@@ -16,7 +16,7 @@ export function TransactionList({ transactions, accounts, categories, disabled, 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
 
   if (transactions.length === 0) {
-    return <p className="transactions-empty">No expenses or income yet. Choose a type and add a transaction to start your history.</p>
+    return <p className="transactions-empty">No transactions yet. Choose a type and add a transaction to start your history.</p>
   }
 
   return (
@@ -24,13 +24,20 @@ export function TransactionList({ transactions, accounts, categories, disabled, 
       {transactions.map((transaction) => (
         <li className="transaction-card" key={transaction.id}>
           <div className="transaction-card-header">
-            <h4>{categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`}</h4>
+            <h4>{transaction.type === 'transfer' ? 'Transfer' : categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`}</h4>
             <strong>{formatCad(transaction.amount)}</strong>
           </div>
           <p className={`transaction-type transaction-type-${transaction.type}`}>{transactionTypeLabels[transaction.type]}</p>
           <dl className="transaction-details">
             <div><dt>Date</dt><dd><time dateTime={transaction.date}>{transaction.date}</time></dd></div>
-            <div><dt>{transaction.type === 'income' ? 'Destination account' : 'Account'}</dt><dd>{accountNames.get(transaction.accountId) ?? `Unavailable account (${transaction.accountId})`}</dd></div>
+            {transaction.type === 'transfer' ? (
+              <>
+                <div><dt>From account</dt><dd>{accountNames.get(transaction.fromAccountId) ?? `Unavailable account (${transaction.fromAccountId})`}</dd></div>
+                <div><dt>To account</dt><dd>{accountNames.get(transaction.toAccountId) ?? `Unavailable account (${transaction.toAccountId})`}</dd></div>
+              </>
+            ) : (
+              <div><dt>{transaction.type === 'income' ? 'Destination account' : 'Account'}</dt><dd>{accountNames.get(transaction.accountId) ?? `Unavailable account (${transaction.accountId})`}</dd></div>
+            )}
           </dl>
           {transaction.type === 'income' && accounts.some((account) => account.id === transaction.accountId && !isEligibleAccount(account, 'income')) && (
             <p className="transaction-error">This income uses an ineligible account. Edit it to choose a bank or cash destination.</p>

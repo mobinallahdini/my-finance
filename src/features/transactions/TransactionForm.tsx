@@ -15,11 +15,12 @@ interface TransactionFormProps {
   onCancel: () => void
 }
 
-type Field = 'amount' | 'date' | 'category' | 'account'
+type Field = 'amount' | 'date' | 'category' | 'account' | 'fromAccount' | 'toAccount'
 type FieldErrors = Partial<Record<Field, string>>
 
 export function TransactionForm({ transaction, type, accounts, categories, disabled, canSave, onSave, onCancel }: TransactionFormProps) {
   const transactionType = transaction?.type ?? type
+  const isTransfer = transactionType === 'transfer'
   const typeLabel = transactionTypeLabels[transactionType]
   const eligibleAccounts = accounts.filter((account) => isEligibleAccount(account, transactionType))
   const matchingCategories = categories.filter((category) => category.type === transactionType)
@@ -28,11 +29,15 @@ export function TransactionForm({ transaction, type, accounts, categories, disab
   const dateRef = useRef<HTMLInputElement>(null)
   const categoryRef = useRef<HTMLSelectElement>(null)
   const accountRef = useRef<HTMLSelectElement>(null)
+  const fromAccountRef = useRef<HTMLSelectElement>(null)
+  const toAccountRef = useRef<HTMLSelectElement>(null)
   const submitting = useRef(false)
   const [amount, setAmount] = useState(() => transaction ? dollarsForInput(transaction.amount) : '')
   const [date, setDate] = useState(() => transaction?.date ?? localCalendarDate())
-  const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? '')
-  const [accountId, setAccountId] = useState(transaction?.accountId ?? '')
+  const [categoryId, setCategoryId] = useState(transaction?.type !== 'transfer' ? transaction?.categoryId ?? '' : '')
+  const [accountId, setAccountId] = useState(transaction?.type !== 'transfer' ? transaction?.accountId ?? '' : '')
+  const [fromAccountId, setFromAccountId] = useState(transaction?.type === 'transfer' ? transaction.fromAccountId : '')
+  const [toAccountId, setToAccountId] = useState(transaction?.type === 'transfer' ? transaction.toAccountId : '')
   const [note, setNote] = useState(transaction?.note ?? '')
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -52,17 +57,29 @@ export function TransactionForm({ transaction, type, accounts, categories, disab
     let amountCents = 0
     try {
       amountCents = parseDollars(amount, true)
-      if (amountCents <= 0) nextErrors.amount = `Enter an ${transactionType} amount greater than zero.`
+      if (amountCents <= 0) nextErrors.amount = `Enter ${transactionType === 'transfer' ? 'a' : 'an'} ${transactionType} amount greater than zero.`
     } catch (error) {
       nextErrors.amount = (error as Error).message
     }
-    if (!matchingCategories.some((category) => category.id === categoryId)) {
-      nextErrors.category = `Choose an existing ${transactionType} category.`
-    }
-    if (!eligibleAccounts.some((account) => account.id === accountId)) {
-      nextErrors.account = transactionType === 'income'
-        ? 'Choose an existing bank or cash account. Income cannot be deposited into a credit card.'
-        : 'Choose an existing bank, cash, or credit card account.'
+    if (isTransfer) {
+      if (!accounts.some((account) => account.id === fromAccountId)) {
+        nextErrors.fromAccount = 'Choose an existing From account.'
+      }
+      if (!accounts.some((account) => account.id === toAccountId)) {
+        nextErrors.toAccount = 'Choose an existing To account.'
+      }
+      if (fromAccountId && fromAccountId === toAccountId) {
+        nextErrors.toAccount = 'Choose a different To account. Transfers require two different accounts.'
+      }
+    } else {
+      if (!matchingCategories.some((category) => category.id === categoryId)) {
+        nextErrors.category = `Choose an existing ${transactionType} category.`
+      }
+      if (!eligibleAccounts.some((account) => account.id === accountId)) {
+        nextErrors.account = transactionType === 'income'
+          ? 'Choose an existing bank or cash account. Income cannot be deposited into a credit card.'
+          : 'Choose an existing bank, cash, or credit card account.'
+      }
     }
     if (!date) nextErrors.date = 'Choose a date.'
     else if (!dateRef.current?.validity.valid) {
@@ -74,22 +91,24 @@ export function TransactionForm({ transaction, type, accounts, categories, disab
       if (nextErrors.amount) amountRef.current?.focus()
       else if (nextErrors.date) dateRef.current?.focus()
       else if (nextErrors.category) categoryRef.current?.focus()
-      else accountRef.current?.focus()
+      else if (nextErrors.account) accountRef.current?.focus()
+      else if (nextErrors.fromAccount) fromAccountRef.current?.focus()
+      else toAccountRef.current?.focus()
       return
     }
 
     submitting.current = true
     try {
       const trimmedNote = note.trim()
-      const record: EntryTransaction = {
+      const base = {
         id: transaction?.id ?? crypto.randomUUID(),
-        type: transactionType,
         amount: amountCents,
         date,
-        categoryId,
-        accountId,
         ...(trimmedNote ? { note: trimmedNote } : {}),
       }
+      const record: EntryTransaction = transactionType === 'transfer'
+        ? { ...base, type: 'transfer', fromAccountId, toAccountId }
+        : { ...base, type: transactionType, categoryId, accountId }
       await onSave(record)
     } catch (error) {
       setSaveError(transactionWriteError(error))
@@ -118,32 +137,80 @@ export function TransactionForm({ transaction, type, accounts, categories, disab
             aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? `${prefix}-date-error` : undefined} />
           {errors.date && <p className="transaction-error" id={`${prefix}-date-error`}>{errors.date}</p>}
         </div>
-        <div className="transaction-field">
-          <label htmlFor={`${prefix}-category`}>{typeLabel} category</label>
-          <select ref={categoryRef} id={`${prefix}-category`} value={categoryId} required
-            onChange={(event) => { setCategoryId(event.target.value); clearError('category') }}
-            aria-invalid={Boolean(errors.category)} aria-describedby={errors.category ? `${prefix}-category-error` : undefined}>
-            <option value="">Choose an {transactionType} category</option>
-            {matchingCategories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
-          {errors.category && <p className="transaction-error" id={`${prefix}-category-error`}>{errors.category}</p>}
-        </div>
-        <div className="transaction-field">
-          <label htmlFor={`${prefix}-account`}>{transactionType === 'income' ? 'Destination account' : 'Account / payment source'}</label>
-          <select ref={accountRef} id={`${prefix}-account`} value={accountId} required
-            onChange={(event) => { setAccountId(event.target.value); clearError('account') }}
-            aria-invalid={Boolean(errors.account)}
-            aria-describedby={`${transactionType === 'income' ? `${prefix}-account-help` : ''}${errors.account ? ` ${prefix}-account-error` : ''}`.trim() || undefined}>
-            <option value="">Choose an account</option>
-            {eligibleAccounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name} ({accountTypeLabels[account.type]})</option>
-            ))}
-          </select>
-          {transactionType === 'income' && <p id={`${prefix}-account-help`}>Income goes into a bank or cash account. A credit card payment is a transfer.</p>}
-          {errors.account && <p className="transaction-error" id={`${prefix}-account-error`}>{errors.account}</p>}
-        </div>
+        {isTransfer ? (
+          <>
+            <div className="transaction-field">
+              <label htmlFor={`${prefix}-from-account`}>From account</label>
+              <select ref={fromAccountRef} id={`${prefix}-from-account`} value={fromAccountId} required
+                onChange={(event) => {
+                  const nextId = event.target.value
+                  setFromAccountId(nextId)
+                  if (nextId === toAccountId) setToAccountId('')
+                  clearError('fromAccount')
+                  clearError('toAccount')
+                }}
+                aria-invalid={Boolean(errors.fromAccount)} aria-describedby={errors.fromAccount ? `${prefix}-from-account-error` : undefined}>
+                <option value="">Choose a From account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id} disabled={account.id === toAccountId}>
+                    {account.name} ({accountTypeLabels[account.type]})
+                  </option>
+                ))}
+              </select>
+              {errors.fromAccount && <p className="transaction-error" id={`${prefix}-from-account-error`}>{errors.fromAccount}</p>}
+            </div>
+            <div className="transaction-field">
+              <label htmlFor={`${prefix}-to-account`}>To account</label>
+              <select ref={toAccountRef} id={`${prefix}-to-account`} value={toAccountId} required
+                onChange={(event) => {
+                  const nextId = event.target.value
+                  setToAccountId(nextId)
+                  if (nextId === fromAccountId) setFromAccountId('')
+                  clearError('fromAccount')
+                  clearError('toAccount')
+                }}
+                aria-invalid={Boolean(errors.toAccount)} aria-describedby={`${prefix}-to-account-help${errors.toAccount ? ` ${prefix}-to-account-error` : ''}`}>
+                <option value="">Choose a To account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id} disabled={account.id === fromAccountId}>
+                    {account.name} ({accountTypeLabels[account.type]})
+                  </option>
+                ))}
+              </select>
+              <p id={`${prefix}-to-account-help`}>Choose a different account. A transfer into a credit card reduces its debt.</p>
+              {errors.toAccount && <p className="transaction-error" id={`${prefix}-to-account-error`}>{errors.toAccount}</p>}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="transaction-field">
+              <label htmlFor={`${prefix}-category`}>{typeLabel} category</label>
+              <select ref={categoryRef} id={`${prefix}-category`} value={categoryId} required
+                onChange={(event) => { setCategoryId(event.target.value); clearError('category') }}
+                aria-invalid={Boolean(errors.category)} aria-describedby={errors.category ? `${prefix}-category-error` : undefined}>
+                <option value="">Choose an {transactionType} category</option>
+                {matchingCategories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+              {errors.category && <p className="transaction-error" id={`${prefix}-category-error`}>{errors.category}</p>}
+            </div>
+            <div className="transaction-field">
+              <label htmlFor={`${prefix}-account`}>{transactionType === 'income' ? 'Destination account' : 'Account / payment source'}</label>
+              <select ref={accountRef} id={`${prefix}-account`} value={accountId} required
+                onChange={(event) => { setAccountId(event.target.value); clearError('account') }}
+                aria-invalid={Boolean(errors.account)}
+                aria-describedby={`${transactionType === 'income' ? `${prefix}-account-help` : ''}${errors.account ? ` ${prefix}-account-error` : ''}`.trim() || undefined}>
+                <option value="">Choose an account</option>
+                {eligibleAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>{account.name} ({accountTypeLabels[account.type]})</option>
+                ))}
+              </select>
+              {transactionType === 'income' && <p id={`${prefix}-account-help`}>Income goes into a bank or cash account. A credit card payment is a transfer.</p>}
+              {errors.account && <p className="transaction-error" id={`${prefix}-account-error`}>{errors.account}</p>}
+            </div>
+          </>
+        )}
         <div className="transaction-field">
           <label htmlFor={`${prefix}-note`}>Note (optional)</label>
           <textarea id={`${prefix}-note`} rows={3} value={note}

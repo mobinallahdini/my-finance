@@ -32,9 +32,7 @@ export function useTransactions() {
           categoriesRepository.getAll(),
         ])
         if (!active) return
-        setTransactions(loadedTransactions.filter((transaction): transaction is EntryTransaction => (
-          transaction.type === 'expense' || transaction.type === 'income'
-        )).sort(compareTransactions))
+        setTransactions(loadedTransactions.sort(compareTransactions))
         setAccounts(loadedAccounts.sort((left, right) => left.name.localeCompare(right.name)))
         setCategories(loadedCategories.sort((left, right) => left.name.localeCompare(right.name)))
       } catch {

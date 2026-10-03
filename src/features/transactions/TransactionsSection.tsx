@@ -10,7 +10,7 @@ import './transactions.css'
 function MonthlyTotal({ transactions, month, type }: {
   transactions: readonly EntryTransaction[]
   month: string
-  type: EntryTransaction['type']
+  type: 'expense' | 'income'
 }) {
   const label = type === 'expense' ? 'Spending' : 'Income'
   let total: number
@@ -35,7 +35,9 @@ export function TransactionsSection() {
   const busy = isLoading || isWriting
   const eligibleAccounts = accounts.filter((account) => isEligibleAccount(account, entryType))
   const matchingCategories = categories.filter((category) => category.type === entryType)
-  const canCreate = eligibleAccounts.length > 0 && matchingCategories.length > 0 && !loadError
+  const canCreate = !loadError && (entryType === 'transfer'
+    ? accounts.length >= 2
+    : eligibleAccounts.length > 0 && matchingCategories.length > 0)
   const month = localCalendarDate().slice(0, 7)
 
   function openEditor(transaction?: EntryTransaction) {
@@ -84,10 +86,10 @@ export function TransactionsSection() {
             onClick={() => openEditor()}>Add {entryType}</button>
         </div>
       </div>
-      <p>Record expenses and income. All amounts are in CAD and stored in this browser.</p>
+      <p>Record expenses, income, and transfers. All amounts are in CAD and stored in this browser.</p>
       <fieldset className="transaction-type-picker" disabled={busy || editor !== null}>
         <legend>Transaction type</legend>
-        {(['expense', 'income'] as const).map((type) => (
+        {(['expense', 'income', 'transfer'] as const).map((type) => (
           <label className="transaction-type-choice" key={type}>
             <input type="radio" name="transaction-type" value={type} checked={entryType === type}
               onChange={() => { setEntryType(type); setActionError(null); setStatus('') }} />
@@ -99,10 +101,16 @@ export function TransactionsSection() {
       {actionError && <p className="transaction-error" role="alert">{actionError}</p>}
       {!isLoading && !loadError && (
         <>
-          {eligibleAccounts.length === 0 && <p className="transactions-empty">{entryType === 'income'
-            ? 'Create a bank or cash account in the Accounts section before adding income. Credit cards cannot receive income.'
-            : 'Create an account in the Accounts section before adding an expense.'}</p>}
-          {matchingCategories.length === 0 && <p className="transactions-empty">Create an {transactionTypeLabels[entryType]} category in the Categories section before adding {entryType}.</p>}
+          {entryType === 'transfer' ? (
+            accounts.length < 2 && <p className="transactions-empty">Create at least two accounts in the Accounts section before adding a transfer. No category is needed.</p>
+          ) : (
+            <>
+              {eligibleAccounts.length === 0 && <p className="transactions-empty">{entryType === 'income'
+                ? 'Create a bank or cash account in the Accounts section before adding income. Credit cards cannot receive income.'
+                : 'Create an account in the Accounts section before adding an expense.'}</p>}
+              {matchingCategories.length === 0 && <p className="transactions-empty">Create an {transactionTypeLabels[entryType]} category in the Categories section before adding {entryType}.</p>}
+            </>
+          )}
         </>
       )}
       {editor && <TransactionForm key={editor.transaction?.id ?? `new-${entryType}`} transaction={editor.transaction}
@@ -118,7 +126,7 @@ export function TransactionsSection() {
               <MonthlyTotal transactions={transactions} month={month} type="income" />
             </div>
             <h3 className="transaction-history-heading">Transaction history</h3>
-            <p>All recorded expenses and income, newest date first.</p>
+            <p>All recorded expenses, income, and transfers, newest date first.</p>
             <TransactionList transactions={transactions} accounts={accounts} categories={categories} disabled={busy || editor !== null}
               onEdit={openEditor} onDelete={(transaction) => { void handleDelete(transaction) }} />
           </>

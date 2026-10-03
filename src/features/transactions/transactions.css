@@ -236,6 +236,11 @@
   color: #285547;
 }
 
+.transaction-type-transfer {
+  background: #edf1fa;
+  color: #344f80;
+}
+
 .transaction-monthly {
   display: grid;
   gap: 0.5rem;

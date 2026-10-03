@@ -1,14 +1,15 @@
-import type { Account, ExpenseTransaction, IncomeTransaction } from '../../domain/models'
+import type { Account, Transaction } from '../../domain/models'
 
-export type EntryTransaction = ExpenseTransaction | IncomeTransaction
+export type EntryTransaction = Transaction
 
 export const transactionTypeLabels: Record<EntryTransaction['type'], string> = {
   expense: 'Expense',
   income: 'Income',
+  transfer: 'Transfer',
 }
 
 export function isEligibleAccount(account: Account, type: EntryTransaction['type']): boolean {
-  return type === 'expense' || account.type === 'bank' || account.type === 'cash'
+  return type !== 'income' || account.type === 'bank' || account.type === 'cash'
 }
 
 export const incomeAccountError = 'Income requires an existing bank or cash account. Credit card payments are transfers.'
