@@ -52,6 +52,11 @@ card debt by 8000, and adds 8000 spending in either case.
 - Spending includes expenses only, regardless of account type. Income and
   transfers never contribute. Empty months return zero and an empty map;
   category totals are keyed by ID and include only categories with expenses.
+- `calculateMonthlyTotalIncome` sums only income in the requested YYYY-MM,
+  validates the month and positive safe integer amounts, and rejects unsafe
+  accumulated totals. Expenses and transfers never contribute; empty months
+  return zero. It shares the existing monetary and month guards without changing
+  account balance or expense calculation semantics.
 
 No real accounts or categories are seeded. No testing framework is installed.
 The exported functions can later be tested directly with typed fixtures for

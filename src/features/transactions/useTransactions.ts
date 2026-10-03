@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Account, Category, ExpenseTransaction } from '../../domain/models'
+import type { Account, Category } from '../../domain/models'
 import { accountsRepository, categoriesRepository, transactionsRepository } from '../../persistence/repositories'
 import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
-import { compareExpenses } from './expenseHelpers'
+import { compareTransactions, incomeAccountError, isEligibleAccount, type EntryTransaction } from './transactionHelpers'
 
-export function useExpenses() {
-  const [expenses, setExpenses] = useState<ExpenseTransaction[]>([])
+export function useTransactions() {
+  const [transactions, setTransactions] = useState<EntryTransaction[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -27,19 +27,19 @@ export function useExpenses() {
     async function load() {
       try {
         const [loadedTransactions, loadedAccounts, loadedCategories] = await Promise.all([
-          transactionsRepository.getByType('expense'),
+          transactionsRepository.getAll(),
           accountsRepository.getAll(),
-          categoriesRepository.getByType('expense'),
+          categoriesRepository.getAll(),
         ])
         if (!active) return
-        setExpenses(loadedTransactions.filter((transaction): transaction is ExpenseTransaction => (
-          transaction.type === 'expense'
-        )).sort(compareExpenses))
+        setTransactions(loadedTransactions.filter((transaction): transaction is EntryTransaction => (
+          transaction.type === 'expense' || transaction.type === 'income'
+        )).sort(compareTransactions))
         setAccounts(loadedAccounts.sort((left, right) => left.name.localeCompare(right.name)))
         setCategories(loadedCategories.sort((left, right) => left.name.localeCompare(right.name)))
       } catch {
         if (active) {
-          setLoadError('Expenses, accounts, and expense categories could not be loaded from browser storage. Check that IndexedDB is available, then use Refresh to retry.')
+          setLoadError('Transactions, accounts, and categories could not be loaded from browser storage. Check that IndexedDB is available, then use Refresh to retry.')
         }
       } finally {
         if (active) setIsLoading(false)
@@ -61,16 +61,22 @@ export function useExpenses() {
     }
   }
 
-  async function saveExpense(expense: ExpenseTransaction, editing: boolean) {
+  async function saveTransaction(transaction: EntryTransaction, editing: boolean) {
     // The repository rechecks persisted references and category type atomically.
-    await write(() => editing
-      ? transactionsRepository.update(expense)
-      : transactionsRepository.add(expense))
+    await write(async () => {
+      if (transaction.type === 'income') {
+        // UI policy: recheck storage because the form's account list may be stale.
+        const account = await accountsRepository.get(transaction.accountId)
+        if (!account || !isEligibleAccount(account, 'income')) throw new Error(incomeAccountError)
+      }
+      if (editing) await transactionsRepository.update(transaction)
+      else await transactionsRepository.add(transaction)
+    })
   }
 
-  async function deleteExpense(id: string) {
+  async function deleteTransaction(id: string) {
     await write(() => transactionsRepository.delete(id))
   }
 
-  return { expenses, accounts, categories, isLoading, isWriting, loadError, reload, saveExpense, deleteExpense }
+  return { transactions, accounts, categories, isLoading, isWriting, loadError, reload, saveTransaction, deleteTransaction }
 }

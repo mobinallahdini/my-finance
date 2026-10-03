@@ -7,8 +7,8 @@
 }
 
 .transactions-header,
-.expense-actions,
-.expense-card-header {
+.transaction-actions,
+.transaction-card-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -16,7 +16,7 @@
 }
 
 .transactions-header,
-.expense-card-header {
+.transaction-card-header {
   justify-content: space-between;
 }
 
@@ -56,18 +56,18 @@
   background: #e9f3ef;
 }
 
-.transactions-section .expense-primary {
+.transactions-section .transaction-primary {
   background: #285547;
   border-color: #285547;
   color: #fff;
 }
 
-.transactions-section .expense-primary:hover:not(:disabled) {
+.transactions-section .transaction-primary:hover:not(:disabled) {
   background: #164d3e;
 }
 
-.transactions-section .expense-delete,
-.transactions-section .expense-error {
+.transactions-section .transaction-delete,
+.transactions-section .transaction-error {
   color: #932b28;
 }
 
@@ -76,35 +76,35 @@
   cursor: default;
 }
 
-.expense-form,
-.expenses-empty,
-.expense-monthly {
+.transaction-form,
+.transactions-empty,
+.transaction-monthly {
   margin-top: 1rem;
   padding: 1rem;
   border-radius: 0.5rem;
   background: #f4f7f6;
 }
 
-.expense-form fieldset {
+.transaction-form fieldset {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.expense-field {
+.transaction-field {
   display: grid;
   gap: 0.375rem;
   margin-block: 1rem;
 }
 
-.expense-field label {
+.transaction-field label {
   font-weight: 600;
 }
 
-.expense-field input,
-.expense-field select,
-.expense-field textarea {
+.transaction-field input,
+.transaction-field select,
+.transaction-field textarea {
   width: 100%;
   min-width: 0;
   padding: 0.5rem 0.75rem;
@@ -112,28 +112,28 @@
   color: #203b33;
 }
 
-.expense-field textarea {
+.transaction-field textarea {
   resize: vertical;
 }
 
-.expense-field [aria-invalid='true'] {
+.transaction-field [aria-invalid='true'] {
   border-color: #932b28;
 }
 
-.expense-field p {
+.transaction-field p {
   font-size: 0.875rem;
 }
 
-.expense-error,
-.expense-status:not(:empty) {
+.transaction-error,
+.transaction-status:not(:empty) {
   margin-top: 0.75rem;
 }
 
-.transactions-section .expense-history-heading {
+.transactions-section .transaction-history-heading {
   margin-top: 1.5rem;
 }
 
-.expense-list {
+.transaction-list {
   display: grid;
   gap: 1rem;
   margin: 1rem 0 0;
@@ -141,38 +141,104 @@
   list-style: none;
 }
 
-.expense-card {
+.transaction-card {
   min-width: 0;
   padding: 1rem;
   border: 1px solid #d8e1df;
   border-radius: 0.5rem;
 }
 
-.expense-card-header strong {
+.transaction-card-header strong {
   overflow-wrap: anywhere;
 }
 
-.expense-details {
+.transaction-details {
   display: grid;
   gap: 0.5rem;
   margin-block: 1rem;
 }
 
-.expense-details > div {
+.transaction-details > div {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.25rem 1rem;
 }
 
-.expense-details dd {
+.transaction-details dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.expense-note {
+.transaction-note {
   margin-bottom: 1rem;
   white-space: pre-wrap;
+}
+
+.transaction-type-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.transaction-type-picker legend {
+  margin-bottom: 0.375rem;
+  padding: 0;
+  font-weight: 600;
+}
+
+.transaction-type-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid #9aada5;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.transaction-type-choice:has(input:checked) {
+  background: #e9f3ef;
+  border-color: #285547;
+}
+
+.transaction-type-choice input {
+  min-height: auto;
+  width: 1rem;
+  height: 1rem;
+  accent-color: #285547;
+}
+
+.transaction-type-picker:disabled .transaction-type-choice {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.transaction-type {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.transaction-type-expense {
+  background: #fff0e7;
+  color: #854320;
+}
+
+.transaction-type-income {
+  background: #e9f3ef;
+  color: #285547;
+}
+
+.transaction-monthly {
+  display: grid;
+  gap: 0.5rem;
 }
 
 @media (min-width: 48rem) {
@@ -180,7 +246,7 @@
     grid-column: 1 / -1;
   }
 
-  .expense-list {
+  .transaction-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

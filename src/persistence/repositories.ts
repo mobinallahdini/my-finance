@@ -19,10 +19,12 @@ async function categoryIsReferenced(id: string): Promise<boolean> {
   return (await database.transactions.where('categoryId').equals(id).count()) > 0
 }
 
-async function requireAccount(id: string): Promise<void> {
-  if (!(await database.accounts.get(id))) {
+async function requireAccount(id: string): Promise<Account> {
+  const account = await database.accounts.get(id)
+  if (!account) {
     throw new Error(`Account does not exist: ${id}`)
   }
+  return account
 }
 
 async function validateReferences(transaction: Transaction): Promise<void> {
@@ -30,7 +32,10 @@ async function validateReferences(transaction: Transaction): Promise<void> {
     await requireAccount(transaction.fromAccountId)
     await requireAccount(transaction.toAccountId)
   } else {
-    await requireAccount(transaction.accountId)
+    const account = await requireAccount(transaction.accountId)
+    if (transaction.type === 'income' && account.type !== 'bank' && account.type !== 'cash') {
+      throw new RangeError('Income must target a bank or cash account. Credit-card payments must be recorded as transfers.')
+    }
     const category = await database.categories.get(transaction.categoryId)
     if (!category) throw new Error(`Category does not exist: ${transaction.categoryId}`)
     if (category.type !== transaction.type) {

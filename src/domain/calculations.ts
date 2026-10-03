@@ -21,6 +21,12 @@ function requirePositiveAmount(amount: MoneyCents): MoneyCents {
   return amount
 }
 
+function requireValidMonth(month: YearMonth): void {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month.startsWith('0000')) {
+    throw new RangeError('Month must use YYYY-MM format with a year from 0001 to 9999.')
+  }
+}
+
 /** Positive means available money for bank/cash, debt owed for credit cards. */
 export function calculateAccountBalance(
   account: Account,
@@ -75,9 +81,7 @@ export function calculateMonthlyExpensesByCategory(
   transactions: readonly Transaction[],
   month: YearMonth,
 ): ReadonlyMap<string, MoneyCents> {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month.startsWith('0000')) {
-    throw new RangeError('Month must use YYYY-MM format with a year from 0001 to 9999.')
-  }
+  requireValidMonth(month)
 
   const totals = new Map<string, MoneyCents>()
   for (const transaction of transactions) {
@@ -100,6 +104,22 @@ export function calculateMonthlyTotalExpenses(
   let total = 0
   for (const amount of calculateMonthlyExpensesByCategory(transactions, month).values()) {
     total = requireSafeCents(total + amount)
+  }
+  return total
+}
+
+/** Income only, matching the stored calendar month without timezone conversion. */
+export function calculateMonthlyTotalIncome(
+  transactions: readonly Transaction[],
+  month: YearMonth,
+): MoneyCents {
+  requireValidMonth(month)
+  let total = 0
+  for (const transaction of transactions) {
+    if (transaction.type !== 'income' || !transaction.date.startsWith(`${month}-`)) {
+      continue
+    }
+    total = requireSafeCents(total + requirePositiveAmount(transaction.amount))
   }
   return total
 }

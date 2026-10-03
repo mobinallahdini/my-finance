@@ -50,6 +50,26 @@ changes, including across tabs. Referenced accounts/categories cannot be deleted
 or have their type changed. Names, opening balances, and credit limits remain
 editable. No financial history is cascade-deleted; transaction deletion is explicit.
 
+Income may target only an existing bank or cash account. Both
+`transactionsRepository.add` and `transactionsRepository.update` enforce this
+in the shared reference validation inside their IndexedDB read-write transaction,
+using the same account lookup that checks existence. A credit-card destination
+rejects with `RangeError`: "Income must target a bank or cash account. Credit-card
+payments must be recorded as transfers." Expense account eligibility and transfer
+endpoints are unchanged; credit-card payments use transfers.
+
+`accountsRepository.update` already rejects any type change while the account is
+referenced by a transaction, including income through `accountId`. This protects
+bank/cash accounts with income references from changing to credit_card. Its
+reference check and update share a read-write transaction on accounts and
+transactions, overlapping the transaction-write scope. Concurrent writes,
+including other database connections/tabs, cannot bypass the income destination
+rule by changing account type between its validation and write.
+
+No schema migration or automatic history rewriting is involved. Existing invalid
+income records introduced before this rule must be corrected to a bank/cash
+destination or explicitly deleted; updating them to a credit card is rejected.
+
 Assumptions: a single currency, browser IndexedDB availability, caller-generated
 IDs, and all application writes going through these repositories. Raw IndexedDB
 access bypasses these application-level integrity rules. No balance snapshots,
