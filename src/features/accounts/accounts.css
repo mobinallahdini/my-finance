@@ -1,0 +1,166 @@
+.accounts-section {
+  padding: 1.5rem;
+  border: 1px solid #d8e1df;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  min-width: 0;
+}
+
+.accounts-header,
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.accounts-header {
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.accounts-section h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.accounts-section h3 {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.accounts-section button,
+.accounts-section input,
+.accounts-section select {
+  min-height: 2.75rem;
+  border: 1px solid #9aada5;
+  border-radius: 0.375rem;
+  font: inherit;
+}
+
+.accounts-section button {
+  padding: 0.5rem 0.875rem;
+  background: #fff;
+  color: #203b33;
+  cursor: pointer;
+}
+
+.accounts-section button:hover:not(:disabled) {
+  background: #e9f3ef;
+}
+
+.accounts-section .account-primary {
+  background: #285547;
+  border-color: #285547;
+  color: #fff;
+}
+
+.accounts-section .account-primary:hover:not(:disabled) {
+  background: #164d3e;
+}
+
+.accounts-section .account-delete,
+.accounts-section .account-error {
+  color: #932b28;
+}
+
+.accounts-section button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.account-form,
+.accounts-empty {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #f4f7f6;
+}
+
+.account-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.account-field {
+  display: grid;
+  gap: 0.375rem;
+  margin-block: 1rem;
+}
+
+.account-field label {
+  font-weight: 600;
+}
+
+.account-field input,
+.account-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  color: #203b33;
+}
+
+.account-field input[aria-invalid='true'] {
+  border-color: #932b28;
+}
+
+.account-field p,
+.account-balance-note {
+  font-size: 0.875rem;
+}
+
+.account-error,
+.account-status:not(:empty) {
+  margin-top: 0.75rem;
+}
+
+.account-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #d8e1df;
+  border-radius: 0.5rem;
+}
+
+.account-type {
+  font-size: 0.875rem;
+}
+
+.account-balances {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.account-balances > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.account-balances dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 48rem) {
+  .accounts-section {
+    grid-column: 1 / -1;
+  }
+
+  .account-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

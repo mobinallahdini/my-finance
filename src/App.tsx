@@ -1,4 +1,5 @@
 import './App.css'
+import { AccountsSection } from './features/accounts/AccountsSection'
 
 function App() {
   return (
@@ -19,11 +20,7 @@ function App() {
           <p>Your expenses and transaction history will appear here.</p>
           <span className="placeholder-label">Coming soon</span>
         </section>
-        <section className="placeholder-section" aria-labelledby="accounts-heading">
-          <h2 id="accounts-heading">Accounts</h2>
-          <p>Your accounts and their balances will appear here.</p>
-          <span className="placeholder-label">Coming soon</span>
-        </section>
+        <AccountsSection />
         <section className="placeholder-section" aria-labelledby="settings-heading">
           <h2 id="settings-heading">Settings</h2>
           <p>Your categories and app preferences will appear here.</p>
