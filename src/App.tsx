@@ -1,5 +1,6 @@
 import './App.css'
 import { AccountsSection } from './features/accounts/AccountsSection'
+import { CategoriesSection } from './features/categories/CategoriesSection'
 
 function App() {
   return (
@@ -21,11 +22,7 @@ function App() {
           <span className="placeholder-label">Coming soon</span>
         </section>
         <AccountsSection />
-        <section className="placeholder-section" aria-labelledby="settings-heading">
-          <h2 id="settings-heading">Settings</h2>
-          <p>Your categories and app preferences will appear here.</p>
-          <span className="placeholder-label">Coming soon</span>
-        </section>
+        <CategoriesSection />
       </main>
     </div>
   )
