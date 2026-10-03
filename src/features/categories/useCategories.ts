@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Category } from '../../domain/models'
 import { categoriesRepository } from '../../persistence/repositories'
 import { CategoryNameError, categoryNameError } from './categoryHelpers'
+import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -9,6 +10,14 @@ export function useCategories() {
   const [isWriting, setIsWriting] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadVersion, setLoadVersion] = useState(0)
+
+  const reload = useCallback(() => {
+    setLoadError(null)
+    setIsLoading(true)
+    setLoadVersion((version) => version + 1)
+  }, [])
+
+  useDataRefresh(reload)
 
   useEffect(() => {
     let active = true
@@ -31,18 +40,12 @@ export function useCategories() {
     return () => { active = false }
   }, [loadVersion])
 
-  function reload() {
-    setLoadError(null)
-    setIsLoading(true)
-    setLoadVersion((version) => version + 1)
-  }
-
   async function write(action: () => Promise<unknown>) {
     setIsWriting(true)
     try {
       await action()
       // A successful write stays successful even if the subsequent read fails.
-      reload()
+      notifyDataChanged()
     } finally {
       setIsWriting(false)
     }

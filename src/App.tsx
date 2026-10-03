@@ -1,6 +1,7 @@
 import './App.css'
 import { AccountsSection } from './features/accounts/AccountsSection'
 import { CategoriesSection } from './features/categories/CategoriesSection'
+import { TransactionsSection } from './features/transactions/TransactionsSection'
 
 function App() {
   return (
@@ -16,11 +17,7 @@ function App() {
           <p>Your monthly spending overview will appear here.</p>
           <span className="placeholder-label">Coming soon</span>
         </section>
-        <section className="placeholder-section" aria-labelledby="transactions-heading">
-          <h2 id="transactions-heading">Transactions</h2>
-          <p>Your expenses and transaction history will appear here.</p>
-          <span className="placeholder-label">Coming soon</span>
-        </section>
+        <TransactionsSection />
         <AccountsSection />
         <CategoriesSection />
       </main>

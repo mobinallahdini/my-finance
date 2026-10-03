@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Account, Transaction } from '../../domain/models'
 import { accountsRepository, transactionsRepository } from '../../persistence/repositories'
+import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -9,6 +10,14 @@ export function useAccounts() {
   const [isWriting, setIsWriting] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadVersion, setLoadVersion] = useState(0)
+
+  const reload = useCallback(() => {
+    setLoadError(null)
+    setIsLoading(true)
+    setLoadVersion((version) => version + 1)
+  }, [])
+
+  useDataRefresh(reload)
 
   useEffect(() => {
     let active = true
@@ -35,18 +44,12 @@ export function useAccounts() {
     return () => { active = false }
   }, [loadVersion])
 
-  function reload() {
-    setLoadError(null)
-    setIsLoading(true)
-    setLoadVersion((version) => version + 1)
-  }
-
   async function write(action: () => Promise<unknown>) {
     setIsWriting(true)
     try {
       await action()
       // A successful write stays successful even if the subsequent read fails.
-      reload()
+      notifyDataChanged()
     } finally {
       setIsWriting(false)
     }
