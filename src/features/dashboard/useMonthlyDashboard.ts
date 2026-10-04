@@ -4,10 +4,10 @@ import {
   calculateMonthlyTotalExpenses,
   calculateMonthlyTotalIncome,
 } from '../../domain/calculations'
-import type { MoneyCents, YearMonth } from '../../domain/models'
-import { categoriesRepository, transactionsRepository } from '../../persistence/repositories'
+import type { MoneyCents, Transaction, YearMonth } from '../../domain/models'
+import { accountsRepository, categoriesRepository, transactionsRepository } from '../../persistence/repositories'
 import { useDataRefresh } from '../shared/dataRefresh'
-import { localCalendarDate } from '../transactions/transactionHelpers'
+import { compareTransactions, localCalendarDate } from '../transactions/transactionHelpers'
 
 export interface CategorySpending {
   readonly categoryId: string
@@ -25,11 +25,22 @@ export interface MonthlySummary {
   readonly hasUnknownCategories: boolean
 }
 
+export interface RecentActivityItem {
+  readonly id: string
+  readonly type: Transaction['type']
+  readonly amount: MoneyCents
+  readonly title: string
+  readonly accountDescription: string
+  readonly transferDescription?: string
+}
+
 interface DashboardResult {
   readonly month: YearMonth
   readonly version: number
   readonly summary: MonthlySummary | null
   readonly error: string | null
+  readonly recentActivity: readonly RecentActivityItem[]
+  readonly activityError: string | null
 }
 
 export function useMonthlyDashboard() {
@@ -54,9 +65,11 @@ export function useMonthlyDashboard() {
 
     async function load() {
       try {
-        const [transactions, categories] = await Promise.all([
+        const [transactions, categories, accounts] = await Promise.all([
           transactionsRepository.getForMonth(month),
           categoriesRepository.getAll(),
+          // An account-name read failure must not hide the financial summary.
+          accountsRepository.getAll().catch(() => null),
         ])
         if (!active) return
 
@@ -68,6 +81,17 @@ export function useMonthlyDashboard() {
         }
 
         const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
+        const accountNames = new Map(accounts?.map((account) => [account.id, account.name]))
+        const accountName = (id: string) => accountNames.get(id) ?? 'Unknown account'
+        const recentActivity: RecentActivityItem[] = [...transactions].sort(compareTransactions).slice(0, 3).map((transaction) => {
+          const base = { id: transaction.id, type: transaction.type, amount: transaction.amount }
+          if (transaction.type === 'transfer') {
+            const from = accountName(transaction.fromAccountId)
+            const to = accountName(transaction.toAccountId)
+            return { ...base, title: 'Transfer', accountDescription: `${from} → ${to}`, transferDescription: `From ${from} to ${to}` }
+          }
+          return { ...base, title: categoryNames.get(transaction.categoryId) ?? 'Unknown category', accountDescription: accountName(transaction.accountId) }
+        })
         const categorySpending = Array.from(calculateMonthlyExpensesByCategory(transactions, month), ([categoryId, amount]) => ({
           categoryId,
           name: categoryNames.get(categoryId) ?? 'Unknown category',
@@ -84,6 +108,8 @@ export function useMonthlyDashboard() {
           version: loadVersion,
           summary: { expenses, income, netCashFlow, categorySpending, hasUnknownCategories: categorySpending.some((category) => category.isUnknown) },
           error: null,
+          recentActivity,
+          activityError: accounts === null ? 'Account names could not be loaded from browser storage.' : null,
         })
       } catch (error) {
         if (!active) return
@@ -91,6 +117,8 @@ export function useMonthlyDashboard() {
           month,
           version: loadVersion,
           summary: null,
+          recentActivity: [],
+          activityError: null,
           error: error instanceof RangeError
             ? 'The monthly totals could not be calculated safely. Review the recorded transaction amounts, then use Refresh to retry.'
             : 'The dashboard could not be loaded from browser storage. Check that IndexedDB is available, then use Refresh to retry.',
@@ -111,5 +139,7 @@ export function useMonthlyDashboard() {
     isLoading: currentResult === null,
     summary: currentResult?.summary ?? null,
     loadError: currentResult?.error ?? null,
+    recentActivity: currentResult?.recentActivity ?? [],
+    activityError: currentResult?.activityError ?? null,
   }
 }

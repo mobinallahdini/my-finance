@@ -24,10 +24,10 @@ function MonthlyTotal({ transactions, month, type }: {
   return <p>{label} for {month}: <strong>{formatCad(total)}</strong></p>
 }
 
-export function TransactionsSection() {
+export function TransactionsSection({ startNewTransaction = false }: { startNewTransaction?: boolean }) {
   const { transactions, accounts, categories, isLoading, isWriting, loadError, reload, saveTransaction, deleteTransaction } = useTransactions()
   const [entryType, setEntryType] = useState<EntryTransaction['type']>('expense')
-  const [editor, setEditor] = useState<{ transaction?: EntryTransaction } | null>(null)
+  const [editor, setEditor] = useState<{ transaction?: EntryTransaction } | null>(() => startNewTransaction ? {} : null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [status, setStatus] = useState('')
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -113,7 +113,7 @@ export function TransactionsSection() {
           )}
         </>
       )}
-      {editor && <TransactionForm key={editor.transaction?.id ?? `new-${entryType}`} transaction={editor.transaction}
+      {editor && !isLoading && <TransactionForm key={editor.transaction?.id ?? `new-${entryType}`} transaction={editor.transaction}
         type={entryType} accounts={accounts} categories={categories}
         disabled={busy} canSave={canCreate} onSave={handleSave} onCancel={closeEditor} />}
       <div aria-busy={busy}>
