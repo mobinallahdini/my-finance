@@ -1,56 +1,57 @@
+import { useId } from 'react'
 import type { Account, Category } from '../../domain/models'
-import { formatCad } from '../accounts/money'
 import { isEligibleAccount, transactionTypeLabels, type EntryTransaction } from './transactionHelpers'
+import { readableTransactionDate, signedTransactionAmount } from './transactionPresentation'
 
-interface TransactionListProps {
+export function TransactionList({ transactions, accounts, categories, disabled, onOpen }: {
   transactions: readonly EntryTransaction[]
   accounts: readonly Account[]
   categories: readonly Category[]
   disabled: boolean
-  onEdit: (transaction: EntryTransaction) => void
-  onDelete: (transaction: EntryTransaction) => void
-}
-
-export function TransactionList({ transactions, accounts, categories, disabled, onEdit, onDelete }: TransactionListProps) {
+  onOpen: (transaction: EntryTransaction, opener: HTMLButtonElement) => void
+}) {
+  const prefix = useId()
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
-
-  if (transactions.length === 0) {
-    return <p className="transactions-empty">No transactions yet. Choose a type and add a transaction to start your history.</p>
+  const accountName = (id: string) => accountNames.get(id) ?? `Unavailable account (${id})`
+  const groups = new Map<string, EntryTransaction[]>()
+  // Filtering preserves the existing date-descending, ID-ascending history order.
+  for (const transaction of transactions) {
+    const group = groups.get(transaction.date) ?? []
+    group.push(transaction)
+    groups.set(transaction.date, group)
   }
 
   return (
-    <ul className="transaction-list">
-      {transactions.map((transaction) => (
-        <li className="transaction-card" key={transaction.id}>
-          <div className="transaction-card-header">
-            <h4>{transaction.type === 'transfer' ? 'Transfer' : categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`}</h4>
-            <strong>{formatCad(transaction.amount)}</strong>
-          </div>
-          <p className={`transaction-type transaction-type-${transaction.type}`}>{transactionTypeLabels[transaction.type]}</p>
-          <dl className="transaction-details">
-            <div><dt>Date</dt><dd><time dateTime={transaction.date}>{transaction.date}</time></dd></div>
-            {transaction.type === 'transfer' ? (
-              <>
-                <div><dt>From account</dt><dd>{accountNames.get(transaction.fromAccountId) ?? `Unavailable account (${transaction.fromAccountId})`}</dd></div>
-                <div><dt>To account</dt><dd>{accountNames.get(transaction.toAccountId) ?? `Unavailable account (${transaction.toAccountId})`}</dd></div>
-              </>
-            ) : (
-              <div><dt>{transaction.type === 'income' ? 'Destination account' : 'Account'}</dt><dd>{accountNames.get(transaction.accountId) ?? `Unavailable account (${transaction.accountId})`}</dd></div>
-            )}
-          </dl>
-          {transaction.type === 'income' && accounts.some((account) => account.id === transaction.accountId && !isEligibleAccount(account, 'income')) && (
-            <p className="transaction-error">This income uses an ineligible account. Edit it to choose a bank or cash destination.</p>
-          )}
-          {transaction.note && <p className="transaction-note">{transaction.note}</p>}
-          <div className="transaction-actions">
-            <button type="button" disabled={disabled} onClick={() => onEdit(transaction)}
-              aria-label={`Edit ${transaction.type} ${formatCad(transaction.amount)} on ${transaction.date}`}>Edit</button>
-            <button className="transaction-delete" type="button" disabled={disabled} onClick={() => onDelete(transaction)}
-              aria-label={`Delete ${transaction.type} ${formatCad(transaction.amount)} on ${transaction.date}`}>Delete</button>
-          </div>
-        </li>
+    <div className="transaction-history">
+      {Array.from(groups, ([date, records]) => (
+        <section key={date} className="transaction-date-group" aria-labelledby={`${prefix}-${date}`}>
+          <h3 id={`${prefix}-${date}`}><time dateTime={date}>{readableTransactionDate(date)}</time></h3>
+          <ul className="transaction-list">
+            {records.map((transaction) => (
+              <li key={transaction.id}>
+                <button className="transaction-row" type="button" disabled={disabled}
+                  data-transaction-id={transaction.id} onClick={(event) => onOpen(transaction, event.currentTarget)}
+                  aria-haspopup="dialog">
+                  <span className="transaction-row-main">
+                    <span className="transaction-row-title">{transaction.type === 'transfer' ? 'Transfer' : categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`}</span>
+                    <span className={`transaction-row-amount financial-${transaction.type === 'transfer' ? 'neutral' : transaction.type}`}>{signedTransactionAmount(transaction)}</span>
+                  </span>
+                  <span className="transaction-row-detail">
+                    {transaction.type === 'transfer' ? <>
+                      <span aria-hidden="true">{accountName(transaction.fromAccountId)} → {accountName(transaction.toAccountId)}</span>
+                      <span className="transaction-sr-only">From {accountName(transaction.fromAccountId)} to {accountName(transaction.toAccountId)}</span>
+                    </> : `${transactionTypeLabels[transaction.type]} · ${accountName(transaction.accountId)}`}
+                  </span>
+                  {transaction.type === 'income' && accounts.some((account) => account.id === transaction.accountId && !isEligibleAccount(account, 'income')) && (
+                    <span className="transaction-row-warning">This income uses an ineligible account. Open to choose a bank or cash destination.</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   )
 }

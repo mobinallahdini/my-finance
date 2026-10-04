@@ -13,18 +13,23 @@ or new dependency is used. The skip link focuses the current page heading withou
 changing the hash. Main itself is not a focus target; heading outlines fit their
 text so keyboard focus remains visible without framing the whole content region.
 
-The header's Add Transaction link opens `#transactions/new`. The Transactions
-component accepts one optional initial-editor flag, then uses its existing
-expense editor and validation. The form mounts after the initial storage load
-so its existing amount-field focus works. Missing accounts/categories keep the
-existing prerequisite messages and prevent saving. A small app-level request
-counter allows the action to reopen after save/cancel while already at the same
-hash. Reloading this action hash opens a fresh new editor.
+The header's Add Transaction link opens `#transactions/new`. On Transactions,
+the prominent Add action appears in the page header instead of being duplicated
+in the app header. The Transactions component accepts one optional initial-editor
+flag and opens its native dialog, focusing Amount when its storage load completes.
+Missing accounts/categories provide direct setup links and prevent saving. A
+small app-level request counter allows the global action to reopen after
+save/cancel while already at the same hash. Reloading this action hash opens a
+fresh new editor.
 
-Only the active feature mounts. Leaving a destination closes its unsaved editor;
-drafts and Home's selected month are not persisted. Persisted records and all
+Only the active feature mounts. The transaction editor checks dirty drafts before
+same-document departures, including browser Back/Forward, and restores the editor
+URL before the app reads it if discard is declined. Reload/closing a dirty editor
+uses the browser's beforeunload warning. See `../transactions/README.md` for the
+history-entry replacement and focus-restoration behavior. Drafts, transaction
+filters, and Home's selected month are not persisted. Persisted records and all
 repositories, domain calculations, schema, parsing, and data-refresh events are
-unchanged. Dedicated Transaction, Account, and Category layouts remain intact.
+unchanged. Account and Category layouts remain intact.
 
 Mobile navigation is fixed at the bottom, with four SVG icons, visible labels,
 and `aria-current="page"`. More remains active while viewing Categories. Its

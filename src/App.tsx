@@ -38,12 +38,12 @@ function App() {
           </svg>
           My Finance
         </h1>
-        <a className="app-add-transaction" href="#transactions/new"
+        {destination !== 'transactions' && <a className="app-add-transaction" href="#transactions/new"
           onClick={() => setNewTransactionRequest((request) => request + 1)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
             strokeLinecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" /></svg>
           <span>Add Transaction</span>
-        </a>
+        </a>}
       </header>
       <AppNavigation active={destination} />
       <main ref={mainRef} id="main-content" className="app-main">

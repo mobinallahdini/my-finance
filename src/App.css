@@ -6,6 +6,7 @@
 }
 
 .app-header {
+  min-height: var(--control-height);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -121,6 +122,7 @@
 @media (min-width: 48rem) {
   .app-shell { padding: var(--space-8) var(--space-8) var(--space-12); }
   .app-header {
+    min-height: calc(var(--control-height) + var(--space-6));
     margin-bottom: 0;
     padding: var(--space-3) var(--space-6);
     border-radius: var(--radius-surface) var(--radius-surface) 0 0;
