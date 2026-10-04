@@ -1,45 +1,29 @@
-import { useId } from 'react'
 import type { Category } from '../../domain/models'
 import { categoryTypeLabels } from './categoryHelpers'
 
 interface CategoryListProps {
   categories: readonly Category[]
+  type: Category['type']
   disabled: boolean
-  onEdit: (category: Category) => void
-  onDelete: (category: Category) => void
+  onOpen: (category: Category, opener: HTMLButtonElement) => void
 }
 
-export function CategoryList({ categories, disabled, onEdit, onDelete }: CategoryListProps) {
-  const prefix = useId()
-  const types: Category['type'][] = ['expense', 'income']
-
+export function CategoryList({ categories, type, disabled, onOpen }: CategoryListProps) {
+  const orderedCategories = [...categories].sort((left, right) => left.name.localeCompare(right.name)
+    || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
   return (
-    <div className="category-groups">
-      {types.map((type) => {
-        const group = categories.filter((category) => category.type === type)
-        return (
-          <section className="category-group" key={type} aria-labelledby={`${prefix}-${type}`}>
-            <h3 id={`${prefix}-${type}`}>{categoryTypeLabels[type]} categories</h3>
-            {group.length === 0
-              ? <p className="categories-empty">No {type} categories yet. Add a category and choose {categoryTypeLabels[type]} to get started.</p>
-              : (
-                <ul className="category-list">
-                  {group.map((category) => (
-                    <li className="category-card" key={category.id}>
-                      <h4>{category.name}</h4>
-                      <div className="category-actions">
-                        <button type="button" disabled={disabled} onClick={() => onEdit(category)}
-                          aria-label={`Edit ${type} category ${category.name}`}>Edit</button>
-                        <button className="category-delete" type="button" disabled={disabled} onClick={() => onDelete(category)}
-                          aria-label={`Delete ${type} category ${category.name}`}>Delete</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </section>
-        )
-      })}
-    </div>
+    <ul className="category-list" aria-label={`${categoryTypeLabels[type]} categories`}>
+      {orderedCategories.map((category) => (
+        <li key={category.id}>
+          <button className="category-row" type="button" disabled={disabled} aria-haspopup="dialog"
+            data-category-id={category.id} aria-label={`${category.name}, ${categoryTypeLabels[category.type]} category`}
+            onClick={(event) => onOpen(category, event.currentTarget)}>
+            <span>{category.name}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+              aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }

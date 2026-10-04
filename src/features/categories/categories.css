@@ -1,60 +1,77 @@
-.categories-header,
-.category-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
+.categories-section { max-width: 48rem; margin-inline: auto; margin-bottom: var(--space-4); padding: 0; border: 0; border-radius: 0; background: transparent; }
+.categories-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.categories-section h2 { margin: 0; }
+.categories-section .category-add { display: inline-flex; align-items: center; gap: var(--space-1); padding-inline: var(--space-3); font-size: var(--font-size-meta); }
+.category-add svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+.category-status:not(:empty), .category-error { margin-top: var(--space-3); }
+.category-status:not(:empty) { margin-bottom: var(--space-4); }
+.category-loading { margin-block: var(--space-3); font-size: var(--font-size-meta); }
+.category-recovery { margin-top: var(--space-4); }
+.category-recovery button { margin-top: var(--space-3); }
+.category-count { margin-bottom: var(--space-2); font-size: var(--font-size-navigation); }
+.category-type-filter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); min-width: 0; max-width: 24rem; margin: var(--space-4) auto var(--space-6); padding: var(--space-1); border: 0; border-radius: var(--radius-control); background: var(--color-border); }
+.category-type-segment { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: var(--control-height); padding: var(--space-2) var(--space-1); border-radius: var(--radius-small); font-size: var(--font-size-meta); font-weight: var(--font-weight-emphasis); cursor: pointer; overflow-wrap: anywhere; }
+.category-type-segment:has(input:checked) { background: var(--color-surface); color: var(--color-action); }
+.category-type-segment:has(input:focus-visible) { outline: var(--focus-width) solid var(--color-focus); outline-offset: var(--focus-offset); }
+.category-sr-only, .category-type-segment input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.category-list { margin: 0; padding: 0; list-style: none; }
+.category-list > li { border-bottom: var(--border-width) solid var(--color-border); }
+.categories-section .category-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: var(--space-3) 0; border: 0; border-radius: var(--radius-small); background: transparent; text-align: left; }
+.category-row > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.category-row > svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; color: var(--color-text-secondary); }
+.category-empty { padding-block: var(--space-4); font-size: var(--font-size-meta); }
+.categories-section .category-empty button { margin-top: var(--space-2); padding-inline: 0; font-size: var(--font-size-meta); }
 
-.categories-header {
-  justify-content: space-between;
-  margin-bottom: var(--space-3);
-}
-
-.categories-section h2 {
+.category-editor {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  height: 100dvh;
+  max-height: none;
   margin: 0;
-}
-
-.categories-section h3,
-.categories-section h4 {
-  margin: 0 0 var(--space-2);
-  overflow-wrap: anywhere;
-}
-
-.category-error,
-.category-status:not(:empty) {
-  margin-top: var(--space-3);
-}
-
-.category-groups,
-.category-list {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-
-.category-group {
-  min-width: 0;
-}
-
-.category-list {
-  margin-bottom: 0;
   padding: 0;
-  list-style: none;
+  border: 0;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  overflow: hidden;
 }
-
-.category-card {
-  min-width: 0;
-  padding: var(--space-4);
+.category-editor::backdrop { background: rgb(31 41 39 / 35%); }
+.category-editor .category-form { display: flex; flex-direction: column; height: 100%; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; background: var(--color-surface); }
+.category-editor-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--space-2);
+  padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-3) var(--space-2);
   border-bottom: var(--border-width) solid var(--color-border);
+}
+.category-editor .category-editor-header h2 { justify-self: center; font-size: var(--font-size-section-heading); text-align: center; }
+.category-editor-header > button { padding-inline: var(--space-2); font-size: var(--font-size-meta); }
+.category-editor-body { flex: 1; min-height: 0; padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: var(--space-4); }
+.category-form .category-field { margin: 0 0 var(--space-6); }
+.category-form .category-field label { font-size: var(--font-size-meta); }
+.category-editor-delete { margin-top: var(--space-6); padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-border); }
+
+@media (max-width: 22rem) {
+  .categories-header h2 { font-size: 1.375rem; }
+  .categories-section .category-add { padding-inline: var(--space-2); font-size: var(--font-size-navigation); }
 }
 
 @media (min-width: 48rem) {
-  .categories-section {
-    grid-column: 1 / -1;
+  .category-editor {
+    width: calc(100% - var(--space-12));
+    max-width: var(--content-width-editor);
+    height: fit-content;
+    max-height: calc(100dvh - 4rem);
+    margin: auto;
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-surface);
+    box-shadow: var(--elevation-overlay);
   }
-
-  .category-groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .category-editor .category-form { height: auto; max-height: calc(100dvh - 4rem); }
+  .category-editor-header { padding: var(--space-3) var(--space-4); }
+  .category-editor-body { padding: var(--space-6); }
 }
