@@ -104,6 +104,7 @@ export function filterTransactions(
       ? [accountName(transaction.fromAccountId), accountName(transaction.toAccountId)]
       : [categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`, accountName(transaction.accountId)]
     text.push(transactionTypeLabels[transaction.type], transaction.note ?? '')
+    if (transaction.type === 'expense') text.push(transaction.receiptNumber ?? '')
     return text.some((value) => value.toLowerCase().includes(query))
   })
 }

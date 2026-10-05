@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { build } from 'vite'
+import { parseCsv, writeCsv } from '../src/features/dataBackup/csv.ts'
 
 const profile = await mkdtemp(join(tmpdir(), 'my-finance-pwa-profile-'))
 const artifacts = await mkdtemp(join(tmpdir(), 'my-finance-pwa-review-'))
@@ -152,16 +153,30 @@ try {
   await route('home');assert.equal(await evaluate(`document.querySelector('.dashboard-section').textContent`),homeBefore);results.push('Offline Home totals and Upcoming Payments match online state')
   await send('Page.navigate',{url:appURL+'index.html#home'});await wait(`!!document.querySelector('.dashboard-summary') && !!navigator.serviceWorker.controller`)
   results.push('Explicit index.html launch also works offline with hash navigation')
-  await route('more/data-backup');await fileInput(csv,'backup-csv-file','release-transactions.csv')
+  const metadataBackup=structuredClone(exported),originalExpense=metadataBackup.data.transactions.find(t=>t.type==='expense')
+  originalExpense.taxAmountCents=500;originalExpense.receiptNumber='INV / offline \u96ea'
+  await route('more/data-backup');await fileInput(metadataBackup);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
+  const offlineMetadata=(await snapshot()).transactions.find(t=>t.id===originalExpense.id)
+  assert.equal(offlineMetadata.taxAmountCents,500);assert.equal(offlineMetadata.receiptNumber,originalExpense.receiptNumber)
+  results.push('Offline v3 restore preserves Expense tax and receipt metadata')
+  await fileInput(exported);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
+  await fileInput(csv,'backup-csv-file','release-transactions.csv')
   await check(`document.querySelector('.backup-csv-counts').textContent.includes('Duplicate: 3') && document.querySelector('.backup-dialog-footer button').disabled`, 'Offline CSV import recognizes existing rows without duplicating them')
   await click('Cancel')
-  const importCsv=csv.replace('expense-雪','imported-expense')
+  let importCsv=csv.replace('expense-雪','imported-expense')
     .replace("\"'income\",\"'income\"", "\"'imported-income\",\"'income\"")
     .replace("\"'transfer\",\"'transfer\"", "\"'imported-transfer\",\"'transfer\"")
+  const csvMatrix=parseCsv(importCsv),csvHeader=csvMatrix[0],csvExpense=csvMatrix.slice(1).find(row=>row[csvHeader.indexOf('type')]==="'expense")
+  csvExpense[csvHeader.indexOf('tax_amount')]='5.00';csvExpense[csvHeader.indexOf('receipt_number')]="'=INV / offline"
+  importCsv=writeCsv(csvHeader,csvMatrix.slice(1))
   await fileInput(importCsv,'backup-csv-file','release-new-transactions.csv')
   await check(`document.querySelector('.backup-csv-counts').textContent.includes('Ready: 3')`, 'Offline CSV preview validates new expense, income, and transfer rows')
   await click('Import 3 transactions');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
-  assert.equal((await snapshot()).transactions.length,6);results.push('Offline CSV import commits all three financial variants')
+  const offlineImported=(await snapshot()).transactions
+  assert.equal(offlineImported.length,6);results.push('Offline CSV import commits all three financial variants')
+  const importedExpense=offlineImported.find(t=>t.id==='imported-expense')
+  assert.equal(importedExpense.taxAmountCents,500);assert.equal(importedExpense.receiptNumber,'=INV / offline')
+  results.push('Offline CSV import preserves exact tax and protected receipt metadata')
   await fileInput(exported);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
   assert.deepEqual(normalized(await snapshot()),normalized(fixture.data));results.push('Offline Full Restore replaces finances and tracking correctly')
   await route('transactions')

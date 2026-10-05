@@ -1,5 +1,6 @@
 import type { Account, Category, Transaction, YearMonth } from '../domain/models'
 export { obligationsRepository, obligationPaymentsRepository } from './obligationRepositories'
+import { normalizeExpenseDetails } from '../domain/expenseDetails'
 import { database } from './database'
 import {
   requireId,
@@ -107,7 +108,7 @@ export const categoriesRepository = {
 }
 
 async function writeTransaction(transaction: Transaction, update: boolean): Promise<string> {
-  const record = structuredClone(transaction)
+  const record = normalizeExpenseDetails(structuredClone(transaction))
   validateTransaction(record)
   return database.transaction(
     'rw', database.accounts, database.categories, database.transactions,

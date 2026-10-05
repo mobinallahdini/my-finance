@@ -9,8 +9,9 @@ import { csvTextEncoding, parseCsv, protectCsvText, unprotectCsvText, writeCsv }
 
 export const legacyTransactionCsvColumns = ['id', 'type', 'date', 'amount_cad', 'category_id', 'category_name', 'account_id', 'account_name',
   'from_account_id', 'from_account_name', 'to_account_id', 'to_account_name', 'note', 'text_encoding'] as const
-export const transactionCsvColumns = ['id', 'type', 'date', 'amount', 'currency_code', 'category_id', 'category_name', 'account_id', 'account_name',
+export const previousTransactionCsvColumns = ['id', 'type', 'date', 'amount', 'currency_code', 'category_id', 'category_name', 'account_id', 'account_name',
   'from_account_id', 'from_account_name', 'to_account_id', 'to_account_name', 'note', 'text_encoding'] as const
+export const transactionCsvColumns = [...previousTransactionCsvColumns, 'tax_amount', 'receipt_number'] as const
 export const accountCsvColumns = ['id', 'name', 'type', 'opening_balance', 'credit_limit', 'currency_code', 'text_encoding'] as const
 export const categoryCsvColumns = ['id', 'name', 'type', 'text_encoding'] as const
 type CsvFields = Record<(typeof transactionCsvColumns)[number], string>
@@ -36,7 +37,9 @@ export function transactionsCsv(snapshot: FinancialSnapshot, currencyCode: strin
       ? ['', '', '', '', transaction.fromAccountId, accounts.get(transaction.fromAccountId) ?? '', transaction.toAccountId, accounts.get(transaction.toAccountId) ?? '']
       : [transaction.categoryId, categories.get(transaction.categoryId) ?? '', transaction.accountId, accounts.get(transaction.accountId) ?? '', '', '', '', '']
     return [protectCsvText(transaction.id), protectCsvText(transaction.type), protectCsvText(transaction.date), dollarsForInput(transaction.amount), currencyCode,
-      ...fields.map(protectCsvText), protectCsvText(transaction.note ?? ''), csvTextEncoding]
+      ...fields.map(protectCsvText), protectCsvText(transaction.note ?? ''), csvTextEncoding,
+      transaction.type === 'expense' && transaction.taxAmountCents !== undefined ? dollarsForInput(transaction.taxAmountCents) : '',
+      protectCsvText(transaction.type === 'expense' ? transaction.receiptNumber ?? '' : '')]
   }))
 }
 export function accountsCsv(accounts: readonly Account[], currencyCode: string): string {
@@ -66,7 +69,7 @@ export function parseTransactionCsv(text: string, workspaceCurrency: string): Cs
   const [headers, ...records] = parseCsv(text)
   const matches = (columns: readonly string[]) => headers && headers.length === columns.length && new Set(headers).size === headers.length && columns.every(column => headers.includes(column))
   const legacy = matches(legacyTransactionCsvColumns)
-  if (!legacy && !matches(transactionCsvColumns)) {
+  if (!legacy && !matches(previousTransactionCsvColumns) && !matches(transactionCsvColumns)) {
     throw new Error('Choose a My Finance Transactions CSV with the documented current or legacy columns, including text_encoding. Accounts, Categories, and arbitrary bank CSV files cannot be imported here.')
   }
   const source: CsvSourceRow[] = records.flatMap((values, index) => {
@@ -78,7 +81,7 @@ export function parseTransactionCsv(text: string, workspaceCurrency: string): Cs
       if (values.length !== headers.length) throw new Error(`Expected ${headers.length} columns; found ${values.length}.`)
       if (fields.text_encoding !== csvTextEncoding) throw new Error('Unsupported text_encoding. Use a My Finance Transactions CSV.')
       for (const column of transactionCsvColumns) {
-        if (column !== 'amount' && column !== 'currency_code' && column !== 'text_encoding') fields[column] = unprotectCsvText(fields[column])
+        if (column !== 'amount' && column !== 'tax_amount' && column !== 'currency_code' && column !== 'text_encoding') fields[column] = unprotectCsvText(fields[column])
       }
     } catch (error) { parseError = error instanceof Error ? error.message : 'Invalid CSV row.' }
     return [{ rowNumber: index + 2, fields, ...(parseError ? { parseError } : {}) }]
@@ -106,6 +109,7 @@ function resolve<T extends { id: string; name: string }>(id: string, name: strin
 /** Display names and empty/absent notes do not make an otherwise identical transaction different. */
 export function transactionIdentity(transaction: Transaction): string {
   return JSON.stringify([transaction.id, transaction.type, transaction.date, transaction.amount, transaction.note ?? '',
+    ...(transaction.type === 'expense' ? [transaction.taxAmountCents ?? null, transaction.receiptNumber ?? ''] : []),
     ...(transaction.type === 'transfer' ? [transaction.fromAccountId, transaction.toAccountId] : [transaction.accountId, transaction.categoryId])])
 }
 
@@ -124,7 +128,9 @@ export function previewTransactionCsv(source: readonly CsvSourceRow[], snapshot:
       if (row.parseError) throw new Error(row.parseError)
       requireId(fields.id)
       const amount = parseDollars(fields.amount)
-      const base = { id: fields.id, type: fields.type, date: fields.date, amount, ...(fields.note ? { note: fields.note } : {}) }
+      const base = { id: fields.id, type: fields.type, date: fields.date, amount, ...(fields.note ? { note: fields.note } : {}),
+        ...(fields.tax_amount.trim() ? { taxAmountCents: parseDollars(fields.tax_amount) } : {}),
+        ...(fields.receipt_number.trim() ? { receiptNumber: fields.receipt_number } : {}) }
       if (fields.type !== 'expense' && fields.type !== 'income' && fields.type !== 'transfer') throw new Error('Invalid transaction type.')
       if (fields.type === 'transfer') {
         if (fields.account_id || fields.account_name || fields.category_id || fields.category_name) throw new Error('Transfers cannot have account or category fields.')

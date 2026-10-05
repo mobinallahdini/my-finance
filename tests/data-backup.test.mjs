@@ -188,7 +188,7 @@ test('All CSV schemas preserve exact decimals and text, with unused columns blan
   const data = fixture(); const exported = parseCsv(transactionsCsv(data))
   assert.deepEqual(exported[0], [...transactionCsvColumns]); assert.equal(exported[1][3], '42.75')
   assert.equal(exported[1][9], ''); assert.equal(exported[3][5], ''); assert.equal(exported[3][7], '')
-  assert.equal(exported[1].at(-1), csvTextEncoding)
+  assert.equal(exported[1][exported[0].indexOf('text_encoding')], csvTextEncoding)
   const accounts = parseCsv(accountsCsv(data.accounts)); assert.equal(accounts[2][3], '-1.00'); assert.equal(accounts[1][4], ''); assert.equal(accounts[3][4], '2000.00')
   assert.deepEqual(parseCsv(categoriesCsv(data.categories))[0], ['id', 'name', 'type', 'text_encoding'])
 })

@@ -130,3 +130,20 @@
   .transaction-editor-header { padding: var(--space-3) var(--space-4); }
   .transaction-editor-body { padding: var(--space-6); }
 }
+
+.transaction-receipt-details { margin-top: var(--space-6); border-top: var(--border-width) solid var(--color-border); padding-top: var(--space-3); }
+.transaction-details-toggle { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.transaction-details-help { color: var(--color-text-secondary); font-size: var(--font-size-meta); margin-top: var(--space-3); }
+.transaction-receipt-details input[inputmode='decimal'] { min-height: var(--control-height); font-size: var(--font-size-body); }
+.transaction-tax-summary { margin: 0; padding: var(--space-3); border-radius: var(--radius-control); background: var(--color-action-subtle); }
+.transaction-tax-summary > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+.transaction-tax-summary dt, .transaction-tax-summary dd { margin: 0; overflow-wrap: anywhere; }
+.transaction-tax-summary dd { font-variant-numeric: tabular-nums; }
+.transaction-tax-total { margin-top: var(--space-2); padding-top: var(--space-2); border-top: var(--border-width) solid var(--color-border); font-weight: var(--font-weight-emphasis); }
+
+@media (max-width: 30rem) {
+  .transaction-editor-header { grid-template-columns: minmax(0, 1fr) auto; }
+  .transaction-editor .transaction-editor-header h2 { grid-column: 1 / -1; grid-row: 1; }
+  .transaction-editor-header > button:first-child { grid-column: 1; grid-row: 2; justify-self: start; }
+  .transaction-editor-header > button[type='submit'] { grid-column: 2; grid-row: 2; justify-self: end; }
+}

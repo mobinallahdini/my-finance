@@ -1,4 +1,5 @@
 import type { Account, Category, Obligation, ObligationPayment, Transaction } from '../domain/models'
+import { normalizeExpenseDetails } from '../domain/expenseDetails.ts'
 import { validateApplicationSettings, type ApplicationSettings } from '../domain/financeSettings.ts'
 import { validateAccount, validateCategory, validateTransaction, validateTransactionReferences } from './validation.ts'
 import { validateObligation, validateObligationPayment, validateObligationPaymentReference } from '../domain/obligationValidation.ts'
@@ -45,11 +46,12 @@ function categoryRecord(value: unknown): Category {
 export function transactionRecord(value: unknown): Transaction {
   const record = objectRecord(value, 'Transaction')
   knownFields(record, ['id', 'type', 'amount', 'date', 'note', ...(record.type === 'transfer'
-    ? ['fromAccountId', 'toAccountId'] : ['accountId', 'categoryId'])], 'Transaction')
+    ? ['fromAccountId', 'toAccountId'] : ['accountId', 'categoryId']),
+    ...(record.type === 'expense' ? ['taxAmountCents', 'receiptNumber'] : [])], 'Transaction')
   text(record.date, 'Transaction date')
   if (record.note !== undefined) text(record.note, 'Transaction note')
   validateTransaction(record as unknown as Transaction)
-  return record as unknown as Transaction
+  return normalizeExpenseDetails(record as unknown as Transaction)
 }
 function records<T extends { id: string }>(value: unknown, label: string, validate: (record: unknown) => T): T[] {
   if (!Array.isArray(value)) throw new Error(`${label} must be an array.`)

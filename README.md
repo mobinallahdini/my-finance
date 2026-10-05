@@ -45,3 +45,5 @@ Development is on `feature/v1.1-onboarding-currency`; the released v1.0.0 remain
 on `main`. [Onboarding and finance settings](docs/finance-settings.md) documents
 schema v3, exact legacy preservation, currency restrictions, confirmation,
 startup, and workspace-currency behavior. No financial values are converted.
+
+Optional Expense Tax / VAT and receipt metadata are documented in [Expense tax and receipt details](docs/expense-tax-receipts.md). Transaction amounts remain the total paid.

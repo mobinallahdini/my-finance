@@ -42,8 +42,10 @@ The metadata `currency` comes from `applicationSettings.currencyCode`; validatio
 rejects contradictory values. Country, currency, Personal/Business, fiscal month,
 and the saved onboarding flag are serialized exactly. No editor state, route,
 search, filters, calculated balance, principal, status, progress, or due date is
-serialized. All financial/tracking record shapes, IDs, dates, notes, references
-and safe integer minor units remain unchanged. There is no exchange conversion.
+serialized. Existing financial/tracking fields, IDs, dates, notes, references
+and safe integer minor units keep their meanings. Expenses may also contain optional
+`taxAmountCents` and `receiptNumber`; subtotal is never stored. There is no exchange
+conversion.
 
 `exportedAt` is an ISO UTC timestamp with milliseconds. Export reads all six
 stores under one transaction, so values and settings cannot come from different
@@ -132,13 +134,23 @@ preferences, money formatting and theme update without requiring reload.
 Transactions CSV v2 uses these columns:
 
 ```text
-id,type,date,amount,currency_code,category_id,category_name,account_id,account_name,from_account_id,from_account_name,to_account_id,to_account_name,note,text_encoding
+id,type,date,amount,currency_code,category_id,category_name,account_id,account_name,from_account_id,from_account_name,to_account_id,to_account_name,note,text_encoding,tax_amount,receipt_number
 ```
 
 Each nonblank row has the same validated, supported `currency_code`, taken from
 the workspace settings in the export snapshot. It is plain uppercase ISO metadata
 such as CAD, USD or EUR. CSV currency is file interpretation only; no currency is
 added to domain transactions or accounts. No FX conversion is offered.
+
+Expense rows may carry optional `tax_amount` (exact decimal cents) and
+`receipt_number` (spreadsheet-protected text). Tax is included in the existing
+`amount`, must be positive and no greater than it, and never changes balances or
+expense totals. Income/Transfer must leave both columns blank. Previous v2 and
+legacy CAD headers lacking both columns remain accepted, with metadata absent.
+Tax and receipt differences participate in ID conflict detection. Full Backup v3
+preserves the optional Expense properties without a schema change; older v1/v2/v3
+files remain valid without synthesized metadata. See [Expense tax and receipt
+details](expense-tax-receipts.md) for validation and editor behavior.
 
 Accounts CSV now uses:
 
@@ -238,7 +250,7 @@ No currency is added to filenames. Downloads remain local Blob URLs, revoked
 after use; PWA caching remains restricted to application assets.
 
 There is one workspace currency, no FX conversion, account/transaction currencies,
-multiple workspaces, tax/VAT, charts, cloud sync, merge restoration, encryption,
+multiple workspaces, tax reports, charts, cloud sync, merge restoration, encryption,
 or entity CSV imports. PWA logic, theme keys and financial calculations are unchanged.
 
 Run `npm test`, `npm run build`, `npm run lint`, and `git diff --check`.
