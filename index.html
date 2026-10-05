@@ -1,7 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="sage">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Apply the preference before styles or React render to avoid a theme flash.
+      try {
+        const theme = localStorage.getItem('my-finance-theme')
+        if (['sage', 'ocean', 'dark'].includes(theme)) {
+          document.documentElement.dataset.theme = theme
+        }
+      } catch {
+        // Sage remains the default when browser storage is unavailable.
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="My Finance — a personal finance tracker." />
     <title>My Finance</title>

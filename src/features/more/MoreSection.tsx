@@ -1,3 +1,4 @@
+import { AppearanceSection } from '../appearance/AppearanceSection'
 import './more.css'
 
 export function MoreSection() {
@@ -19,6 +20,7 @@ export function MoreSection() {
           </li>
         </ul>
       </nav>
+      <AppearanceSection />
       <section className="more-storage" aria-labelledby="more-storage-heading">
         <h3 id="more-storage-heading">Local data</h3>
         <p>Your financial data is saved in this browser on this device. Clearing this site's browser storage removes it.</p>

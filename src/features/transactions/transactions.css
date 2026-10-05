@@ -86,7 +86,7 @@
   color: var(--color-text-primary);
   overflow: hidden;
 }
-.transaction-editor::backdrop { background: rgb(31 41 39 / 35%); }
+.transaction-editor::backdrop { background: var(--color-backdrop); }
 .transaction-editor .transaction-form {
   display: flex;
   flex-direction: column;

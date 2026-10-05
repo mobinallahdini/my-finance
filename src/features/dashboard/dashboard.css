@@ -106,7 +106,7 @@
 }
 .dashboard-category-share { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
 .dashboard-category-track { display: block; flex: 1; height: 0.5rem; overflow: hidden; border-radius: var(--radius-control); background: var(--color-border); }
-.dashboard-category-track > span { display: block; height: 100%; border-radius: inherit; background: var(--color-action); }
+.dashboard-category-track > span { display: block; height: 100%; border-radius: inherit; background: var(--color-progress-fill); }
 .dashboard-category-percentage { min-width: 3.25rem; text-align: right; color: var(--color-text-secondary); font-size: var(--font-size-navigation); font-variant-numeric: tabular-nums; }
 .dashboard-section .dashboard-show-categories { display: block; margin: var(--space-2) auto 0; font-size: var(--font-size-meta); }
 .dashboard-footnote { margin-top: var(--space-6); font-size: var(--font-size-navigation); }
