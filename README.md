@@ -1,83 +1,38 @@
-# React + TypeScript + Vite
+# My Finance v1.0.0
 
-My Finance's local export and restore formats, validation rules, and safety
-guarantees are documented in [Data & Backup](docs/data-backup.md).
+A local-first personal finance app with Expense, Income, and Transfer tracking;
+accounts and credit-card balances; advanced transaction filtering; a monthly
+dashboard; Bills & Installments with payment history; Sage, Ocean, and Dark themes;
+JSON backup/restore; Transactions CSV import and financial CSV exports; and an
+installable PWA shell.
 
-The domain and persistence foundation for monthly obligation tracking is
-documented in [Bills & Installments](src/domain/obligations/README.md).
-Its UI and Home preview are implemented. Full Backup schemaVersion 2 protects
-obligations and recorded payments; restoring a version 1 backup clears them.
+Data is stored in the current browser on the current device. Clearing site or
+browser data may erase it. **Full Backup is recommended.** Installing My Finance
+does not create cloud synchronization. There is no backend, analytics, tracking,
+or financial-data upload.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Build and run
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm ci
+npm run dev
+npm run build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Deploy the complete `dist/` directory to static HTTPS hosting. The same build
+works at the site root or a subdirectory, such as `/my-finance/`; keep the trailing
+slash. Production uses neither the development server nor source-module URLs.
+Service workers require HTTPS, with localhost allowed for testing.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+After the first successful online visit and service-worker installation, the
+application shell and its local data are available offline. Use the browser's
+Install/Add to Home Screen command where supported; iOS uses Safari's Share menu.
+Updates wait until all existing app tabs/windows have closed and become available
+when the app is reopened. They never reset financial records or preferences.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+See [v1.0.0 release and PWA notes](docs/release-v1.0.0.md) for hosting, update safety,
+validation commands, and browser limitations. [Data & Backup](docs/data-backup.md)
+documents JSON v2, v1 restore compatibility, and CSV safety. The
+[Bills & Installments foundation](src/domain/obligations/README.md) and
+[tracking UI](src/features/obligations/README.md) document existing semantics.

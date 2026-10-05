@@ -2,7 +2,7 @@
   width: 100%;
   max-width: var(--content-width);
   margin-inline: auto;
-  padding: var(--space-4) var(--page-gutter) calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-6));
+  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) max(var(--page-gutter), env(safe-area-inset-right, 0px)) calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-6)) max(var(--page-gutter), env(safe-area-inset-left, 0px));
 }
 
 .app-header {
@@ -74,7 +74,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   min-height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-2) max(var(--space-2), env(safe-area-inset-right, 0px)) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)) max(var(--space-2), env(safe-area-inset-left, 0px));
   border-top: var(--border-width) solid var(--color-border);
   background: var(--color-surface);
 }
@@ -120,7 +120,7 @@
 }
 
 @media (min-width: 48rem) {
-  .app-shell { padding: var(--space-8) var(--space-8) var(--space-12); }
+  .app-shell { padding: calc(var(--space-8) + env(safe-area-inset-top, 0px)) max(var(--space-8), env(safe-area-inset-right, 0px)) calc(var(--space-12) + env(safe-area-inset-bottom, 0px)) max(var(--space-8), env(safe-area-inset-left, 0px)); }
   .app-header {
     min-height: calc(var(--control-height) + var(--space-6));
     margin-bottom: 0;
@@ -159,5 +159,17 @@
     border-radius: var(--radius-small);
     background: var(--color-action);
     content: '';
+  }
+}
+
+/* Keep full-screen dialog controls inside landscape cutouts as well as portrait insets. */
+@media (max-width: 47.999rem) {
+  .app-shell :is(.transaction-editor-header, .account-editor-header, .category-editor-header, .obligation-editor-header, .backup-dialog-header) {
+    padding-left: max(var(--space-3), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--space-3), env(safe-area-inset-right, 0px));
+  }
+  .app-shell :is(.transaction-editor-body, .account-editor-body, .category-editor-body, .obligation-editor-body, .backup-dialog-body, .backup-dialog-footer, .transaction-filter-body) {
+    padding-left: max(var(--space-4), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--space-4), env(safe-area-inset-right, 0px));
   }
 }
