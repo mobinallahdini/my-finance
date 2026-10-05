@@ -57,30 +57,116 @@ flow is the primary value; income and expenses are supporting values. Positive
 net cash flow has a plus sign; negative net cash flow has a minus sign and a text
 explanation. Home has no enclosing feature-card border or shadow.
 
-Category spending is a semantic list of compact rows with exact workspace-currency amounts,
-text percentages, and decorative CSS bars hidden from assistive technology.
-Bars clamp display width to 0–100% and never participate in calculations. The
-first five sorted categories are shown initially. If more exist, Show all / Show
-less exposes `aria-expanded` and `aria-controls`. No category data is discarded;
-the unknown-category warning considers the complete list even when collapsed.
-Changing months resets expansion. Shares may not add to 100% after rounding.
+## Spending donut
 
-Income and expenses stack below 22rem. Long names and values wrap without
-truncation. Selected month and expansion are local Home state and reset when
-leaving Home or reloading. No charts, dependencies, persisted dashboard state,
-or new global state library are added.
+`SpendingDonutChart` receives `summary.categorySpending` and `summary.expenses`
+from the unchanged dashboard hook. It has no financial queries, transaction
+aggregation, separate month state, persisted state or chart dependency.
+`spendingDonut.ts` groups existing category totals for presentation and formats
+shares with the original en-CA, at-most-one-decimal formatter. Integer cents remain
+authoritative. Geometry uses bounded floating-point percentages only; its last
+segment closes the circle without modifying any money or displayed percentage.
 
-The polish pass removes the Home subtitle and calendar icon from the month
-title. The native input remains available through the labelled month button.
-Net cash flow retains the hero hierarchy; income and expenses occupy quiet
-secondary surfaces. Category bars use 8px tracks with rounded ends and keep their
-exact amount and percentage text. At 64rem and wider, the financial summary
-aligns its secondary metrics alongside the hero, with spending and activity in
-two balanced columns below. Mobile retains the vertical composition.
+The normal rule shows five largest named categories (descending cents, then ID
+for ties) and combines every remaining category into Other. When all Unknown
+category entries would fall outside those five, the first unresolved category
+reserves the fifth named slot so historical missing-category data remains
+identifiable. The displaced category joins Other. Additional unresolved categories
+may be included in Other, with the existing warning still considering the entire
+source list. There are at most five named slices plus Other, and every cent is
+retained. Other appears last as a group, even if its combined amount is larger
+than an individual category. Structural keys distinguish the Other group from a
+real category named Other.
 
-Polish validation: build, lint, whitespace check, and 98 isolated Chrome checks
-at 320, 390, 1280, and 1440px, including selected-month activity, deterministic
-ties, signed display with positive stored cents, transfer direction, empty
-months, unchanged calculations, account-name recovery, focus/navigation,
-horizontal overflow, and bottom-navigation clearance. A 200% text-size check
-also passes. Review fixtures are confined to a disposable browser profile.
+No-expense months retain the existing empty message and render no donut. One
+category produces a full ring, its exact amount and 100%. The total at the center
+is the existing monthly Expense total, using the centralized workspace-currency
+formatter without abbreviations. Long totals use smaller relative typography and
+wrap completely within the center; no amount is clipped or truncated. CAD, USD
+and EUR, including the maximum safe integer cents, are checked.
+
+SVG circles use `pathLength=100`, proportional dash lengths, cumulative offsets
+and a top origin. The track is a themed border role. The SVG and legend markers
+are decorative (`aria-hidden`, SVG `focusable=false`); a semantic HTML definition
+list exposes Expenses and the total, and one labelled HTML list exposes each
+category name, exact amount and percentage. Assistive technology never needs to
+interpret the geometry or colors. There are no chart controls, hover-only data,
+animations, tooltips, filters or drilldown.
+
+The new legend replaces the prior progress bars and Show all/Show less behavior
+so Home has one compact distribution view. Individual categories inside Other
+are not listed on Home. Transaction history retains their detailed records and
+existing filtering. Category names and numeric values wrap gracefully.
+
+`--color-chart-category-1` through `--color-chart-category-6` define categorical
+colors in every theme. Sage/Ocean use restrained teal, blue, gold, plum, clay and
+slate tones; Dark uses lighter companion colors. These colors imply no financial
+status. The SVG slices and corresponding markers use identical tokens; primary
+and secondary text roles retain the existing theme semantics.
+
+The chart is capped at 240px, with mobile legend below the centered ring. A native
+CSS container query places donut and legend side by side when the Spending by
+category section has at least 30rem of width. The desktop Home detail columns give
+spending more width than Recent Activity. Container sizing responds to 200% text,
+stacking the legend when needed rather than squeezing it. Upcoming payments and
+the existing Home summary remain unchanged.
+
+Month changes and financial/category data changes use the existing hook and shared
+refresh behavior. Add/edit/delete Expense and category rename update the chart
+without reload. Expense tax is informational: the total paid remains the category
+contribution, and no tax slice exists. Income, Transfer, bills/installments and
+recorded tracking payments do not enter the chart unless independently recorded
+as normal Expense transactions. Financial calculations, models, persistence,
+backup/CSV, workspace currency interpretation and PWA source are unchanged.
+
+## Files and validation
+
+Created:
+
+- `src/features/dashboard/SpendingDonutChart.tsx`
+- `src/features/dashboard/spendingDonut.ts`
+- `tests/spending-donut.test.mjs`
+- `tests/spending-donut.browser.mjs`
+
+Modified:
+
+- `README.md`
+- `src/features/dashboard/README.md`
+- `src/features/dashboard/DashboardSection.tsx`
+- `src/features/dashboard/dashboard.css`
+- `src/styles/tokens.css`
+- `package.json` (browser-test command only)
+
+Validation passed with Node 24.14.0 and Chrome:
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 371 passed (13 focused donut tests) |
+| `npm run test:obligations:browser` | 99 passed |
+| `npm run test:obligations:ui` | 263 passed |
+| `npm run test:backup:browser` | 184 passed |
+| `npm run test:settings:browser` | 92 passed |
+| `npm run test:workspace-backup:browser` | 48 passed |
+| `npm run test:expense-details:browser` | 96 passed |
+| `npm run test:spending-donut:browser` | 107 passed |
+| `npm run test:pwa:browser` | 216 passed |
+| `npm run build` | Passed |
+| `npm run lint` | Passed |
+| `git diff --check` | Passed |
+
+All 1,476 unit tests and browser checks passed. Donut checks cover empty, one,
+three and many categories; exact totals, order, grouping, rounded percentages,
+unknown categories, tax inclusion, excluded financial/tracking types, month
+selection, actual Expense editor add/edit/delete and category rename refresh,
+accessible HTML text via the browser accessibility tree, CAD/USD/EUR, and all
+three themes at 320px, 390px, tablet 768px and desktop 1280px with 100%/200% text.
+Long names and maximum exact amounts fit without horizontal overflow. Screenshots
+were visually reviewed. Existing production checks verify both hosting paths,
+service-worker caching, offline operation, data exchange and safe application
+updates. Review fixtures use isolated disposable browser profiles.
+
+Review choices are the five-slice grouping policy with a reserved Unknown category
+slot, grouped Other always last, and rank-based presentation colors. Category
+colors may change when rankings/months change; names and exact numeric text are
+always authoritative. Work remains uncommitted on
+`feature/v1.1-onboarding-currency`.

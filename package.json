@@ -15,6 +15,7 @@
     "test:settings:browser": "node tests/finance-settings.browser.mjs",
     "test:workspace-backup:browser": "node tests/workspace-backup.browser.mjs",
     "test:expense-details:browser": "node tests/expense-details.browser.mjs",
+    "test:spending-donut:browser": "node tests/spending-donut.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

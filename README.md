@@ -47,3 +47,5 @@ schema v3, exact legacy preservation, currency restrictions, confirmation,
 startup, and workspace-currency behavior. No financial values are converted.
 
 Optional Expense Tax / VAT and receipt metadata are documented in [Expense tax and receipt details](docs/expense-tax-receipts.md). Transaction amounts remain the total paid.
+
+Home spending uses an accessible SVG donut with exact category amounts and percentages. See the [monthly dashboard](src/features/dashboard/README.md) for grouping, accessibility and validation.
