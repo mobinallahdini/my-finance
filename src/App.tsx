@@ -8,15 +8,17 @@ import { TransactionsSection } from './features/transactions/TransactionsSection
 import { MoreSection } from './features/more/MoreSection'
 import { useAppNavigation } from './features/navigation/useAppNavigation'
 import { DataBackupSection } from './features/dataBackup/DataBackupSection'
+import { ObligationsSection } from './features/obligations/ObligationsSection'
 
 function App() {
-  const { screen, destination, accountId } = useAppNavigation()
+  const { screen, destination, accountId, obligationId, obligationMonth } = useAppNavigation()
   const [newTransactionRequest, setNewTransactionRequest] = useState(0)
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
       : screen === 'more/data-backup' ? 'Data & Backup'
+      : screen.startsWith('more/bills-installments') ? 'Bills & Installments'
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
     window.scrollTo(0, 0)
@@ -53,6 +55,7 @@ function App() {
         {destination === 'transactions' && <TransactionsSection key={`${screen}-${newTransactionRequest}`} startNewTransaction={screen === 'transactions/new'} />}
         {destination === 'accounts' && <AccountsSection accountId={accountId} />}
         {screen === 'more' && <MoreSection />}
+        {screen.startsWith('more/bills-installments') && <ObligationsSection obligationId={obligationId} initialMonth={obligationMonth} />}
         {screen === 'more/categories' && <>
           <a className="more-back-link" href="#more"><span aria-hidden="true">&larr;</span> Back to More</a>
           <CategoriesSection />

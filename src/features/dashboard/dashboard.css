@@ -151,6 +151,25 @@
 .dashboard-activity-recovery button { font-size: var(--font-size-meta); }
 .dashboard-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
+.dashboard-payments { margin-block: var(--space-8) var(--space-6); }
+.dashboard-payments-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.dashboard-payments-header h3 { margin: 0; }
+.dashboard-payments-view-all { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); min-height: var(--control-height); max-width: 100%; color: var(--color-action); font-size: var(--font-size-meta); font-weight: var(--font-weight-emphasis); text-decoration: none; }
+.dashboard-payments-view-all:hover { text-decoration: underline; }
+.dashboard-payments-caption { font-size: var(--font-size-meta); }
+.dashboard-payments-list { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.dashboard-payment-row { display: block; padding-block: var(--space-3); border-bottom: var(--border-width) solid var(--color-border); border-radius: var(--radius-small); color: var(--color-text-primary); text-decoration: none; }
+.dashboard-payment-row:hover { background: var(--color-action-subtle); }
+.dashboard-payment-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-1) var(--space-4); }
+.dashboard-payment-heading strong { flex: 1 1 10rem; overflow-wrap: anywhere; }
+.dashboard-payment-amount { font-weight: var(--font-weight-emphasis); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dashboard-payment-amount small { font-size: var(--font-size-meta); font-weight: var(--font-weight-body); color: var(--color-text-secondary); }
+.dashboard-payment-detail { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin-top: var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-meta); }
+.dashboard-payment-status { font-weight: var(--font-weight-emphasis); }
+.dashboard-payment-status[data-status='overdue'] { color: var(--color-danger); }
+.dashboard-payment-status:is([data-status='due_today'], [data-status='due_soon'], [data-status='partially_paid']) { color: var(--color-warning); }
+.dashboard-payment-status:is([data-status='paid'], [data-status='completed']) { color: var(--color-positive); }
+
 @media (max-width: 22rem) {
   .dashboard-summary { padding: var(--space-4); }
   .dashboard-supporting { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }

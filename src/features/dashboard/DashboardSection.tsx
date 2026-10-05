@@ -3,6 +3,7 @@ import type { YearMonth } from '../../domain/models'
 import { formatCad } from '../accounts/money'
 import { useMonthlyDashboard } from './useMonthlyDashboard'
 import { RecentActivity } from './RecentActivity'
+import { UpcomingPayments } from './UpcomingPayments'
 import './dashboard.css'
 
 const percentageFormatter = new Intl.NumberFormat('en-CA', { maximumFractionDigits: 1 })
@@ -123,6 +124,7 @@ export function DashboardSection() {
           </>
         )}
       </div>
+      <UpcomingPayments month={month} />
     </section>
   )
 }

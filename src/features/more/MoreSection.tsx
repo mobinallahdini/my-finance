@@ -8,6 +8,17 @@ export function MoreSection() {
       <nav className="more-utilities" aria-label="Utilities">
         <ul className="more-list">
           <li>
+            <a className="more-category-link" href="#more/bills-installments">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <path d="M5 3h14v18l-3-2-4 2-4-2-3 2ZM8 8h8M8 12h8M8 16h4" />
+              </svg>
+              <span><strong>Bills &amp; Installments</strong><span>Track monthly bills, installments, due dates, and payments</span></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+            </a>
+          </li>
+          <li>
             <a className="more-category-link" href="#more/categories">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
