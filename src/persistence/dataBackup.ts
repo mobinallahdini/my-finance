@@ -1,7 +1,7 @@
 import type { Transaction } from '../domain/models'
-import { applicationSettingsId, legacyApplicationSettings, validateApplicationSettings, validateCurrencyCode } from '../domain/financeSettings'
+import { applicationSettingsId, requireMatchingCurrency, validateApplicationSettings, validateCurrencyCode, type ApplicationSettings } from '../domain/financeSettings'
 import { database } from './database'
-import { transactionRecord, validateApplicationSnapshot, type ApplicationSnapshot, type FinancialSnapshot } from './snapshotValidation.ts'
+import { transactionRecord, validateWorkspaceSnapshot, validateApplicationSnapshot, type ApplicationSnapshot, type FinancialSnapshot } from './snapshotValidation.ts'
 import { validateTransactionReferences } from './validation.ts'
 
 /** A single read transaction prevents exporting a mixture of different database states. */
@@ -26,14 +26,22 @@ export async function readApplicationSnapshot(): Promise<ApplicationSnapshot> {
 }
 
 /** Replacement restore is indivisible across financial and tracking records. */
-export async function replaceApplicationSnapshot(value: unknown, currencyCode?: string): Promise<void> {
+export async function replaceApplicationSnapshot(value: unknown): Promise<void> {
   const snapshot = validateApplicationSnapshot(structuredClone(value))
-  if (currencyCode !== undefined) validateCurrencyCode(currencyCode)
+  await writeSnapshot(snapshot)
+}
+
+/** All six stores commit together; validate the complete graph before opening the write transaction. */
+export async function replaceWorkspaceSnapshot(value: unknown): Promise<void> {
+  const snapshot = validateWorkspaceSnapshot(structuredClone(value))
+  await writeSnapshot(snapshot, snapshot.applicationSettings)
+}
+
+async function writeSnapshot(snapshot: ApplicationSnapshot, settings?: ApplicationSettings) {
   await database.transaction('rw', database.tables, async () => {
-    if (currencyCode !== undefined) {
-      const existing = await database.applicationSettings.get(applicationSettingsId)
-      const settings = existing ? validateApplicationSettings(existing) : legacyApplicationSettings
-      await database.applicationSettings.put({ ...settings, currencyCode, onboardingCompleted: true })
+    if (settings) {
+      await database.applicationSettings.clear()
+      await database.applicationSettings.add(settings)
     }
     await database.obligationPayments.clear()
     await database.transactions.clear()
@@ -53,19 +61,19 @@ export async function readBackupSource() {
   return database.transaction('r', database.tables, async () => {
     const settings = validateApplicationSettings(await database.applicationSettings.get(applicationSettingsId))
     if (!settings.onboardingCompleted) throw new Error('Complete workspace setup before exporting.')
-    return { snapshot: await readApplicationSnapshot(), currencyCode: settings.currencyCode }
+    return { snapshot: { ...await readApplicationSnapshot(), applicationSettings: settings }, currencyCode: settings.currencyCode }
   })
 }
 
-export async function importTransactionBatch(values: readonly Transaction[]): Promise<number> {
+export async function importTransactionBatch(values: readonly Transaction[], currencyCode: string): Promise<number> {
+  validateCurrencyCode(currencyCode)
   const transactions = structuredClone(values).map(transactionRecord)
   const ids = new Set(transactions.map((transaction) => transaction.id))
   if (ids.size !== transactions.length) throw new Error('The selected batch contains repeated transaction IDs. Review the preview.')
   return database.transaction('rw', database.accounts, database.categories, database.transactions, database.applicationSettings, async () => {
-    const settings = await database.applicationSettings.get(applicationSettingsId)
-    if (settings && validateApplicationSettings(settings).currencyCode !== 'CAD') {
-      throw new Error('This CSV format uses CAD. Currency-aware CSV support will be added in the next step.')
-    }
+    const settings = validateApplicationSettings(await database.applicationSettings.get(applicationSettingsId))
+    if (!settings.onboardingCompleted) throw new Error('Complete workspace setup before importing.')
+    requireMatchingCurrency(currencyCode, settings.currencyCode)
     const [accounts, categories, existing] = await Promise.all([
       database.accounts.toArray(), database.categories.toArray(), database.transactions.bulkGet([...ids]),
     ])

@@ -1,10 +1,10 @@
-# My Finance ? v1.1 development
+# My Finance - v1.1 development
 
 A local-first personal finance app with Expense, Income, and Transfer tracking;
 accounts and credit-card balances; advanced transaction filtering; a monthly
 dashboard; Bills & Installments with payment history; Sage, Ocean, and Dark themes;
 first-run workspace setup; country, currency, Personal / Business and fiscal preferences;
-JSON backup/restore; CAD CSV import/export; and an
+JSON backup/restore; currency-aware CSV import/export; and an
 installable PWA shell.
 
 Data is stored in the current browser on the current device. Clearing site or
@@ -34,7 +34,7 @@ when the app is reopened. They never reset financial records or preferences.
 
 See [v1.0.0 release and PWA notes](docs/release-v1.0.0.md) for hosting, update safety,
 validation commands, and browser limitations. [Data & Backup](docs/data-backup.md)
-documents JSON v2, v1 restore compatibility, and CSV safety. The
+documents JSON v3, v1/v2 restore compatibility, workspace settings and CSV currency safety. The
 [Bills & Installments foundation](src/domain/obligations/README.md) and
 [tracking UI](src/features/obligations/README.md) document existing semantics.
 
@@ -44,4 +44,4 @@ documents JSON v2, v1 restore compatibility, and CSV safety. The
 Development is on `feature/v1.1-onboarding-currency`; the released v1.0.0 remains
 on `main`. [Onboarding and finance settings](docs/finance-settings.md) documents
 schema v3, exact legacy preservation, currency restrictions, confirmation,
-startup, and the temporary CSV/backup limitations. No financial values are converted.
+startup, and workspace-currency behavior. No financial values are converted.

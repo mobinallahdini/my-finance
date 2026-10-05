@@ -64,14 +64,14 @@ test('Currency formatting rejects unsupported precision rather than interpreting
   assert.throws(() => formatMoney(100, 'JPY'))
   assert.throws(() => formatMoney(100, 'KWD'))
 })
-test('Backup v2 records and validates workspace currency without changing amounts; v1 remains CAD', () => {
+test('Backup v3 records and validates workspace currency without changing amounts; v1 remains CAD', () => {
   const snapshot = { accounts: [], categories: [], transactions: [], obligations: [], obligationPayments: [] }
   for (const currency of ['CAD', 'USD', 'EUR', 'GBP']) {
-    const backup = createBackup(snapshot, 'dark', undefined, 'full', new Date(), currency)
+    const backup = createBackup({...snapshot,applicationSettings:{...legacyApplicationSettings,currencyCode:currency}}, 'dark', undefined, 'full', new Date())
     assert.equal(parseFullBackup(JSON.stringify(backup)).currency, currency)
-    assert.deepEqual(backup.data, snapshot)
+    assert.deepEqual(backup.data, {...snapshot,applicationSettings:{...legacyApplicationSettings,currencyCode:currency}})
   }
-  const legacy = { ...createBackup(snapshot, 'sage'), schemaVersion: 1, currency: 'USD',
+  const legacy = { ...createBackup({...snapshot,applicationSettings:legacyApplicationSettings}, 'sage'), schemaVersion: 1, currency: 'USD',
     sections: ['accounts', 'categories', 'transactions', 'preferences'], data: { accounts: [], categories: [], transactions: [] } }
   assert.throws(() => parseFullBackup(JSON.stringify(legacy)), /Version 1.*CAD/)
 })

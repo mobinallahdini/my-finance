@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useMemo, useRef, useState } from 'react'
 import type { Transaction } from '../../domain/models'
 import type { FinancialSnapshot } from '../../persistence/snapshotValidation'
@@ -12,9 +13,9 @@ const mappingLabels = { accountId: 'Account', categoryId: 'Category', fromAccoun
 function amountText(row: CsvPreviewRow) {
   try {
     const type = row.fields.type
-    if (type !== 'expense' && type !== 'income' && type !== 'transfer') return row.fields.amount_cad || 'Amount missing'
-    return signedTransactionAmount({ type, amount: parseDollars(row.fields.amount_cad) }, 'CAD')
-  } catch { return row.fields.amount_cad || 'Amount missing' }
+    if (type !== 'expense' && type !== 'income' && type !== 'transfer') return row.fields.amount || 'Amount missing'
+    return signedTransactionAmount({ type, amount: parseDollars(row.fields.amount) }, row.fields.currency_code)
+  } catch { return row.fields.amount || 'Amount missing' }
 }
 export function CsvImportPreview({ source, filename, snapshot, busy, error, available, onClose, onImport }: {
   source: readonly CsvSourceRow[]
@@ -24,14 +25,15 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
   error: string
   available: boolean
   onClose: () => void
-  onImport: (transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>) => void
+  onImport: (transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>, currencyCode: string) => void
 }) {
+  const { currencyCode } = useMoney()
   const [mappings, setMappings] = useState<CsvMappings>({})
   const [excluded, setExcluded] = useState<ReadonlySet<number>>(new Set())
   const [statusFilter, setStatusFilter] = useState<CsvRowStatus | 'all'>('all')
   const [page, setPage] = useState(0)
   const listRef = useRef<HTMLUListElement>(null)
-  const rows = useMemo(() => previewTransactionCsv(source, snapshot, mappings), [source, snapshot, mappings])
+  const rows = useMemo(() => available ? previewTransactionCsv(source, snapshot, currencyCode, mappings) : [], [source, snapshot, mappings, currencyCode, available])
   const counts = Object.fromEntries(csvRowStatuses.map((status) => [status, rows.filter((row) => row.status === status).length])) as Record<CsvRowStatus, number>
   const selected = rows.filter((row) => row.status === 'Ready' && !excluded.has(row.rowNumber))
   const filtered = statusFilter === 'all' ? rows : rows.filter((row) => row.status === statusFilter)
@@ -65,9 +67,9 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
   }
   return <BackupDialog title="Import transactions" wide busy={busy} error={error} onClose={onClose}
     action={<button className="button-primary" type="button" disabled={busy || !available || !selected.length}
-      onClick={() => onImport(selected.map((row) => row.transaction!), counts)}>Import {selected.length} {selected.length === 1 ? 'transaction' : 'transactions'}</button>}>
+      onClick={() => onImport(selected.map((row) => row.transaction!), counts, selected[0].fields.currency_code)}>Import {selected.length} {selected.length === 1 ? 'transaction' : 'transactions'}</button>}>
     <p className="backup-filename">{filename}</p>
-    <p className="backup-help">This CSV format uses CAD amounts.</p>
+    <p className="backup-help">CSV amounts use {source[0]?.fields.currency_code ?? currencyCode}. No currency conversion occurs.</p>
     <p className="backup-help">Only selected Ready rows will be added. Duplicates, invalid rows, conflicts, and unmapped rows are skipped.</p>
     <p className="backup-csv-counts" role="status">{source.length} rows found. {csvRowStatuses.map((status) => `${status}: ${counts[status]}`).join(' · ')}</p>
     <div className="backup-preview-controls">

@@ -87,24 +87,20 @@ and bill/installment/payment amounts/editors/history/confirmations. Exact input
 parsing is unchanged. CAD references remain only where explicitly required by
 legacy migration, backup compatibility, and the legacy CSV format/preview.
 
-## Backup and CSV work remaining
+## Settings-aware backup and CSV
 
-JSON schema remains v2. Full and Custom Backup write the active workspace currency
-from the same read transaction as their data. V2 validation accepts supported
-two-decimal codes; v1 retains CAD-only compatibility. Replacement restore applies
-the backup currency atomically with all five data tables; failures roll back all
-six stores. Preview and final confirmation explain the currency being restored.
+[Data & Backup](data-backup.md) now documents JSON schema v3, which includes all
+application settings, financial/tracking records and theme. Metadata currency
+must agree with settings. Restore replaces all six stores atomically, updates the
+provider without a reload and completes setup. V1 restores Canadian legacy
+settings; v2 reconstructs missing metadata using the destination country,
+backup currency, Personal and January. Preview explicitly explains these defaults.
 
-Country, profile type, fiscal month, and onboarding metadata are not included in
-JSON yet. Restore keeps the destination's country/profile/fiscal settings and
-marks the workspace ready. The next backup step must define full settings backup
-and restoration. Non-CAD v2 backups cannot be restored by the released v1.0 app.
-
-Legacy CSV columns and bytes remain CAD-specific. All CSV import/export actions
-are disabled with an explanation for non-CAD workspaces. Export checks persisted
-currency with its snapshot, and transaction import checks it within its write
-transaction. The next step must introduce currency-aware CSV metadata, headers,
-validation and previews; no Bills & Installments CSV format is added here.
+Transactions and Accounts CSV have neutral amount columns plus `currency_code`.
+CSV actions are available for every supported workspace currency. Import blocks
+mixed/unsupported/mismatched currencies before preview and rechecks currency
+under its write transaction. Legacy `amount_cad` files remain CAD-only. Category
+CSV is unchanged. There is still no FX conversion or entity-level currency.
 
 ## Validation and review
 
@@ -115,7 +111,7 @@ With Vite running, run all existing browser suites and
 isolated Chrome profile and seeds the actual released Dexie v2 schema, verifies
 exact preservation of all five tables/theme, explicit first-run setup/reload,
 settings edits/cancel/confirmation, active currency presentation, JSON metadata,
-CSV gating, restore rollback, and recoverable startup failures.
+CSV currency safety, restore rollback, and recoverable startup failures.
 
 The suites cover Sage/Ocean/Dark, 320px/390px/desktop, 200% text, native labelled
 controls, keyboard order/visible focus, confirmations, and horizontal overflow.
@@ -124,7 +120,7 @@ directory. Existing PWA checks cover subdirectory/root hosting, offline navigati
 asset-only caching, update activation and record preservation. PWA logic is unchanged.
 
 
-## Files in this step
+## Files in the onboarding step
 
 ### Created (12)
 
@@ -183,7 +179,7 @@ asset-only caching, update activation and record preservation. PWA logic is unch
 - [tests/obligations.browser.mjs](../tests/obligations.browser.mjs)
 - [tests/pwa.browser.mjs](../tests/pwa.browser.mjs)
 
-## Results on the feature branch
+## Onboarding step validation results
 
 - Build, lint, and `git diff --check`: pass.
 - Unit tests: 248 passed (211 existing checks plus 37 settings/currency checks).

@@ -1,4 +1,5 @@
 import type { Account, Category, Obligation, ObligationPayment, Transaction } from '../domain/models'
+import { validateApplicationSettings, type ApplicationSettings } from '../domain/financeSettings.ts'
 import { validateAccount, validateCategory, validateTransaction, validateTransactionReferences } from './validation.ts'
 import { validateObligation, validateObligationPayment, validateObligationPaymentReference } from '../domain/obligationValidation.ts'
 
@@ -10,6 +11,9 @@ export interface FinancialSnapshot {
 export interface ApplicationSnapshot extends FinancialSnapshot {
   obligations: Obligation[]
   obligationPayments: ObligationPayment[]
+}
+export interface WorkspaceSnapshot extends ApplicationSnapshot {
+  applicationSettings: ApplicationSettings
 }
 
 export function objectRecord(value: unknown, label: string): Record<string, unknown> {
@@ -99,4 +103,14 @@ export function validateApplicationSnapshot(value: unknown): ApplicationSnapshot
     catch (error) { throw new Error(`Payment ${payment.id}: ${error instanceof Error ? error.message : 'Invalid reference.'}`, { cause: error }) }
   }
   return { ...financial, obligations, obligationPayments }
+}
+
+/** Settings are structural workspace metadata; financial validators stay unchanged. */
+export function validateWorkspaceSnapshot(value: unknown): WorkspaceSnapshot {
+  const data = objectRecord(value, 'Workspace data')
+  knownFields(data, ['accounts', 'categories', 'transactions', 'obligations', 'obligationPayments', 'applicationSettings'], 'Workspace data')
+  const applicationSettings = validateApplicationSettings(data.applicationSettings)
+  const snapshot = validateApplicationSnapshot({ accounts: data.accounts, categories: data.categories, transactions: data.transactions,
+    obligations: data.obligations, obligationPayments: data.obligationPayments })
+  return { ...snapshot, applicationSettings }
 }

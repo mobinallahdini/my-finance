@@ -134,7 +134,7 @@ try {
   await click('Clear all')
   await route('more/data-backup');await evaluate(`document.querySelector('.backup-export-row').click()`)
   const exported=JSON.parse(await downloaded('my-finance-backup-2026-10-05.json'))
-  assert.equal(exported.schemaVersion,2);assert.deepEqual(normalized(exported.data),normalized(fixture.data));assert.deepEqual(exported.preferences,{theme:'dark'});results.push('Production Full Backup download preserves every record and theme')
+  assert.equal(exported.schemaVersion,3);const {applicationSettings,...exportedRecords}=exported.data;assert.deepEqual(normalized(exportedRecords),normalized(fixture.data));assert.deepEqual(applicationSettings,{id:'application',countryCode:'CA',currencyCode:'CAD',profileType:'personal',fiscalYearStartMonth:1,onboardingCompleted:true});assert.deepEqual(exported.preferences,{theme:'dark'});results.push('Production Full Backup download preserves every record and theme')
   await evaluate(`document.querySelectorAll('.backup-export-row')[1].click()`)
   const csv=await downloaded('my-finance-transactions-2026-10-05.csv')
   assert.ok(csv.includes('expense-雪'));assert.ok(csv.includes('25.00'));results.push('Production Transactions CSV downloads exact IDs/cents')

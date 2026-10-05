@@ -16,6 +16,11 @@ export const legacyApplicationSettings: ApplicationSettings = {
 export function validateCurrencyCode(value: unknown): asserts value is string {
   if (typeof value !== 'string' || !currencyCodes.includes(value)) throw new Error('Choose a supported two-decimal currency.')
 }
+export function requireMatchingCurrency(fileCurrency: string, workspaceCurrency: string) {
+  validateCurrencyCode(fileCurrency)
+  validateCurrencyCode(workspaceCurrency)
+  if (fileCurrency !== workspaceCurrency) throw new Error(`This file uses ${fileCurrency}, but this workspace uses ${workspaceCurrency}.`)
+}
 export function validateApplicationSettings(value: unknown): ApplicationSettings {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('Finance settings must be an object.')
   const record = value as Record<string, unknown>

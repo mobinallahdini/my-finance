@@ -96,6 +96,8 @@ IDs, and all application writes going through these repositories. Raw IndexedDB
 access bypasses these application-level integrity rules. No balance snapshots,
 credit-limit spending enforcement, seeds, UI integration, or synchronization are
 implemented by these repositories. Browser eviction/user-cleared storage can
-remove local data. JSON backup v2 covers all five data tables, theme, and workspace
-currency. Country, profile type, and fiscal month remain local metadata until the
-next backup-format step. CAD-specific CSV operations are gated for non-CAD workspaces.
+remove local data. JSON backup v3 covers all six stores and theme, including complete workspace
+settings. Workspace replacement validates before writing and commits all six stores
+together. CSV import checks the file currency against current settings under the
+same transaction as financial writes. V1/v2 backup and legacy CAD CSV compatibility
+are documented in [Data & Backup](../../docs/data-backup.md).
