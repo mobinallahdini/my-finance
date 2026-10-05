@@ -1,4 +1,10 @@
-# Expense, income, and transfer transactions
+# Expense, income, transfer, and refund transactions
+
+[v1.2 inline categories and Refunds](../../../docs/transaction-improvements.md)
+documents the fourth type, shared category validation and draft preservation,
+signed net Expenses, and backup/CSV compatibility. Refund uses an Expense category,
+any destination account and no tax/receipt metadata. Income and Transfer restrictions
+remain unchanged.
 
 `TransactionsSection` makes history the main experience. Compact, selectable rows
 show a category or Transfer, an exact signed workspace-currency amount, and account information.

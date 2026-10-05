@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Category } from '../../domain/models'
 import { categoriesRepository } from '../../persistence/repositories'
-import { CategoryNameError, categoryNameError } from './categoryHelpers'
+import { saveCategoryRecord } from './categoryWrites'
 import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
 
 export function useCategories() {
@@ -52,15 +52,7 @@ export function useCategories() {
   }
 
   async function saveCategory(category: Category, editing: boolean) {
-    await write(async () => {
-      // Recheck persisted names so a stale list does not allow an accidental duplicate.
-      const currentCategories = await categoriesRepository.getAll()
-      const error = categoryNameError(category.name, category.type, currentCategories, editing ? category.id : undefined)
-      if (error) throw new CategoryNameError(error)
-      const record: Category = { ...category, name: category.name.trim() }
-      if (editing) await categoriesRepository.update(record)
-      else await categoriesRepository.add(record)
-    })
+    await write(() => saveCategoryRecord(category, editing))
   }
 
   async function deleteCategory(id: string) {

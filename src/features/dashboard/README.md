@@ -59,8 +59,14 @@ explanation. Home has no enclosing feature-card border or shadow.
 
 ## Spending donut
 
+Refund subtracts from its Expense category and month without increasing Income.
+Signed Expenses may be negative. The donut omits nonpositive category nets and
+divides by their positive sum. When that differs from Expenses, its center says
+Chart total and text explains both totals and excess refunds. Refund-only months
+show an explanation without a donut. See the [refund policy](../../../docs/transaction-improvements.md).
+
 `SpendingDonutChart` receives `summary.categorySpending` and `summary.expenses`
-from the unchanged dashboard hook. It has no financial queries, transaction
+from the dashboard hook. It has no financial queries, transaction
 aggregation, separate month state, persisted state or chart dependency.
 `spendingDonut.ts` groups existing category totals for presentation and formats
 shares with the original en-CA, at-most-one-decimal formatter. Integer cents remain
@@ -80,7 +86,7 @@ real category named Other.
 
 No-expense months retain the existing empty message and render no donut. One
 category produces a full ring, its exact amount and 100%. The total at the center
-is the existing monthly Expense total, using the centralized workspace-currency
+is the net monthly Expense total when all category nets are nonnegative, using the centralized workspace-currency
 formatter without abbreviations. Long totals use smaller relative typography and
 wrap completely within the center; no amount is clipped or truncated. CAD, USD
 and EUR, including the maximum safe integer cents, are checked.

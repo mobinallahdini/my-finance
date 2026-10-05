@@ -17,6 +17,7 @@
     "test:expense-details:browser": "node tests/expense-details.browser.mjs",
     "test:spending-donut:browser": "node tests/spending-donut.browser.mjs",
     "test:release:browser": "node tests/release-candidate.browser.mjs",
+    "test:transactions:browser": "node tests/transaction-improvements.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

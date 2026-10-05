@@ -53,7 +53,7 @@ export function calculateAccountBalance(
     } else {
       if (transaction.accountId !== account.id) continue
       const amount = requirePositiveAmount(transaction.amount)
-      change = transaction.type === 'income' ? amount : -amount
+      change = transaction.type === 'income' || transaction.type === 'refund' ? amount : -amount
     }
 
     balance = requireSafeCents(balance + direction * change)
@@ -85,13 +85,13 @@ export function calculateMonthlyExpensesByCategory(
 
   const totals = new Map<string, MoneyCents>()
   for (const transaction of transactions) {
-    if (transaction.type !== 'expense' || !transaction.date.startsWith(`${month}-`)) {
+    if ((transaction.type !== 'expense' && transaction.type !== 'refund') || !transaction.date.startsWith(`${month}-`)) {
       continue
     }
     const amount = requirePositiveAmount(transaction.amount)
     totals.set(
       transaction.categoryId,
-      requireSafeCents((totals.get(transaction.categoryId) ?? 0) + amount),
+      requireSafeCents((totals.get(transaction.categoryId) ?? 0) + (transaction.type === 'refund' ? -amount : amount)),
     )
   }
   return totals

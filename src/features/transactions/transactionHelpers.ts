@@ -6,6 +6,7 @@ export const transactionTypeLabels: Record<EntryTransaction['type'], string> = {
   expense: 'Expense',
   income: 'Income',
   transfer: 'Transfer',
+  refund: 'Refund',
 }
 
 export function isEligibleAccount(account: Account, type: EntryTransaction['type']): boolean {

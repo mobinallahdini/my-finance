@@ -92,7 +92,7 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
         </div> : !isLoading && transactions.length === 0 ? (
           <div className="transaction-ledger-empty">
             <h3>No transactions yet</h3>
-            <p>Record your first expense, income, or transfer.</p>
+            <p>Record your first expense, income, transfer, or refund.</p>
             <button className="transaction-primary" type="button" aria-haspopup="dialog" onClick={(event) => openEditor(event.currentTarget)}>Add Transaction</button>
           </div>
         ) : transactions.length > 0 && (

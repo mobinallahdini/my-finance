@@ -13,7 +13,7 @@ const mappingLabels = { accountId: 'Account', categoryId: 'Category', fromAccoun
 function amountText(row: CsvPreviewRow) {
   try {
     const type = row.fields.type
-    if (type !== 'expense' && type !== 'income' && type !== 'transfer') return row.fields.amount || 'Amount missing'
+    if (type !== 'expense' && type !== 'income' && type !== 'transfer' && type !== 'refund') return row.fields.amount || 'Amount missing'
     return signedTransactionAmount({ type, amount: parseDollars(row.fields.amount) }, row.fields.currency_code)
   } catch { return row.fields.amount || 'Amount missing' }
 }
@@ -52,7 +52,7 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
     })
   }
   function mappingField(row: CsvPreviewRow, field: MappingField) {
-    const choices = field === 'categoryId' ? snapshot.categories.filter((category) => category.type === row.fields.type)
+    const choices = field === 'categoryId' ? snapshot.categories.filter((category) => category.type === (row.fields.type === 'refund' ? 'expense' : row.fields.type))
       : snapshot.accounts.filter((account) => row.fields.type !== 'income' || account.type !== 'credit_card')
     const value = choices.some((choice) => choice.id === row.mapping[field]) ? row.mapping[field] : ''
     return <div className="backup-mapping-field" key={field}>
@@ -93,12 +93,12 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
         const categoryName = snapshot.categories.find((category) => category.id === row.mapping.categoryId)?.name ?? (row.fields.category_name || 'Category not mapped')
         return <li key={row.rowNumber} data-csv-row={row.rowNumber}>
           <div className="backup-preview-row-heading">
-            <h3 tabIndex={-1}>Row {row.rowNumber} · {type === 'expense' ? 'Expense' : type === 'income' ? 'Income' : type === 'transfer' ? 'Transfer' : type || 'Type missing'}</h3>
+            <h3 tabIndex={-1}>Row {row.rowNumber} · {type === 'expense' ? 'Expense' : type === 'income' ? 'Income' : type === 'transfer' ? 'Transfer' : type === 'refund' ? 'Refund' : type || 'Type missing'}</h3>
             <span className={`backup-row-status${row.status === 'Invalid' || row.status === 'Conflict' ? ' financial-danger' : ''}`}>{row.status}</span>
           </div>
           <div className="backup-preview-row-main">
             <strong>{type === 'transfer' ? 'Transfer' : categoryName}</strong>
-            <span className={`financial-value financial-${type === 'income' ? 'income' : type === 'expense' ? 'expense' : 'neutral'}`}>{amountText(row)}</span>
+            <span className={`financial-value financial-${type === 'income' ? 'income' : type === 'expense' ? 'expense' : type === 'refund' ? 'refund' : 'neutral'}`}>{amountText(row)}</span>
           </div>
           <p className="backup-row-detail"><time>{row.fields.date || 'Date missing'}</time> · {type === 'transfer'
             ? `From ${accountName(row.mapping.fromAccountId, row.fields.from_account_name)} → To ${accountName(row.mapping.toAccountId, row.fields.to_account_name)}`
@@ -113,7 +113,7 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
               })} /> <span>Import this row</span>
           </label>}
           {row.fields.note && <details className="backup-note"><summary>Note</summary><pre>{row.fields.note}</pre></details>}
-          {row.status !== 'Duplicate' && (type === 'transfer' || type === 'income' || type === 'expense') && <details className="backup-row-mapping">
+          {row.status !== 'Duplicate' && (type === 'transfer' || type === 'income' || type === 'expense' || type === 'refund') && <details className="backup-row-mapping">
             <summary>Map accounts and categories</summary>
             {type === 'transfer' ? <>{mappingField(row, 'fromAccountId')}{mappingField(row, 'toAccountId')}</>
               : <>{mappingField(row, 'accountId')}{mappingField(row, 'categoryId')}</>}

@@ -1,9 +1,9 @@
 import type { Account, Category, Transaction } from '../../domain/models'
-import { dollarsForInput, formatMoney, parseDollars } from '../accounts/money'
-import { localCalendarDate, transactionTypeLabels } from './transactionHelpers'
-import { readableMonth } from './transactionPresentation'
+import { dollarsForInput, formatMoney, parseDollars } from '../accounts/money.ts'
+import { localCalendarDate, transactionTypeLabels } from './transactionHelpers.ts'
+import { readableMonth } from './transactionPresentation.ts'
 
-export const filterTypes = ['expense', 'income', 'transfer'] as const
+export const filterTypes = ['expense', 'income', 'transfer', 'refund'] as const
 export type DateMode = 'month' | 'range' | 'all'
 export interface TransactionFilterState {
   query: string

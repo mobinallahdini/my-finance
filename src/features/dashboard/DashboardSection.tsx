@@ -85,7 +85,7 @@ export function DashboardSection() {
             <div className="dashboard-details">
               <section className="dashboard-breakdown" aria-labelledby={`${prefix}-categories-heading`}>
                 <h3 id={`${prefix}-categories-heading`}>Spending by category</h3>
-                <p className="dashboard-category-caption">Largest first · share of monthly expenses</p>
+                <p className="dashboard-category-caption">Largest first · share of positive category spending</p>
                 {summary.hasUnknownCategories && <p className="dashboard-warning" role="status">Some expense categories could not be found. Unknown category spending remains included in this breakdown. Review Categories and transaction history.</p>}
                 {summary.categorySpending.length === 0 ? (
                   <p className="dashboard-empty">No expenses in {readableMonth}. Your spending breakdown will appear here when you record an expense.</p>

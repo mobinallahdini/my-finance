@@ -121,6 +121,10 @@ button:is(.button-destructive, .account-delete, .category-delete, .transaction-d
   color: var(--color-neutral);
 }
 
+.financial-refund {
+  color: var(--color-action);
+}
+
 .financial-danger,
 .financial-overdraft,
 .financial-over-limit {

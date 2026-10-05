@@ -1,5 +1,10 @@
 # Data & Backup - JSON schema version 3
 
+Refund is supported in existing Backup v3 and Transactions CSV, using Expense
+categories and bank/cash/card destinations without tax/receipt metadata. Older
+files without Refund remain valid; files containing Refund need a refund-aware
+reader (v1.1 and earlier reject that type). See the [v1.2 policy](transaction-improvements.md).
+
 More -> Data & Backup reads and writes files entirely in the browser. Nothing is
 uploaded. Financial, tracking and workspace settings are stored in IndexedDB
 `my-finance`, still at Dexie schema 3. File schema version is independent of the

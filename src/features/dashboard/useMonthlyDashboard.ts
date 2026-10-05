@@ -8,6 +8,7 @@ import type { MoneyCents, Transaction, YearMonth } from '../../domain/models'
 import { accountsRepository, categoriesRepository, transactionsRepository } from '../../persistence/repositories'
 import { useDataRefresh } from '../shared/dataRefresh'
 import { compareTransactions, localCalendarDate } from '../transactions/transactionHelpers'
+import { spendingDonutTotal } from './spendingDonut'
 
 export interface CategorySpending {
   readonly categoryId: string
@@ -92,12 +93,15 @@ export function useMonthlyDashboard() {
           }
           return { ...base, title: categoryNames.get(transaction.categoryId) ?? 'Unknown category', accountDescription: accountName(transaction.accountId) }
         })
-        const categorySpending = Array.from(calculateMonthlyExpensesByCategory(transactions, month), ([categoryId, amount]) => ({
+        const categoryTotals = calculateMonthlyExpensesByCategory(transactions, month)
+        const chartTotal = spendingDonutTotal(Array.from(categoryTotals, ([, amount]) => ({ amount })))
+        if (!Number.isSafeInteger(chartTotal - expenses)) throw new RangeError('Excess refunds must be safe integer cents.')
+        const categorySpending = Array.from(categoryTotals, ([categoryId, amount]) => ({
           categoryId,
           name: categoryNames.get(categoryId) ?? 'Unknown category',
           amount,
           // Percentages are display values only; money remains integer cents.
-          percentage: expenses === 0 ? 0 : amount / expenses * 100,
+          percentage: chartTotal === 0 ? 0 : Math.max(0, amount) / chartTotal * 100,
           isUnknown: !categoryNames.has(categoryId),
         })).sort((left, right) => (
           right.amount - left.amount || (left.categoryId < right.categoryId ? -1 : left.categoryId > right.categoryId ? 1 : 0)
