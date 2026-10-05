@@ -172,15 +172,15 @@ hard-deleted. Overlapping transaction scopes serialize reference checks against
 deletion/start/type changes across independent browser connections/tabs. Raw
 IndexedDB access can bypass these repository-level policies.
 
-## Backup limitation and validation
+## Backup coverage and validation
 
-**Full Backup schemaVersion 1 excludes obligations and obligationPayments.**
-This step deliberately does not extend backup/restore or CSV formats. Existing
-financial restores leave the new tracking stores untouched. Bills &
-Installments require a future backup schema version with validated export,
-restore, references, and migration support **before production-safe release**.
-Current Full Backup cannot recover this tracking data after browser eviction or
-cleared storage. Users must not assume “Full Backup” includes these tables.
+**Full Backup schemaVersion 2 includes obligations and obligationPayments.**
+The full financial and tracking reference graphs are validated before all five
+stores are replaced in one atomic transaction. Version 1 backups remain supported,
+but replacement clears both tracking tables; preview and confirmation explicitly
+warn about this consequence. Custom Bills & Installments export always includes
+obligations and recorded payments together. CSV formats remain financial-only.
+See [Data & Backup](../../../docs/data-backup.md) for the canonical format.
 
 Run `npm test`, `npm run build`, `npm run lint`, and `git diff --check`.
 `tests/obligations.test.mjs` uses Node's built-in test runner (Node 24 supports
@@ -195,5 +195,5 @@ needed. The dependency-free Node runner starts a headless Chrome/Chromium with
 an automatically generated temporary profile; it never opens the user's
 normal browser database. It seeds a genuine version-1 database, opens the real
 version-2 application database/repositories, checks CRUD, integrity, independent
-connection races, backup exclusion, fresh installation, and reopen durability,
+connection races, version 2 backup inclusion, fresh installation, and reopen durability,
 then closes the browser and removes its verified temporary profile.

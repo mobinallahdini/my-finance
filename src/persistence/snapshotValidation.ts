@@ -1,10 +1,15 @@
-import type { Account, Category, Transaction } from '../domain/models'
+import type { Account, Category, Obligation, ObligationPayment, Transaction } from '../domain/models'
 import { validateAccount, validateCategory, validateTransaction, validateTransactionReferences } from './validation.ts'
+import { validateObligation, validateObligationPayment, validateObligationPaymentReference } from '../domain/obligationValidation.ts'
 
 export interface FinancialSnapshot {
   accounts: Account[]
   categories: Category[]
   transactions: Transaction[]
+}
+export interface ApplicationSnapshot extends FinancialSnapshot {
+  obligations: Obligation[]
+  obligationPayments: ObligationPayment[]
 }
 
 export function objectRecord(value: unknown, label: string): Record<string, unknown> {
@@ -71,4 +76,27 @@ export function validateFinancialSnapshot(value: unknown): FinancialSnapshot {
     catch (error) { throw new Error(`Transaction ${transaction.id}: ${error instanceof Error ? error.message : 'Invalid references.'}`, { cause: error }) }
   }
   return { accounts, categories, transactions }
+}
+
+/** Validate both complete graphs without adding any derived obligation state. */
+export function validateApplicationSnapshot(value: unknown): ApplicationSnapshot {
+  const data = objectRecord(value, 'Application data')
+  knownFields(data, ['accounts', 'categories', 'transactions', 'obligations', 'obligationPayments'], 'Application data')
+  const financial = validateFinancialSnapshot({ accounts: data.accounts, categories: data.categories, transactions: data.transactions })
+  const obligations = records(data.obligations, 'Bills & Installments', (value) => {
+    const obligation = objectRecord(value, 'Obligation') as unknown as Obligation
+    validateObligation(obligation)
+    return obligation
+  })
+  const obligationPayments = records(data.obligationPayments, 'Recorded payments', (value) => {
+    const payment = objectRecord(value, 'Obligation payment') as unknown as ObligationPayment
+    validateObligationPayment(payment)
+    return payment
+  })
+  const obligationMap = new Map(obligations.map((record) => [record.id, record]))
+  for (const payment of obligationPayments) {
+    try { validateObligationPaymentReference(payment, obligationMap.get(payment.obligationId)) }
+    catch (error) { throw new Error(`Payment ${payment.id}: ${error instanceof Error ? error.message : 'Invalid reference.'}`, { cause: error }) }
+  }
+  return { ...financial, obligations, obligationPayments }
 }

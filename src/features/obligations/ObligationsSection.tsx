@@ -101,7 +101,6 @@ export function ObligationsSection({ obligationId, initialMonth }: { obligationI
         {obligationId === undefined && <button className="button-primary" data-main-action disabled={loading || Boolean(loadError || calculationError)} onClick={(event) => openEditor({ kind: 'obligation' }, event.currentTarget)}>+ Add</button>}
         {obligation && <button data-main-action disabled={busy || loading} onClick={(event) => openEditor({ kind: 'obligation', obligation, route: obligationId }, event.currentTarget)}>Edit</button>}
       </header>
-      <p className="obligation-backup-note">Bills &amp; Installments are not included in Full Backup yet.</p>
       <div className="obligation-month" role="group" aria-label="Selected month">
         <button aria-label="Previous month" disabled={month === '0001-01'} onClick={() => setMonth(previousMonth())}>‹</button>
         <div><label htmlFor="obligation-month">{monthLabel(month)}</label>

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createBackup, exportFilename, includedSections, parseFullBackup, validateFullBackup } from '../src/features/dataBackup/backupFormat.ts'
+import { createBackup, exportFilename, includedSections, parseFullBackup, restoreSnapshot, validateFullBackup } from '../src/features/dataBackup/backupFormat.ts'
+import { calculateInstallmentBalance, calculateObligationMonth } from '../src/domain/obligationCalculations.ts'
 import { parseCsv, writeCsv, protectCsvText, unprotectCsvText, csvTextEncoding } from '../src/features/dataBackup/csv.ts'
 import { accountsCsv, categoriesCsv, parseTransactionCsv, previewTransactionCsv, transactionsCsv, transactionIdentity,
   transactionCsvColumns } from '../src/features/dataBackup/transactionCsv.ts'
@@ -14,13 +15,23 @@ const fixture = () => ({
     { id: 'income-id', type: 'income', amount: 200000, date: '2026-10-04', accountId: 'bank', categoryId: 'income' },
     { id: 'transfer-id', type: 'transfer', amount: 30000, date: '2026-10-03', fromAccountId: 'bank', toAccountId: 'card' }],
 })
-const backup = () => createBackup(fixture(), 'ocean', undefined, 'full', new Date('2026-10-05T14:32:00.000Z'))
+const applicationFixture = () => ({ ...fixture(),
+  obligations: [
+    { id:'bill-雪',type:'bill',name:'Mobile',dueDay:31,startMonth:'2026-01',isActive:true,expectedAmountCents:10000,note:'Exact note\r\nwith Unicode: 雪' },
+    { id:'installment',type:'installment',name:'Laptop',dueDay:15,startMonth:'2026-09',isActive:true,originalAmountCents:100000,scheduledPaymentCents:15500 },
+  ],
+  obligationPayments: [
+    {id:'bill-pay',obligationId:'bill-雪',dueMonth:'2026-10',paidDate:'2026-11-02',amountCents:4000,note:'Late partial'},
+    {id:'principal-pay',obligationId:'installment',dueMonth:'2026-09',paidDate:'2026-09-15',amountCents:38000},
+  ],
+})
+const backup = () => createBackup(applicationFixture(), 'ocean', undefined, 'full', new Date('2026-10-05T14:32:00.000Z'))
 
 test('Full Backup retains exact records, references, notes and theme, without UI state', () => {
   const file = backup()
-  assert.equal(file.format, 'my-finance-backup'); assert.equal(file.schemaVersion, 1); assert.equal(file.currency, 'CAD')
+  assert.equal(file.format, 'my-finance-backup'); assert.equal(file.schemaVersion, 2); assert.equal(file.currency, 'CAD')
   assert.equal(file.exportedAt, '2026-10-05T14:32:00.000Z')
-  assert.deepEqual(parseFullBackup(JSON.stringify(file)).data, fixture())
+  assert.deepEqual(parseFullBackup(JSON.stringify(file)).data, applicationFixture())
   assert.deepEqual(file.preferences, { theme: 'ocean' })
   assert.deepEqual(Object.keys(file).sort(), ['format', 'schemaVersion', 'exportedAt', 'currency', 'kind', 'sections', 'data', 'preferences'].sort())
   fixture().transactions[0].amount = 1
@@ -28,14 +39,14 @@ test('Full Backup retains exact records, references, notes and theme, without UI
 })
 test('Custom sections explainable dependencies and partial restore rejection', () => {
   assert.deepEqual(includedSections(['transactions']), ['accounts', 'categories', 'transactions'])
-  const partial = createBackup(fixture(), 'sage', ['transactions'], 'custom')
+  const partial = createBackup(applicationFixture(), 'sage', ['transactions'], 'custom')
   assert.deepEqual(partial.data, fixture()); assert.equal(partial.preferences, undefined)
   assert.throws(() => validateFullBackup(partial), /partial Custom Backup/)
-  const complete = createBackup(fixture(), 'dark', ['transactions', 'preferences'], 'custom')
+  const complete = createBackup(applicationFixture(), 'dark', ['transactions', 'obligations', 'preferences'], 'custom')
   assert.equal(validateFullBackup(complete).preferences.theme, 'dark')
-  const preferences = createBackup(fixture(), 'ocean', ['preferences'], 'custom')
+  const preferences = createBackup(applicationFixture(), 'ocean', ['preferences'], 'custom')
   assert.deepEqual(preferences.data, {}); assert.deepEqual(preferences.sections, ['preferences'])
-  assert.throws(() => createBackup(fixture(), 'sage', [], 'custom'), /Select at least/)
+  assert.throws(() => createBackup(applicationFixture(), 'sage', [], 'custom'), /Select at least/)
 })
 test('Filenames use local calendar fields, independently of ISO export timestamps', () => {
   const now = new Date(2026, 9, 5, 0, 1)
@@ -45,7 +56,7 @@ test('Filenames use local calendar fields, independently of ISO export timestamp
 })
 
 const invalidBackups = [
-  ['wrong format', b => { b.format = 'other' }], ['unsupported version', b => { b.schemaVersion = 2 }],
+  ['wrong format', b => { b.format = 'other' }], ['unsupported version', b => { b.schemaVersion = 3 }],
   ['wrong currency', b => { b.currency = 'USD' }], ['invalid ISO timestamp', b => { b.exportedAt = 'yesterday' }],
   ['rollover timestamp', b => { b.exportedAt = '2026-02-30T00:00:00.000Z' }], ['invalid theme', b => { b.preferences.theme = 'neon' }],
   ['missing preferences', b => { delete b.preferences }], ['missing accounts', b => { delete b.data.accounts }],
@@ -72,12 +83,83 @@ for (const [name, change] of invalidBackups) test(`Full Backup rejects ${name}`,
 })
 test('Malformed JSON fails cleanly; BOM is supported', () => {
   assert.throws(() => parseFullBackup('{broken'), /not valid JSON/)
-  assert.deepEqual(parseFullBackup('\uFEFF' + JSON.stringify(backup())).data, fixture())
+  assert.deepEqual(parseFullBackup('\uFEFF' + JSON.stringify(backup())).data, applicationFixture())
 })
 test('Safe integer boundaries and valid leap dates retain exact cents', () => {
   const b = backup(); b.data.accounts[0].openingBalance = Number.MIN_SAFE_INTEGER
   b.data.accounts[2].creditLimit = Number.MAX_SAFE_INTEGER; b.data.transactions[0].amount = Number.MAX_SAFE_INTEGER
   b.data.transactions[0].date = '2024-02-29'; assert.equal(validateFullBackup(b).data.transactions[0].amount, Number.MAX_SAFE_INTEGER)
+})
+
+test('Version 2 preserves tracking IDs, exact cents, history and derived results', () => {
+  const data = applicationFixture(), restored = restoreSnapshot(parseFullBackup(JSON.stringify(backup())))
+  assert.deepEqual(restored, data)
+  assert.equal(calculateInstallmentBalance(restored.obligations[1], restored.obligationPayments).remainingAmountCents, 62000)
+  assert.equal(calculateObligationMonth(restored.obligations[0], restored.obligationPayments, '2026-10', '2026-10-05').status, 'partially_paid')
+  const paid = [...restored.obligationPayments, {id:'second',obligationId:'bill-雪',dueMonth:'2026-10',paidDate:'2026-10-05',amountCents:6000}]
+  assert.equal(calculateObligationMonth(restored.obligations[0], paid, '2026-10', '2026-10-05').status, 'paid')
+  assert.deepEqual(Object.keys(restored.obligations[1]).sort(), ['id','type','name','dueDay','startMonth','isActive','originalAmountCents','scheduledPaymentCents'].sort())
+})
+
+test('Tracking Custom selection always exports obligations and payments together', () => {
+  assert.deepEqual(includedSections(['obligations']), ['obligations','obligationPayments'])
+  assert.deepEqual(includedSections(['obligationPayments']), ['obligations','obligationPayments'])
+  const data = applicationFixture()
+  for (const section of ['obligations','obligationPayments']) {
+    const file = createBackup(data, 'dark', [section], 'custom')
+    assert.deepEqual(file.data, {obligations:data.obligations,obligationPayments:data.obligationPayments})
+    assert.throws(() => validateFullBackup(file), /partial Custom/)
+  }
+  assert.throws(() => createBackup(data,'sage',['transactions','preferences'],'full'), /every section/)
+})
+
+test('Version 1 retains its original graph and normalizes to empty tracking tables for replacement', () => {
+  const file = { ...backup(), schemaVersion:1, sections:['accounts','categories','transactions','preferences'], data:fixture() }
+  for (const kind of ['full','custom']) {
+    file.kind = kind
+    const parsed = parseFullBackup(JSON.stringify(file))
+    assert.equal(parsed.schemaVersion, 1)
+    assert.deepEqual(parsed.data, fixture())
+    assert.deepEqual(restoreSnapshot(parsed), {...fixture(),obligations:[],obligationPayments:[]})
+    assert.deepEqual(validateFullBackup(parsed), parsed)
+  }
+  file.data.obligations = []
+  assert.throws(() => validateFullBackup(file), /unsupported field/)
+})
+
+const invalidTracking = [
+  ['missing obligations', b => { delete b.data.obligations }],
+  ['missing payments', b => { delete b.data.obligationPayments }],
+  ['orphan payment', b => { b.data.obligationPayments[0].obligationId = 'missing' }],
+  ['duplicate obligation ID', b => { b.data.obligations.push(b.data.obligations[0]) }],
+  ['duplicate payment ID', b => { b.data.obligationPayments.push(b.data.obligationPayments[0]) }],
+  ['unsupported obligation type', b => { b.data.obligations[0].type = 'weekly' }],
+  ['untrimmed name', b => { b.data.obligations[0].name = ' Mobile ' }],
+  ['blank name', b => { b.data.obligations[0].name = ' ' }],
+  ['invalid due day', b => { b.data.obligations[0].dueDay = 32 }],
+  ['fractional due day', b => { b.data.obligations[0].dueDay = 1.5 }],
+  ['invalid start month', b => { b.data.obligations[0].startMonth = '2026-13' }],
+  ['year zero', b => { b.data.obligations[0].startMonth = '0000-01' }],
+  ['unsafe expected amount', b => { b.data.obligations[0].expectedAmountCents = Number.MAX_SAFE_INTEGER+1 }],
+  ['zero original amount', b => { b.data.obligations[1].originalAmountCents = 0 }],
+  ['missing scheduled amount', b => { delete b.data.obligations[1].scheduledPaymentCents }],
+  ['nonboolean active', b => { b.data.obligations[0].isActive = 'true' }],
+  ['cross-type bill field', b => { b.data.obligations[0].originalAmountCents = 100 }],
+  ['cross-type installment field', b => { b.data.obligations[1].expectedAmountCents = 100 }],
+  ['derived balance', b => { b.data.obligations[1].remainingAmountCents = 100 }],
+  ['derived status', b => { b.data.obligations[0].status = 'paid' }],
+  ['invalid due month', b => { b.data.obligationPayments[0].dueMonth = '2026-1' }],
+  ['pre-start due month', b => { b.data.obligationPayments[0].dueMonth = '2025-12' }],
+  ['invalid paid date', b => { b.data.obligationPayments[0].paidDate = '2026-02-30' }],
+  ['zero payment', b => { b.data.obligationPayments[0].amountCents = 0 }],
+  ['negative payment', b => { b.data.obligationPayments[0].amountCents = -1 }],
+  ['fractional payment', b => { b.data.obligationPayments[0].amountCents = 1.5 }],
+  ['unsafe payment', b => { b.data.obligationPayments[0].amountCents = Number.MAX_SAFE_INTEGER+1 }],
+  ['invalid note', b => { b.data.obligationPayments[0].note = 3 }],
+  ['linked transaction', b => { b.data.obligationPayments[0].transactionId = 'expense-id' }],
+]
+for (const [name, change] of invalidTracking) test(`Version 2 rejects ${name}`, () => {
+  const file = backup(); change(file); assert.throws(() => validateFullBackup(file))
 })
 
 test('CSV parser handles quoted commas, escaped quotes, CRLF/LF, empty fields, BOM and Unicode', () => {

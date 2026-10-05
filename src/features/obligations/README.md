@@ -34,8 +34,9 @@ navigation with unsaved changes, and restore focus to their opening control.
 
 Writes only use obligations and obligationPayments repositories and the shared
 refresh event. No financial transactions, account changes, schema
-changes, or backup changes. The temporary Full Backup warning stays visible on
-list and details until those tables are included in a future backup version.
+changes, or financial integration. Full Backup schemaVersion 2 includes both
+tracking tables, so the temporary backup warning has been removed. Version 1
+replacement restore clears tracking data with an explicit preview warning.
 
 Validation: `npm run test:obligations:ui` runs real UI checks in a disposable Chrome
 profile against Vite (default `http://127.0.0.1:5173`; override `BILLS_APP_URL`).
@@ -56,4 +57,4 @@ Partial row amounts use `remainingDueCents`; other rows use the month's
 `expectedAmountCents`. Principal remaining is displayed separately. The caption
 uses `remainingTotalDueCents`; none of these values feed financial dashboard
 calculations. View all and Details links carry the selected month in the hash
-query. The backup warning stays inside Bills & Installments only.
+query. Backup warnings belong in the restore preview, rather than Home.

@@ -30,16 +30,15 @@ export function BackupDialog({ title, busy, error, onClose, children, action, wi
     )).filter((element) => element.getClientRects().length)
     const first = targets[0], last = targets.at(-1)
     if (!first) { event.preventDefault(); event.currentTarget.querySelector<HTMLElement>('h2')?.focus() }
-    else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+    else if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget.querySelector('h2'))) { event.preventDefault(); last?.focus() }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
   }
   return <dialog ref={dialogRef} className={`backup-dialog${wide ? ' backup-dialog-wide' : ''}`} aria-labelledby={`${prefix}-heading`}
     aria-busy={busy} onKeyDown={containFocus} onCancel={(event) => { event.preventDefault(); if (!busy) onClose() }}>
     <div className="backup-dialog-layout">
       <header className="backup-dialog-header">
-        <button className="button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button>
         <h2 id={`${prefix}-heading`} tabIndex={-1}>{title}</h2>
-        <span className="backup-header-balance" aria-hidden="true" />
+        <button className="button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button>
       </header>
       <div className="backup-dialog-body">
         {children}

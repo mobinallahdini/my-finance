@@ -4,7 +4,6 @@
 .obligation-page-header, .obligation-row-heading, .obligation-row-meta, .obligation-details-status, .obligation-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
 .obligation-page-header h2 { flex: 1 1 12rem; }
 .obligation-page-header button { white-space: nowrap; }
-.obligation-backup-note { color: var(--color-text-secondary); font-size: var(--font-size-meta); margin-block: var(--space-3) var(--space-6); }
 .obligation-month { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; margin-bottom: var(--space-6); }
 .obligation-month > div { min-width: 0; text-align: center; }
 .obligation-month label { display: block; font-weight: var(--font-weight-emphasis); margin-bottom: var(--space-1); }

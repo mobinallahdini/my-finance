@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Transaction } from '../../domain/models'
-import { importTransactionBatch, readFinancialSnapshot, replaceFinancialSnapshot } from '../../persistence/dataBackup'
-import type { FinancialSnapshot } from '../../persistence/snapshotValidation'
+import { importTransactionBatch, readApplicationSnapshot, replaceApplicationSnapshot } from '../../persistence/dataBackup'
+import type { ApplicationSnapshot } from '../../persistence/snapshotValidation'
 import { setTheme } from '../appearance/themePreference'
 import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
-import { validateFullBackup, type FullBackup } from './backupFormat'
+import { restoreSnapshot, validateFullBackup, type FullBackup } from './backupFormat'
 
 export function useDataBackup() {
-  const [snapshot, setSnapshot] = useState<FinancialSnapshot>({ accounts: [], categories: [], transactions: [] })
+  const [snapshot, setSnapshot] = useState<ApplicationSnapshot>({ accounts: [], categories: [], transactions: [], obligations: [], obligationPayments: [] })
   const [isLoading, setIsLoading] = useState(true)
   const [isWriting, setIsWriting] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -19,7 +19,7 @@ export function useDataBackup() {
   useDataRefresh(reload)
   useEffect(() => {
     let active = true
-    void readFinancialSnapshot().then((data) => { if (active) setSnapshot(data) }).catch(() => {
+    void readApplicationSnapshot().then((data) => { if (active) setSnapshot(data) }).catch(() => {
       if (active) setLoadError('Local data could not be read. Check that browser storage is available, then try again.')
     }).finally(() => { if (active) setIsLoading(false) })
     return () => { active = false }
@@ -37,8 +37,8 @@ export function useDataBackup() {
   async function restore(backup: FullBackup) {
     const validated = validateFullBackup(structuredClone(backup))
     return write(async () => {
-      await replaceFinancialSnapshot(validated.data)
-      // Appearance persistence cannot roll back or misreport a successful financial commit.
+      await replaceApplicationSnapshot(restoreSnapshot(validated))
+      // Appearance persistence cannot roll back or misreport a successful data commit.
       return setTheme(validated.preferences.theme)
     })
   }

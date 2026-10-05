@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { readFinancialSnapshot } from '../../persistence/dataBackup'
+import { readApplicationSnapshot, readFinancialSnapshot } from '../../persistence/dataBackup'
 import { useTheme } from '../appearance/themePreference'
 import { BackupDialog } from './BackupDialog'
 import { createBackup, exportFilename, parseFullBackup, type BackupSection, type FullBackup } from './backupFormat'
@@ -15,7 +15,7 @@ type ExportKind = 'backup' | 'transactions' | 'accounts' | 'categories' | 'custo
 type Preview = { kind: 'custom' } | { kind: 'restore'; backup: FullBackup; filename: string }
   | { kind: 'csv'; source: CsvSourceRow[]; filename: string }
 const exports: { kind: ExportKind; title: string; format: string; description: string }[] = [
-  { kind: 'backup', title: 'Full Backup', format: 'JSON', description: 'Recommended · All financial data and your theme' },
+  { kind: 'backup', title: 'Full Backup', format: 'JSON', description: 'All financial data, bills, installments, payments, and appearance' },
   { kind: 'transactions', title: 'Transactions', format: 'CSV', description: 'All transaction history' },
   { kind: 'accounts', title: 'Accounts', format: 'CSV', description: 'Opening balances and credit limits' },
   { kind: 'categories', title: 'Categories', format: 'CSV', description: 'Income and expense categories' },
@@ -58,10 +58,14 @@ export function DataBackupSection() {
     if (busy || loadError) return
     setPreparing(true); setError(''); setStatus('')
     try {
-      const current = await readFinancialSnapshot()
       const json = kind === 'backup' || kind === 'custom-backup'
-      const content = json ? JSON.stringify(createBackup(current, theme, sections, kind === 'backup' ? 'full' : 'custom'), null, 2)
-        : kind === 'transactions' ? transactionsCsv(current) : kind === 'accounts' ? accountsCsv(current.accounts) : categoriesCsv(current.categories)
+      let content: string
+      if (json) {
+        content = JSON.stringify(createBackup(await readApplicationSnapshot(), theme, sections, kind === 'backup' ? 'full' : 'custom'), null, 2)
+      } else {
+        const current = await readFinancialSnapshot()
+        content = kind === 'transactions' ? transactionsCsv(current) : kind === 'accounts' ? accountsCsv(current.accounts) : categoriesCsv(current.categories)
+      }
       const filename = exportFilename(kind)
       downloadFile(content, filename, json ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8')
       setStatus(`Download prepared: ${filename}`)
@@ -83,14 +87,15 @@ export function DataBackupSection() {
   }
   async function replaceData() {
     if (preview?.kind !== 'restore' || busy || loadError) return
-    if (!window.confirm('Replace current data? This will replace all local accounts, categories, and transactions with this backup. This cannot be undone.')) return
+    const legacyWarning = preview.backup.schemaVersion === 1 ? ' This version 1 backup contains no Bills & Installments; all current obligations and recorded payments will be removed.' : ''
+    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} This cannot be undone.`)) return
     setError(''); setStatus('')
     try {
       const persisted = await restore(preview.backup)
-      setStatus(persisted ? 'Financial data and appearance restored. Current local data was replaced.'
-        : 'Financial data restored. Appearance was applied for this session, but the preference could not be saved to browser storage.')
+      setStatus(persisted ? 'All data and appearance restored. Current local data was replaced.'
+        : 'All data restored. Appearance was applied for this session, but the preference could not be saved to browser storage.')
       pendingFocus.current = true; setPreview(null)
-    } catch (error) { setError(`Restore failed. Previous financial data is intact. ${errorMessage(error)}`) }
+    } catch (error) { setError(`Restore failed. Previous financial data, bills, installments, and payments are intact. ${errorMessage(error)}`) }
   }
   async function importRows(transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>) {
     if (busy || loadError) return
@@ -145,7 +150,7 @@ export function DataBackupSection() {
     </section>
     <section className="backup-section" aria-labelledby="backup-local-heading">
       <h3 id="backup-local-heading">Local data information</h3>
-      {!isLoading && !loadError && <p className="backup-local-counts">{snapshot.accounts.length} accounts · {snapshot.categories.length} categories · {snapshot.transactions.length} transactions</p>}
+      {!isLoading && !loadError && <p className="backup-local-counts">{snapshot.accounts.length} accounts · {snapshot.categories.length} categories · {snapshot.transactions.length} transactions · {snapshot.obligations.length} bills &amp; installments · {snapshot.obligationPayments.length} recorded payments</p>}
       <p className="backup-help">Financial data is stored locally on this device and browser. Clearing browser or site data may erase it. A Full Backup is the recommended way to recover or move your data.</p>
     </section>
     {preview?.kind === 'custom' && <CustomExport busy={busy} error={error || loadError || ''} available={!loadError} onClose={closePreview} onExport={(sections) => { void exportData('custom-backup', sections) }} />}

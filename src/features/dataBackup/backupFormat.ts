@@ -1,46 +1,56 @@
 import type { Theme } from '../appearance/themePreference'
-import { knownFields, objectRecord, validateFinancialSnapshot, type FinancialSnapshot } from '../../persistence/snapshotValidation.ts'
+import { knownFields, objectRecord, validateApplicationSnapshot, validateFinancialSnapshot, type ApplicationSnapshot, type FinancialSnapshot } from '../../persistence/snapshotValidation.ts'
 import { localCalendarDate } from '../transactions/transactionHelpers.ts'
 
-export const backupSections = ['accounts', 'categories', 'transactions', 'preferences'] as const
+const legacySections = ['accounts', 'categories', 'transactions', 'preferences'] as const
+export const backupSections = ['accounts', 'categories', 'transactions', 'obligations', 'obligationPayments', 'preferences'] as const
 export type BackupSection = (typeof backupSections)[number]
 export interface BackupFile {
   format: 'my-finance-backup'
-  schemaVersion: 1
+  schemaVersion: 2
   exportedAt: string
   currency: 'CAD'
   kind: 'full' | 'custom'
   sections: BackupSection[]
-  data: Partial<FinancialSnapshot>
+  data: Partial<ApplicationSnapshot>
   preferences?: { theme: Theme }
 }
-export interface FullBackup extends BackupFile {
+interface FullBackupV2 extends BackupFile {
+  data: ApplicationSnapshot
+  preferences: { theme: Theme }
+}
+interface FullBackupV1 extends Omit<BackupFile, 'schemaVersion' | 'data' | 'sections'> {
+  schemaVersion: 1
+  sections: (typeof legacySections)[number][]
   data: FinancialSnapshot
   preferences: { theme: Theme }
 }
+export type FullBackup = FullBackupV1 | FullBackupV2
 
 export function includedSections(selected: readonly BackupSection[]): BackupSection[] {
   const wanted = new Set(selected)
   if (wanted.has('transactions')) { wanted.add('accounts'); wanted.add('categories') }
+  if (wanted.has('obligations') || wanted.has('obligationPayments')) { wanted.add('obligations'); wanted.add('obligationPayments') }
   return backupSections.filter((section) => wanted.has(section))
 }
 function validateTheme(value: unknown): asserts value is Theme {
   if (value !== 'sage' && value !== 'ocean' && value !== 'dark') throw new Error('Backup theme must be Sage, Ocean, or Dark.')
 }
-export function createBackup(snapshot: FinancialSnapshot, theme: Theme, selected: readonly BackupSection[] = backupSections,
+export function createBackup(snapshot: ApplicationSnapshot, theme: Theme, selected: readonly BackupSection[] = backupSections,
   kind: 'full' | 'custom' = 'full', now = new Date()): BackupFile {
   const sections = includedSections(selected)
   if (!sections.length) throw new Error('Select at least one section to export.')
   if (kind === 'full' && sections.length !== backupSections.length) throw new Error('Full Backup must include every section.')
-  // A transaction export must contain a consistent reference graph.
-  validateFinancialSnapshot(snapshot)
+  validateApplicationSnapshot(snapshot)
   validateTheme(theme)
-  const data: Partial<FinancialSnapshot> = {}
+  const data: Partial<ApplicationSnapshot> = {}
   if (sections.includes('accounts')) data.accounts = snapshot.accounts
   if (sections.includes('categories')) data.categories = snapshot.categories
   if (sections.includes('transactions')) data.transactions = snapshot.transactions
+  if (sections.includes('obligations')) data.obligations = snapshot.obligations
+  if (sections.includes('obligationPayments')) data.obligationPayments = snapshot.obligationPayments
   return structuredClone({
-    format: 'my-finance-backup', schemaVersion: 1, exportedAt: now.toISOString(), currency: 'CAD', kind, sections, data,
+    format: 'my-finance-backup', schemaVersion: 2, exportedAt: now.toISOString(), currency: 'CAD', kind, sections, data,
     ...(sections.includes('preferences') ? { preferences: { theme } } : {}),
   })
 }
@@ -49,21 +59,29 @@ export function validateFullBackup(value: unknown): FullBackup {
   const backup = objectRecord(value, 'Backup')
   knownFields(backup, ['format', 'schemaVersion', 'exportedAt', 'currency', 'kind', 'sections', 'data', 'preferences'], 'Backup')
   if (backup.format !== 'my-finance-backup') throw new Error('This is not a My Finance backup file.')
-  if (backup.schemaVersion !== 1) throw new Error('Unsupported backup schema version. This version of My Finance restores version 1 only.')
+  if (backup.schemaVersion !== 1 && backup.schemaVersion !== 2) throw new Error('Unsupported backup schema version. My Finance restores versions 1 and 2 only.')
   if (backup.currency !== 'CAD') throw new Error('Only CAD backups are supported.')
   if (typeof backup.exportedAt !== 'string' || !Number.isFinite(Date.parse(backup.exportedAt))
     || new Date(backup.exportedAt).toISOString() !== backup.exportedAt) throw new Error('Backup creation time must be a valid ISO timestamp.')
   if (backup.kind !== 'full' && backup.kind !== 'custom') throw new Error('Unsupported backup kind.')
-  if (!Array.isArray(backup.sections) || backup.sections.length !== backupSections.length
-    || !backupSections.every((section) => (backup.sections as unknown[]).filter((value) => value === section).length === 1)) {
-    throw new Error('This file is a partial Custom Backup. Restore requires accounts, categories, transactions, and preferences. Choose a Full Backup.')
+  const requiredSections = backup.schemaVersion === 1 ? legacySections : backupSections
+  if (!Array.isArray(backup.sections) || backup.sections.length !== requiredSections.length
+    || !requiredSections.every((section) => (backup.sections as unknown[]).filter((value) => value === section).length === 1)) {
+    throw new Error('This file is a partial Custom Backup. Restore requires every section for its backup version. Choose a Full Backup.')
   }
-  const data = validateFinancialSnapshot(backup.data)
   const preferences = objectRecord(backup.preferences, 'Preferences')
   knownFields(preferences, ['theme'], 'Preferences')
   validateTheme(preferences.theme)
-  return { format: 'my-finance-backup', schemaVersion: 1, exportedAt: backup.exportedAt, currency: 'CAD',
-    kind: backup.kind, sections: [...backupSections], data, preferences: { theme: preferences.theme } }
+  const metadata = { format: 'my-finance-backup' as const, exportedAt: backup.exportedAt, currency: 'CAD' as const,
+    kind: backup.kind as 'full' | 'custom', preferences: { theme: preferences.theme } }
+  return backup.schemaVersion === 1
+    ? { ...metadata, schemaVersion: 1, sections: [...legacySections], data: validateFinancialSnapshot(backup.data) }
+    : { ...metadata, schemaVersion: 2, sections: [...backupSections], data: validateApplicationSnapshot(backup.data) }
+}
+
+/** Legacy replacement intentionally clears tracking data; it never preserves it. */
+export function restoreSnapshot(backup: FullBackup): ApplicationSnapshot {
+  return backup.schemaVersion === 1 ? { ...backup.data, obligations: [], obligationPayments: [] } : backup.data
 }
 
 export function parseFullBackup(text: string): FullBackup {

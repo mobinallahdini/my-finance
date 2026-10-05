@@ -5,7 +5,8 @@ guarantees are documented in [Data & Backup](docs/data-backup.md).
 
 The domain and persistence foundation for monthly obligation tracking is
 documented in [Bills & Installments](src/domain/obligations/README.md).
-It currently has no UI and is excluded from backup schemaVersion 1.
+Its UI and Home preview are implemented. Full Backup schemaVersion 2 protects
+obligations and recorded payments; restoring a version 1 backup clears them.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
