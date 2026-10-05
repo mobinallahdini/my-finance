@@ -33,12 +33,15 @@ function subscribe(onChange: () => void) {
 
 export function setTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme
+  let persisted = true
   try {
     localStorage.setItem(preferenceKey, theme)
   } catch {
     // Changing appearance still works for this session if storage is unavailable.
+    persisted = false
   }
   window.dispatchEvent(new Event(changeEvent))
+  return persisted
 }
 
 export function useTheme() {

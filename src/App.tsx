@@ -7,6 +7,7 @@ import { DashboardSection } from './features/dashboard/DashboardSection'
 import { TransactionsSection } from './features/transactions/TransactionsSection'
 import { MoreSection } from './features/more/MoreSection'
 import { useAppNavigation } from './features/navigation/useAppNavigation'
+import { DataBackupSection } from './features/dataBackup/DataBackupSection'
 
 function App() {
   const { screen, destination, accountId } = useAppNavigation()
@@ -15,6 +16,7 @@ function App() {
 
   useEffect(() => {
     const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
+      : screen === 'more/data-backup' ? 'Data & Backup'
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
     window.scrollTo(0, 0)
@@ -54,6 +56,10 @@ function App() {
         {screen === 'more/categories' && <>
           <a className="more-back-link" href="#more"><span aria-hidden="true">&larr;</span> Back to More</a>
           <CategoriesSection />
+        </>}
+        {screen === 'more/data-backup' && <>
+          <a className="more-back-link" href="#more"><span aria-hidden="true">&larr;</span> Back to More</a>
+          <DataBackupSection />
         </>}
       </main>
     </div>

@@ -6,6 +6,7 @@ import {
   validateCategory,
   validateMonth,
   validateTransaction,
+  validateTransactionReferences,
 } from './validation'
 
 async function accountIsReferenced(id: string): Promise<boolean> {
@@ -19,29 +20,14 @@ async function categoryIsReferenced(id: string): Promise<boolean> {
   return (await database.transactions.where('categoryId').equals(id).count()) > 0
 }
 
-async function requireAccount(id: string): Promise<Account> {
-  const account = await database.accounts.get(id)
-  if (!account) {
-    throw new Error(`Account does not exist: ${id}`)
-  }
-  return account
-}
-
 async function validateReferences(transaction: Transaction): Promise<void> {
-  if (transaction.type === 'transfer') {
-    await requireAccount(transaction.fromAccountId)
-    await requireAccount(transaction.toAccountId)
-  } else {
-    const account = await requireAccount(transaction.accountId)
-    if (transaction.type === 'income' && account.type !== 'bank' && account.type !== 'cash') {
-      throw new RangeError('Income must target a bank or cash account. Credit-card payments must be recorded as transfers.')
-    }
-    const category = await database.categories.get(transaction.categoryId)
-    if (!category) throw new Error(`Category does not exist: ${transaction.categoryId}`)
-    if (category.type !== transaction.type) {
-      throw new Error('Transaction and category types must match.')
-    }
-  }
+  const ids = transaction.type === 'transfer'
+    ? [transaction.fromAccountId, transaction.toAccountId] : [transaction.accountId]
+  const records = await Promise.all(ids.map((id) => database.accounts.get(id)))
+  const category = transaction.type === 'transfer' ? undefined : await database.categories.get(transaction.categoryId)
+  validateTransactionReferences(transaction,
+    new Map(records.filter((record): record is Account => record !== undefined).map((record) => [record.id, record])),
+    new Map(category ? [[category.id, category]] : []))
 }
 
 export const accountsRepository = {

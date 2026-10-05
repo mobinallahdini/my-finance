@@ -83,3 +83,28 @@ export function validateTransaction(transaction: Transaction): void {
     throw new RangeError('Invalid transaction type.')
   }
 }
+
+/** One reference policy for normal writes, validated restores, and CSV imports. */
+export function validateTransactionReferences(
+  transaction: Transaction,
+  accounts: ReadonlyMap<string, Account>,
+  categories: ReadonlyMap<string, Category>,
+): void {
+  function account(id: string) {
+    const record = accounts.get(id)
+    if (!record) throw new Error(`Account does not exist: ${id}`)
+    return record
+  }
+  if (transaction.type === 'transfer') {
+    account(transaction.fromAccountId)
+    account(transaction.toAccountId)
+  } else {
+    const target = account(transaction.accountId)
+    if (transaction.type === 'income' && target.type !== 'bank' && target.type !== 'cash') {
+      throw new RangeError('Income must target a bank or cash account. Credit-card payments must be recorded as transfers.')
+    }
+    const category = categories.get(transaction.categoryId)
+    if (!category) throw new Error(`Category does not exist: ${transaction.categoryId}`)
+    if (category.type !== transaction.type) throw new Error('Transaction and category types must match.')
+  }
+}

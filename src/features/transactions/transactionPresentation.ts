@@ -30,7 +30,7 @@ export function readableTransactionDate(date: string, today = new Date()): strin
 }
 
 /** Display signs never alter the persisted positive-cent amounts. */
-export function signedTransactionAmount(transaction: EntryTransaction): string {
+export function signedTransactionAmount(transaction: Pick<EntryTransaction, 'type' | 'amount'>): string {
   const sign = transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : ''
   return `${sign}${formatCad(transaction.amount)}`
 }

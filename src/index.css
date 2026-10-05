@@ -36,7 +36,7 @@ p {
 }
 
 /* Shared visual primitives; feature files retain their own layout rules. */
-:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) {
+:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) {
   min-width: 0;
   padding: var(--space-4);
   border: var(--border-width) solid var(--color-border);
@@ -45,23 +45,23 @@ p {
   box-shadow: var(--elevation-content);
 }
 
-:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) :is(h2, h3, h4) {
+:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) :is(h2, h3, h4) {
   color: var(--color-text-primary);
   font-weight: var(--font-weight-emphasis);
   line-height: var(--line-height-heading);
   overflow-wrap: anywhere;
 }
 
-:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) h2 {
+:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) h2 {
   font-size: var(--font-size-page-title);
   letter-spacing: var(--letter-spacing-heading);
 }
 
-:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) h3 {
+:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) h3 {
   font-size: var(--font-size-section-heading);
 }
 
-:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) h4 {
+:where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) h4 {
   font-size: var(--font-size-body);
 }
 
@@ -102,7 +102,7 @@ p {
 }
 
 @media (min-width: 48rem) {
-  :where(.dashboard-section, .transactions-section, .accounts-section, .categories-section) {
+  :where(.dashboard-section, .transactions-section, .accounts-section, .categories-section, .data-backup-section) {
     padding: var(--space-6);
   }
 }

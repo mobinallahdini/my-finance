@@ -18,13 +18,20 @@ export function MoreSection() {
                 aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
             </a>
           </li>
+          <li>
+            <a className="more-category-link" href="#more/data-backup">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <path d="M5 3h11l3 3v15H5Z M8 3v6h8V3 M8 21v-7h8v7" />
+              </svg>
+              <span><strong>Data &amp; Backup</strong><span>Export, restore, and move your financial data</span></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+            </a>
+          </li>
         </ul>
       </nav>
       <AppearanceSection />
-      <section className="more-storage" aria-labelledby="more-storage-heading">
-        <h3 id="more-storage-heading">Local data</h3>
-        <p>Your financial data is saved in this browser on this device. Clearing this site's browser storage removes it.</p>
-      </section>
     </section>
   )
 }
