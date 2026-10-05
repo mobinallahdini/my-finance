@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import type { PrimaryDestination } from '../features/navigation/useAppNavigation'
 
 const destinations: readonly { id: PrimaryDestination; label: string; path: string }[] = [
@@ -8,8 +9,25 @@ const destinations: readonly { id: PrimaryDestination; label: string; path: stri
 ]
 
 export function AppNavigation({ active }: { active: PrimaryDestination }) {
+  const navigationRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    const navigation = navigationRef.current
+    const shell = navigation?.closest<HTMLElement>('.app-shell')
+    if (!navigation || !shell) return
+    // Wrapped labels at large text sizes can exceed the navigation's minimum height.
+    const measure = () => shell.style.setProperty('--navigation-height', `${navigation.getBoundingClientRect().height}px`)
+    measure()
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
+    observer?.observe(navigation)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+      shell.style.removeProperty('--navigation-height')
+    }
+  }, [])
   return (
-    <nav className="app-navigation" aria-label="Primary">
+    <nav ref={navigationRef} className="app-navigation" aria-label="Primary">
       {destinations.map(({ id, label, path }) => (
         <a key={id} className="app-navigation-link" href={`#${id}`}
           aria-current={active === id ? 'page' : undefined}>

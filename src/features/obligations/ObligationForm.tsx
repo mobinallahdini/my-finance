@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId, useState } from 'react'
 import type { Obligation } from '../../domain/models'
 import { requireCalendarMonth } from '../../domain/calendar'
@@ -6,6 +7,7 @@ import { ObligationDialog } from './ObligationDialog'
 
 interface Props { obligation?: Obligation; month: string; onClose: () => void; onSave: (obligation: Obligation) => Promise<void> }
 export function ObligationForm({ obligation, month, onClose, onSave }: Props) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const [initial] = useState(() => ({ name: obligation?.name ?? '', type: obligation?.type ?? 'bill',
     amount: obligation ? dollarsForInput(obligation.type === 'bill' ? obligation.expectedAmountCents : obligation.originalAmountCents) : '',
@@ -29,9 +31,9 @@ export function ObligationForm({ obligation, month, onClose, onSave }: Props) {
       </select>{obligation && <p>Type and start month changes must preserve payment history.</p>}</div>
     <div className="obligation-field"><label htmlFor={`${prefix}-name`}>Name</label>
       <input id={`${prefix}-name`} required value={fields.name} onChange={(e) => change('name', e.target.value)} /></div>
-    <div className="obligation-field"><label htmlFor={`${prefix}-amount`}>{fields.type === 'bill' ? 'Expected monthly amount (CAD)' : 'Original amount (CAD)'}</label>
+    <div className="obligation-field"><label htmlFor={`${prefix}-amount`}>{fields.type === 'bill' ? `Expected monthly amount (${currencyCode})` : `Original amount (${currencyCode})`}</label>
       <input id={`${prefix}-amount`} required inputMode="decimal" value={fields.amount} onChange={(e) => change('amount', e.target.value)} /></div>
-    {fields.type === 'installment' && <div className="obligation-field"><label htmlFor={`${prefix}-scheduled`}>Scheduled monthly payment (CAD)</label>
+    {fields.type === 'installment' && <div className="obligation-field"><label htmlFor={`${prefix}-scheduled`}>Scheduled monthly payment ({currencyCode})</label>
       <input id={`${prefix}-scheduled`} required inputMode="decimal" value={fields.scheduled} onChange={(e) => change('scheduled', e.target.value)} /></div>}
     <div className="obligation-field"><label htmlFor={`${prefix}-day`}>Due day (1–31)</label>
       <input id={`${prefix}-day`} type="number" required min="1" max="31" step="1" value={fields.dueDay} onChange={(e) => change('dueDay', e.target.value)} aria-describedby={`${prefix}-day-help`} />

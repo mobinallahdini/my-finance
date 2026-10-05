@@ -33,9 +33,15 @@ validation, archive/delete rules, and backup limitation are documented in
 lock both new tables; no tracking write touches financial tables. Existing
 version-1 data survives the additive version-2 upgrade.
 
-For future migrations, retain versions 1 and 2 and append a new schema version,
+Version 3 adds `applicationSettings: 'id'`, with the single fixed ID `application`.
+Any existing record in the five data tables creates completed CA/CAD/personal/January
+settings during upgrade. An empty database leaves settings absent until setup.
+The upgrade writes only this new table. [Finance settings](../../docs/finance-settings.md)
+documents bootstrap, validation, and currency-change transactions.
+
+For future migrations, retain versions 1, 2 and 3 and append a new schema version,
 with an `upgrade(...)` callback when existing records need transformation. Do not
-rewrite existing version declarations. Construction does not seed records;
+rewrite existing version declarations. Construction does not seed financial records;
 Dexie opens the database lazily on first operation.
 
 Each repository provides `add(record)`, `get(id)`, `getAll()`, `update(record)`,
@@ -90,6 +96,8 @@ IDs, and all application writes going through these repositories. Raw IndexedDB
 access bypasses these application-level integrity rules. No balance snapshots,
 credit-limit spending enforcement, seeds, UI integration, or synchronization are
 implemented by these repositories. Browser eviction/user-cleared storage can
-remove local data. Existing backup/export covers financial records only;
-obligation tracking needs a future backup schema version before production-safe
-release.
+remove local data. JSON backup v3 covers all six stores and theme, including complete workspace
+settings. Workspace replacement validates before writing and commits all six stores
+together. CSV import checks the file currency against current settings under the
+same transaction as financial writes. V1/v2 backup and legacy CAD CSV compatibility
+are documented in [Data & Backup](../../docs/data-backup.md).

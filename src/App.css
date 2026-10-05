@@ -2,7 +2,7 @@
   width: 100%;
   max-width: var(--content-width);
   margin-inline: auto;
-  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) max(var(--page-gutter), env(safe-area-inset-right, 0px)) calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-6)) max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) max(var(--page-gutter), env(safe-area-inset-right, 0px)) calc(max(calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)), var(--navigation-height, 0px)) + var(--space-6)) max(var(--page-gutter), env(safe-area-inset-left, 0px));
 }
 
 .app-header {

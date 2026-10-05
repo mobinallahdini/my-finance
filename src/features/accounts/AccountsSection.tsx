@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useRef, useState } from 'react'
 import type { Account } from '../../domain/models'
 import { AccountForm } from './AccountForm'
@@ -8,6 +9,7 @@ import { useAccounts } from './useAccounts'
 import './accounts.css'
 
 export function AccountsSection({ accountId }: { accountId?: string }) {
+  const { currencyCode } = useMoney()
   const { accounts, transactions, isLoading, isWriting, loadError, reload, saveAccount, deleteAccount } = useAccounts()
   const [editor, setEditor] = useState<{ account?: Account; initialType?: Account['type']; routeAccountId?: string } | null>(null)
   const [status, setStatus] = useState('')
@@ -131,7 +133,7 @@ export function AccountsSection({ accountId }: { accountId?: string }) {
       </div>
       {accountId !== undefined && selectedAccount && <AccountDetails key={accountId} account={selectedAccount}
         accounts={accounts} transactions={transactions} isLoading={isLoading} loadError={loadError} />}
-      <p className="account-currency-note">All amounts in CAD.</p>
+      <p className="account-currency-note">All amounts in {currencyCode}.</p>
       {editor && <AccountForm key={editor.account?.id ?? 'new'} account={editor.account} initialType={editor.initialType}
         disabled={busy} isLoading={isLoading} loadError={loadError}
         onSave={handleSave} onCancel={closeEditor} onDelete={handleDelete} onRetry={reload} />}

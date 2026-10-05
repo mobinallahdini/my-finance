@@ -48,14 +48,20 @@ interface CategorizedTransaction extends TransactionBase {
 
 export interface ExpenseTransaction extends CategorizedTransaction {
   readonly type: 'expense'
+  readonly taxAmountCents?: MoneyCents
+  readonly receiptNumber?: string
 }
 
 export interface IncomeTransaction extends CategorizedTransaction {
   readonly type: 'income'
+  readonly taxAmountCents?: never
+  readonly receiptNumber?: never
 }
 
 export interface TransferTransaction extends TransactionBase {
   readonly type: 'transfer'
+  readonly taxAmountCents?: never
+  readonly receiptNumber?: never
   readonly fromAccountId: string
   readonly toAccountId: string
   readonly accountId?: never

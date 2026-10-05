@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve, sep } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { build } from 'vite'
+import { parseCsv, writeCsv } from '../src/features/dataBackup/csv.ts'
 
 const profile = await mkdtemp(join(tmpdir(), 'my-finance-pwa-profile-'))
 const artifacts = await mkdtemp(join(tmpdir(), 'my-finance-pwa-review-'))
@@ -53,7 +54,7 @@ async function field(label, value) {
   await evaluate(`(() => { const l=[...document.querySelectorAll('dialog[open] label')].find(l=>l.textContent.trim()===${JSON.stringify(label)});if(!l)throw new Error('Missing field '+${JSON.stringify(label)});const e=document.getElementById(l.htmlFor),p=e instanceof HTMLSelectElement?HTMLSelectElement.prototype:e instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event(e instanceof HTMLSelectElement?'change':'input',{bubbles:true})) })()`)
   await delay(30)
 }
-const screens = { home:'.dashboard-summary', transactions:'.transaction-count', accounts:'.accounts-section', more:'.more-section', 'more/categories':'.categories-section', 'more/bills-installments':'.obligations-section', 'more/data-backup':'.data-backup-section' }
+const screens = { home:'.dashboard-summary', transactions:'.transaction-count', accounts:'.accounts-section', more:'.more-section', 'more/categories':'.categories-section', 'more/bills-installments':'.obligations-section', 'more/finance-settings':'.finance-settings', 'more/data-backup':'.data-backup-section' }
 async function route(hash) {
   await evaluate(`location.hash=${JSON.stringify(hash)}`)
   await wait(`!!document.querySelector(${JSON.stringify(screens[hash] ?? '.obligations-section')}) && !document.querySelector('.transaction-loading,.dashboard-status,.account-loading,.category-loading,.obligations-section [role="status"]') && !document.querySelector('[aria-busy="true"]')`)
@@ -104,6 +105,9 @@ try {
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false})
   await send('Page.addScriptToEvaluateOnNewDocument',{source:`const OriginalDate=Date;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:['2026-10-05T16:00:00Z']))}static now(){return new OriginalDate('2026-10-05T16:00:00Z').getTime()}};document.addEventListener('readystatechange',()=>{if(document.readyState==='interactive')window.__startupAppearance={theme:document.documentElement.dataset.theme,background:getComputedStyle(document.documentElement).backgroundColor,colorScheme:getComputedStyle(document.documentElement).colorScheme}})`})
   await send('Page.navigate',{url:appURL+'#more/data-backup'})
+  await wait(`!!document.querySelector('.finance-onboarding')`)
+  await evaluate(`(() => { for (const [suffix,value] of [['country','CA'],['currency','CAD']]) { const select=document.querySelector('select[id$="-'+suffix+'"]');select.value=value;select.dispatchEvent(new Event('change',{bubbles:true})) } })()`)
+  await click('Start using My Finance')
   await wait(`!!document.querySelector('.data-backup-section') && !document.querySelector('[aria-busy="true"]')`)
   await wait(`(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?.active?.state==='activated'})()`)
   results.push('Production worker installs and activates under a subdirectory')
@@ -131,7 +135,7 @@ try {
   await click('Clear all')
   await route('more/data-backup');await evaluate(`document.querySelector('.backup-export-row').click()`)
   const exported=JSON.parse(await downloaded('my-finance-backup-2026-10-05.json'))
-  assert.equal(exported.schemaVersion,2);assert.deepEqual(normalized(exported.data),normalized(fixture.data));assert.deepEqual(exported.preferences,{theme:'dark'});results.push('Production Full Backup download preserves every record and theme')
+  assert.equal(exported.schemaVersion,3);const {applicationSettings,...exportedRecords}=exported.data;assert.deepEqual(normalized(exportedRecords),normalized(fixture.data));assert.deepEqual(applicationSettings,{id:'application',countryCode:'CA',currencyCode:'CAD',profileType:'personal',fiscalYearStartMonth:1,onboardingCompleted:true});assert.deepEqual(exported.preferences,{theme:'dark'});results.push('Production Full Backup download preserves every record and theme')
   await evaluate(`document.querySelectorAll('.backup-export-row')[1].click()`)
   const csv=await downloaded('my-finance-transactions-2026-10-05.csv')
   assert.ok(csv.includes('expense-雪'));assert.ok(csv.includes('25.00'));results.push('Production Transactions CSV downloads exact IDs/cents')
@@ -149,16 +153,30 @@ try {
   await route('home');assert.equal(await evaluate(`document.querySelector('.dashboard-section').textContent`),homeBefore);results.push('Offline Home totals and Upcoming Payments match online state')
   await send('Page.navigate',{url:appURL+'index.html#home'});await wait(`!!document.querySelector('.dashboard-summary') && !!navigator.serviceWorker.controller`)
   results.push('Explicit index.html launch also works offline with hash navigation')
-  await route('more/data-backup');await fileInput(csv,'backup-csv-file','release-transactions.csv')
+  const metadataBackup=structuredClone(exported),originalExpense=metadataBackup.data.transactions.find(t=>t.type==='expense')
+  originalExpense.taxAmountCents=500;originalExpense.receiptNumber='INV / offline \u96ea'
+  await route('more/data-backup');await fileInput(metadataBackup);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
+  const offlineMetadata=(await snapshot()).transactions.find(t=>t.id===originalExpense.id)
+  assert.equal(offlineMetadata.taxAmountCents,500);assert.equal(offlineMetadata.receiptNumber,originalExpense.receiptNumber)
+  results.push('Offline v3 restore preserves Expense tax and receipt metadata')
+  await fileInput(exported);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
+  await fileInput(csv,'backup-csv-file','release-transactions.csv')
   await check(`document.querySelector('.backup-csv-counts').textContent.includes('Duplicate: 3') && document.querySelector('.backup-dialog-footer button').disabled`, 'Offline CSV import recognizes existing rows without duplicating them')
   await click('Cancel')
-  const importCsv=csv.replace('expense-雪','imported-expense')
+  let importCsv=csv.replace('expense-雪','imported-expense')
     .replace("\"'income\",\"'income\"", "\"'imported-income\",\"'income\"")
     .replace("\"'transfer\",\"'transfer\"", "\"'imported-transfer\",\"'transfer\"")
+  const csvMatrix=parseCsv(importCsv),csvHeader=csvMatrix[0],csvExpense=csvMatrix.slice(1).find(row=>row[csvHeader.indexOf('type')]==="'expense")
+  csvExpense[csvHeader.indexOf('tax_amount')]='5.00';csvExpense[csvHeader.indexOf('receipt_number')]="'=INV / offline"
+  importCsv=writeCsv(csvHeader,csvMatrix.slice(1))
   await fileInput(importCsv,'backup-csv-file','release-new-transactions.csv')
   await check(`document.querySelector('.backup-csv-counts').textContent.includes('Ready: 3')`, 'Offline CSV preview validates new expense, income, and transfer rows')
   await click('Import 3 transactions');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
-  assert.equal((await snapshot()).transactions.length,6);results.push('Offline CSV import commits all three financial variants')
+  const offlineImported=(await snapshot()).transactions
+  assert.equal(offlineImported.length,6);results.push('Offline CSV import commits all three financial variants')
+  const importedExpense=offlineImported.find(t=>t.id==='imported-expense')
+  assert.equal(importedExpense.taxAmountCents,500);assert.equal(importedExpense.receiptNumber,'=INV / offline')
+  results.push('Offline CSV import preserves exact tax and protected receipt metadata')
   await fileInput(exported);await click('Replace current data');await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
   assert.deepEqual(normalized(await snapshot()),normalized(fixture.data));results.push('Offline Full Restore replaces finances and tracking correctly')
   await route('transactions')
@@ -178,7 +196,7 @@ try {
     for(const [width,height,font] of [[320,760,16],[390,844,16],[1280,900,16],[320,844,32],[390,844,32],[1280,900,32]]){
       await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false})
       await evaluate(`document.documentElement.style.fontSize='${font}px'`)
-      for(const hash of ['home','transactions','accounts','more/bills-installments','more/data-backup']){
+      for(const hash of ['home','transactions','accounts','more/bills-installments','more/finance-settings','more/data-backup']){
         await route(hash);await check(`document.documentElement.scrollWidth<=document.documentElement.clientWidth`, `${theme} ${width}px ${font===32?'200%':'100%'} ${hash} fits`)
       }
       await evaluate(`window.scrollTo(0,document.documentElement.scrollHeight)`)

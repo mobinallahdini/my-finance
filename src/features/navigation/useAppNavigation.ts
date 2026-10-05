@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 export type PrimaryDestination = 'home' | 'transactions' | 'accounts' | 'more'
 type AccountScreen = `accounts/${string}`
 type ObligationScreen = `more/bills-installments/${string}`
-export type AppScreen = PrimaryDestination | 'more/categories' | 'more/data-backup' | 'more/bills-installments' | 'transactions/new' | AccountScreen | ObligationScreen
+export type AppScreen = PrimaryDestination | 'more/categories' | 'more/data-backup' | 'more/finance-settings' | 'more/bills-installments' | 'transactions/new' | AccountScreen | ObligationScreen
 
 function isObligationScreen(screen: string): screen is ObligationScreen {
   return screen.startsWith('more/bills-installments/') && screen.length > 'more/bills-installments/'.length
@@ -24,6 +24,7 @@ function readScreen(): AppScreen {
     case 'more':
     case 'more/categories':
     case 'more/data-backup':
+    case 'more/finance-settings':
     case 'more/bills-installments':
       return hash
     default:
@@ -45,7 +46,7 @@ function readObligationMonth() {
 export function useAppNavigation() {
   const screen = useSyncExternalStore(subscribe, readScreen)
   const obligationMonth = useSyncExternalStore(subscribe, readObligationMonth)
-  const destination: PrimaryDestination = screen === 'more/categories' || screen === 'more/data-backup' || screen === 'more/bills-installments' || isObligationScreen(screen)
+  const destination: PrimaryDestination = screen === 'more/categories' || screen === 'more/data-backup' || screen === 'more/finance-settings' || screen === 'more/bills-installments' || isObligationScreen(screen)
     ? 'more'
     : screen === 'transactions/new' ? 'transactions'
     : isAccountScreen(screen) ? 'accounts' : screen

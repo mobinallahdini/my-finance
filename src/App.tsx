@@ -9,8 +9,10 @@ import { MoreSection } from './features/more/MoreSection'
 import { useAppNavigation } from './features/navigation/useAppNavigation'
 import { DataBackupSection } from './features/dataBackup/DataBackupSection'
 import { ObligationsSection } from './features/obligations/ObligationsSection'
+import { FinanceSettingsProvider } from './features/financeSettings/FinanceSettingsProvider'
+import { FinanceSettingsForm } from './features/financeSettings/FinanceSettingsForm'
 
-function App() {
+function Application() {
   const { screen, destination, accountId, obligationId, obligationMonth } = useAppNavigation()
   const [newTransactionRequest, setNewTransactionRequest] = useState(0)
   const mainRef = useRef<HTMLElement>(null)
@@ -18,6 +20,7 @@ function App() {
   useEffect(() => {
     const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
       : screen === 'more/data-backup' ? 'Data & Backup'
+      : screen === 'more/finance-settings' ? 'Finance settings'
       : screen.startsWith('more/bills-installments') ? 'Bills & Installments'
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
@@ -55,6 +58,7 @@ function App() {
         {destination === 'transactions' && <TransactionsSection key={`${screen}-${newTransactionRequest}`} startNewTransaction={screen === 'transactions/new'} />}
         {destination === 'accounts' && <AccountsSection accountId={accountId} />}
         {screen === 'more' && <MoreSection />}
+        {screen === 'more/finance-settings' && <FinanceSettingsForm />}
         {screen.startsWith('more/bills-installments') && <ObligationsSection obligationId={obligationId} initialMonth={obligationMonth} />}
         {screen === 'more/categories' && <>
           <a className="more-back-link" href="#more"><span aria-hidden="true">&larr;</span> Back to More</a>
@@ -68,5 +72,7 @@ function App() {
     </div>
   )
 }
+
+function App() { return <FinanceSettingsProvider><Application /></FinanceSettingsProvider> }
 
 export default App

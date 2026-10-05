@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId } from 'react'
 import type { Account, Category } from '../../domain/models'
 import { isEligibleAccount, transactionTypeLabels, type EntryTransaction } from './transactionHelpers'
@@ -11,6 +12,7 @@ export function TransactionList({ transactions, accounts, categories, disabled, 
   onOpen?: (transaction: EntryTransaction, opener: HTMLButtonElement) => void
   accountContext?: boolean
 }) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const DateHeading = accountContext ? 'h4' : 'h3'
   const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
@@ -34,7 +36,7 @@ export function TransactionList({ transactions, accounts, categories, disabled, 
               const content = <>
                 <span className="transaction-row-main">
                   <span className="transaction-row-title">{transaction.type === 'transfer' ? 'Transfer' : categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`}</span>
-                  <span className={`transaction-row-amount financial-${transaction.type === 'transfer' ? 'neutral' : transaction.type}`}>{signedTransactionAmount(transaction)}</span>
+                  <span className={`transaction-row-amount financial-${transaction.type === 'transfer' ? 'neutral' : transaction.type}`}>{signedTransactionAmount(transaction, currencyCode)}</span>
                 </span>
                 <span className="transaction-row-detail">
                   {transaction.type === 'transfer' ? <>

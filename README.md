@@ -1,9 +1,10 @@
-# My Finance v1.0.0
+# My Finance - v1.1.0 release candidate
 
 A local-first personal finance app with Expense, Income, and Transfer tracking;
 accounts and credit-card balances; advanced transaction filtering; a monthly
 dashboard; Bills & Installments with payment history; Sage, Ocean, and Dark themes;
-JSON backup/restore; Transactions CSV import and financial CSV exports; and an
+first-run setup for a single workspace; country, currency, and fiscal preferences;
+JSON backup/restore; currency-aware CSV import/export; and an
 installable PWA shell.
 
 Data is stored in the current browser on the current device. Clearing site or
@@ -33,6 +34,28 @@ when the app is reopened. They never reset financial records or preferences.
 
 See [v1.0.0 release and PWA notes](docs/release-v1.0.0.md) for hosting, update safety,
 validation commands, and browser limitations. [Data & Backup](docs/data-backup.md)
-documents JSON v2, v1 restore compatibility, and CSV safety. The
+documents JSON v3, v1/v2 restore compatibility, workspace settings and CSV currency safety. The
 [Bills & Installments foundation](src/domain/obligations/README.md) and
 [tracking UI](src/features/obligations/README.md) document existing semantics.
+
+
+## v1.1.0 release candidate
+
+Feature work is frozen. [Release notes and validation](docs/release-v1.1.0.md)
+document the feature inventory, upgrade checks, and remaining manual review.
+This candidate has not been merged or tagged.
+
+## v1.1 finance settings
+
+Development is on `feature/v1.1-onboarding-currency`; the released v1.0.0 remains
+on `main`. [Onboarding and finance settings](docs/finance-settings.md) documents
+schema v3, exact legacy preservation, currency restrictions, confirmation,
+startup, and workspace-currency behavior. No financial values are converted.
+
+V1.1 has one workspace. Onboarding and Finance settings expose Country / Region,
+Currency, and Fiscal year start. Multiple workspaces/profiles are planned for a
+future version; there is no Personal / Business selection in v1.1.
+
+Optional Expense Tax / VAT and receipt metadata are documented in [Expense tax and receipt details](docs/expense-tax-receipts.md). Transaction amounts remain the total paid.
+
+Home spending uses an accessible SVG donut with exact category amounts and percentages. See the [monthly dashboard](src/features/dashboard/README.md) for grouping, accessibility and validation.

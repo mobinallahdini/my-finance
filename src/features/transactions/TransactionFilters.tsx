@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Account, Category } from '../../domain/models'
 import { TransactionFilterPanel } from './TransactionFilterPanel'
@@ -11,11 +12,12 @@ export function TransactionFilters({ filters, accounts, categories, onChange, sh
   onChange: (filters: TransactionFilterState) => void
   showAccountFilter?: boolean
 }) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const [panelOpen, setPanelOpen] = useState(false)
   const filterButtonRef = useRef<HTMLButtonElement>(null)
   const pendingFocus = useRef(false)
-  const chips = filterChips(filters, accounts, categories)
+  const chips = filterChips(filters, accounts, categories, currencyCode)
 
   useEffect(() => {
     if (panelOpen || !pendingFocus.current) return

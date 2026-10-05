@@ -1,5 +1,7 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type SubmitEvent } from 'react'
-import type { Account, Category } from '../../domain/models'
+import { expenseSubtotal, normalizeReceiptNumber, receiptNumberMaxLength, validateExpenseDetails } from '../../domain/expenseDetails'
+import type { Account, Category, ExpenseTransaction } from '../../domain/models'
 import { accountTypeLabels } from '../accounts/accountLabels'
 import { dollarsForInput, parseDollars } from '../accounts/money'
 import { isEligibleAccount, localCalendarDate, transactionTypeLabels, transactionWriteError, type EntryTransaction } from './transactionHelpers'
@@ -18,10 +20,11 @@ interface TransactionFormProps {
   onRetry: () => void
 }
 
-type Field = 'amount' | 'date' | 'category' | 'account' | 'fromAccount' | 'toAccount'
+type Field = 'amount' | 'date' | 'category' | 'account' | 'fromAccount' | 'toAccount' | 'tax' | 'receipt'
 type FieldErrors = Partial<Record<Field, string>>
 
 export function TransactionForm({ transaction, accounts, categories, disabled, isLoading, loadError, onSave, onCancel, onDelete, onRetry }: TransactionFormProps) {
+  const { currencyCode, formatAmount } = useMoney()
   const [initial] = useState(() => ({
     type: transaction?.type ?? 'expense' as EntryTransaction['type'],
     amount: transaction ? dollarsForInput(transaction.amount) : '',
@@ -31,6 +34,8 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
     fromAccountId: transaction?.type === 'transfer' ? transaction.fromAccountId : '',
     toAccountId: transaction?.type === 'transfer' ? transaction.toAccountId : '',
     note: transaction?.note ?? '',
+    tax: transaction?.type === 'expense' && transaction.taxAmountCents !== undefined ? dollarsForInput(transaction.taxAmountCents) : '',
+    receipt: transaction?.type === 'expense' ? transaction.receiptNumber ?? '' : '',
   }))
   const [transactionType, setTransactionType] = useState(initial.type)
   const isTransfer = transactionType === 'transfer'
@@ -45,6 +50,8 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
   const accountRef = useRef<HTMLSelectElement>(null)
   const fromAccountRef = useRef<HTMLSelectElement>(null)
   const toAccountRef = useRef<HTMLSelectElement>(null)
+  const taxRef = useRef<HTMLInputElement>(null)
+  const receiptRef = useRef<HTMLInputElement>(null)
   const submitting = useRef(false)
   const navigationAllowed = useRef(false)
   const editorURL = useRef(window.location.href)
@@ -55,13 +62,26 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
   const [fromAccountId, setFromAccountId] = useState(initial.fromAccountId)
   const [toAccountId, setToAccountId] = useState(initial.toAccountId)
   const [note, setNote] = useState(initial.note)
+  const [tax, setTax] = useState(initial.tax)
+  const [receipt, setReceipt] = useState(initial.receipt)
+  const [detailsOpen, setDetailsOpen] = useState(Boolean(initial.tax || initial.receipt))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const dirty = transactionType !== initial.type || amount !== initial.amount || date !== initial.date
     || categoryId !== initial.categoryId || accountId !== initial.accountId
     || fromAccountId !== initial.fromAccountId || toAccountId !== initial.toAccountId || note !== initial.note
+    || tax !== initial.tax || receipt !== initial.receipt
   const canSave = !loadError && (isTransfer ? accounts.length >= 2 : eligibleAccounts.length > 0 && matchingCategories.length > 0)
+
+  let taxSummary: { subtotal: number; tax: number; total: number } | undefined
+  if (transactionType === 'expense' && tax.trim()) {
+    try {
+      const total = parseDollars(amount), taxCents = parseDollars(tax)
+      const candidate: ExpenseTransaction = { id: 'summary', type: 'expense', date, accountId, categoryId, amount: total, taxAmountCents: taxCents }
+      if (total > 0) taxSummary = { subtotal: expenseSubtotal(candidate)!, tax: taxCents, total }
+    } catch { /* Only present a summary for valid total and tax inputs. */ }
+  }
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current!
@@ -118,7 +138,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
     if (event.key !== 'Tab') return
     const targets = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
       'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]',
-    ))
+    )).filter(target => target.getClientRects().length > 0)
     const first = targets[0]
     const last = targets.at(-1)
     if (!first) {
@@ -151,6 +171,9 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
     setAccountId('')
     setFromAccountId('')
     setToAccountId('')
+    setTax('')
+    setReceipt('')
+    setDetailsOpen(false)
     setErrors({})
     setSaveError(null)
   }
@@ -185,6 +208,18 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
     } catch (error) {
       nextErrors.amount = (error as Error).message
     }
+    let taxAmountCents: number | undefined
+    let receiptNumber: string | undefined
+    if (transactionType === 'expense') {
+      try {
+        if (tax.trim()) {
+          taxAmountCents = parseDollars(tax, true)
+          validateExpenseDetails({ id: 'editor', type: 'expense', amount: amountCents, date, accountId, categoryId, taxAmountCents })
+        }
+      } catch (error) { nextErrors.tax = (error as Error).message }
+      try { receiptNumber = normalizeReceiptNumber(receipt) }
+      catch (error) { nextErrors.receipt = (error as Error).message }
+    }
     if (isTransfer) {
       if (!accounts.some((account) => account.id === fromAccountId)) {
         nextErrors.fromAccount = 'Choose an existing From account.'
@@ -212,12 +247,15 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
 
     setErrors(nextErrors)
     if (Object.values(nextErrors).some(Boolean)) {
+      if (nextErrors.tax || nextErrors.receipt) setDetailsOpen(true)
       if (nextErrors.amount) amountRef.current?.focus()
       else if (nextErrors.date) dateRef.current?.focus()
       else if (nextErrors.category) categoryRef.current?.focus()
       else if (nextErrors.account) accountRef.current?.focus()
       else if (nextErrors.fromAccount) fromAccountRef.current?.focus()
-      else toAccountRef.current?.focus()
+      else if (nextErrors.toAccount) toAccountRef.current?.focus()
+      else if (nextErrors.tax) requestAnimationFrame(() => taxRef.current?.focus())
+      else if (nextErrors.receipt) requestAnimationFrame(() => receiptRef.current?.focus())
       return
     }
 
@@ -232,7 +270,10 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
       }
       const record: EntryTransaction = transactionType === 'transfer'
         ? { ...base, type: 'transfer', fromAccountId, toAccountId }
-        : { ...base, type: transactionType, categoryId, accountId }
+        : transactionType === 'expense'
+          ? { ...base, type: 'expense', categoryId, accountId,
+            ...(taxAmountCents === undefined ? {} : { taxAmountCents }), ...(receiptNumber === undefined ? {} : { receiptNumber }) }
+          : { ...base, type: 'income', categoryId, accountId }
       await onSave(record)
     } catch (error) {
       setSaveError(transactionWriteError(error))
@@ -273,12 +314,12 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
           </div>}
           <fieldset className="transaction-editor-fields" disabled={disabled}>
             <div className="transaction-field">
-              <label htmlFor={`${prefix}-amount`}>Amount (CAD)</label>
+              <label htmlFor={`${prefix}-amount`}>Amount ({currencyCode})</label>
               <input ref={amountRef} autoFocus id={`${prefix}-amount`} type="text" inputMode="decimal" value={amount} required
-                onChange={(event) => { setAmount(event.target.value); clearError('amount') }}
+                onChange={(event) => { setAmount(event.target.value); clearError('amount'); clearError('tax') }}
                 aria-invalid={Boolean(errors.amount)}
                 aria-describedby={`${prefix}-amount-help${errors.amount ? ` ${prefix}-amount-error` : ''}`} />
-              <p id={`${prefix}-amount-help`}>Enter dollars greater than zero, such as 42.75, with at most two decimal places.</p>
+              <p id={`${prefix}-amount-help`}>Enter an amount greater than zero, such as 42.75, with at most two decimal places.</p>
               {errors.amount && <p className="transaction-error" id={`${prefix}-amount-error`}>{errors.amount}</p>}
             </div>
             {isTransfer ? (
@@ -367,6 +408,36 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
               <textarea id={`${prefix}-note`} rows={3} value={note}
                 onChange={(event) => { setNote(event.target.value); setSaveError(null) }} />
             </div>
+            {transactionType === 'expense' && <section className="transaction-receipt-details">
+              <button className="button-quiet transaction-details-toggle" type="button" aria-expanded={detailsOpen}
+                aria-controls={`${prefix}-receipt-details`} onClick={() => setDetailsOpen(!detailsOpen)}>
+                Tax &amp; receipt (optional)
+              </button>
+              <div id={`${prefix}-receipt-details`} hidden={!detailsOpen}>
+                <p className="transaction-details-help">Tax is included in the total amount paid. Enter the actual tax; no rates are calculated.</p>
+                <div className="transaction-field">
+                  <label htmlFor={`${prefix}-tax`}>Tax / VAT ({currencyCode})</label>
+                  <input ref={taxRef} id={`${prefix}-tax`} type="text" inputMode="decimal" value={tax}
+                    onChange={(event) => { setTax(event.target.value); clearError('tax') }}
+                    aria-invalid={Boolean(errors.tax)} aria-describedby={`${prefix}-tax-help${errors.tax ? ` ${prefix}-tax-error` : ''}`} />
+                  <p id={`${prefix}-tax-help`}>Optional. Must be greater than zero and no more than the total Expense amount. Leave blank to remove.</p>
+                  {errors.tax && <p className="transaction-error" id={`${prefix}-tax-error`}>{errors.tax}</p>}
+                </div>
+                <div className="transaction-field">
+                  <label htmlFor={`${prefix}-receipt`}>Receipt number (optional)</label>
+                  <input ref={receiptRef} id={`${prefix}-receipt`} type="text" value={receipt}
+                    onChange={(event) => { setReceipt(event.target.value); clearError('receipt') }}
+                    aria-invalid={Boolean(errors.receipt)} aria-describedby={`${prefix}-receipt-help${errors.receipt ? ` ${prefix}-receipt-error` : ''}`} />
+                  <p id={`${prefix}-receipt-help`}>Up to {receiptNumberMaxLength} characters. Letters, spaces and punctuation are allowed.</p>
+                  {errors.receipt && <p className="transaction-error" id={`${prefix}-receipt-error`}>{errors.receipt}</p>}
+                </div>
+                {taxSummary && <dl className="transaction-tax-summary" aria-label="Expense amount breakdown">
+                  <div><dt>Subtotal</dt><dd>{formatAmount(taxSummary.subtotal)}</dd></div>
+                  <div><dt>Tax / VAT</dt><dd>{formatAmount(taxSummary.tax)}</dd></div>
+                  <div className="transaction-tax-total"><dt>Total</dt><dd>{formatAmount(taxSummary.total)}</dd></div>
+                </dl>}
+              </div>
+            </section>}
           </fieldset>
           {Object.values(errors).some(Boolean) && <p className="transaction-error" role="alert">Please correct the marked fields.</p>}
           {saveError && <p className="transaction-error" role="alert">{saveError}</p>}

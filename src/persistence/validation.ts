@@ -1,4 +1,5 @@
 import type { Account, Category, Transaction, YearMonth } from '../domain/models'
+import { validateExpenseDetails } from '../domain/expenseDetails.ts'
 import { requireCalendarDate, requireCalendarMonth } from '../domain/calendar.ts'
 export { validateObligation, validateObligationPayment, validateObligationPaymentReference } from '../domain/obligationValidation.ts'
 
@@ -53,6 +54,7 @@ export function validateTransaction(transaction: Transaction): void {
     throw new RangeError('Transaction amounts must be positive.')
   }
   validateDate(transaction.date)
+  validateExpenseDetails(transaction)
   if (transaction.type === 'transfer') {
     requireId(transaction.fromAccountId)
     requireId(transaction.toAccountId)

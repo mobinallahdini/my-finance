@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type SubmitEvent } from 'react'
 import type { Account, Category } from '../../domain/models'
 import { accountTypeLabels } from '../accounts/accountLabels'
@@ -19,6 +20,7 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
   onCancel: () => void
   showAccountFilter?: boolean
 }) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [draft, setDraft] = useState(() => filterDraft(filters))
@@ -118,7 +120,7 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
             </div>}
           </fieldset>
           <fieldset className="transaction-filter-group">
-            <legend>Amount (CAD)</legend>
+            <legend>Amount ({currencyCode})</legend>
             <p className="transaction-filter-help">Match the amount regardless of its displayed sign. Leave either bound blank for no limit.</p>
             <div className="transaction-filter-pair">
               {field('minimum', 'Minimum amount', 'text')}{field('maximum', 'Maximum amount', 'text')}

@@ -1,5 +1,5 @@
 import type { YearMonth } from '../../domain/models'
-import { formatCad } from '../accounts/money'
+import { formatMoney } from '../accounts/money'
 import { localCalendarDate, type EntryTransaction } from './transactionHelpers'
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -30,7 +30,7 @@ export function readableTransactionDate(date: string, today = new Date()): strin
 }
 
 /** Display signs never alter the persisted positive-cent amounts. */
-export function signedTransactionAmount(transaction: Pick<EntryTransaction, 'type' | 'amount'>): string {
+export function signedTransactionAmount(transaction: Pick<EntryTransaction, 'type' | 'amount'>, currencyCode: string): string {
   const sign = transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : ''
-  return `${sign}${formatCad(transaction.amount)}`
+  return `${sign}${formatMoney(transaction.amount, currencyCode)}`
 }

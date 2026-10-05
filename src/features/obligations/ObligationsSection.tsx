@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMoney } from '../financeSettings/useMoney'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { Obligation } from '../../domain/models'
 import { calculateObligationMonthSummary } from '../../domain/obligationCalculations'
 import type { ObligationMonthState, ObligationMonthSummary } from '../../domain/obligationCalculations'
 import { nextCalendarMonth } from '../../domain/calendar'
 import { obligationsRepository, obligationPaymentsRepository } from '../../persistence/repositories'
-import { formatCad } from '../accounts/money'
 import { localCalendarDate } from '../transactions/transactionHelpers'
 import { notifyDataChanged } from '../shared/dataRefresh'
 import { useLocalToday } from '../shared/useLocalToday'
@@ -16,26 +16,35 @@ import './obligations.css'
 
 type Editor = { kind: 'obligation'; obligation?: Obligation; route?: string } | { kind: 'payment'; obligation: Obligation; route: string }
 
-function Progress({ obligation, state }: { obligation: Obligation; state: ObligationMonthState }) {
+function Progress({ obligation, state, compact = false }: { obligation: Obligation; state: ObligationMonthState; compact?: boolean }) {
   if (obligation.type !== 'installment') return null
   const paid = Math.min(state.installmentBalance!.totalPaidCents, obligation.originalAmountCents)
   const percent = Math.round(paid / obligation.originalAmountCents * 100)
   return <div className="obligation-progress">
     <progress value={paid} max={obligation.originalAmountCents} aria-label={`${obligation.name}: ${percent}% of principal paid`} />
-    <span>{percent}% of principal paid</span>
+    <span>{percent}% {compact ? 'paid' : 'of principal paid'}</span>
   </div>
 }
 function Status({ state, today }: { state: ObligationMonthState; today: string }) {
   return <span className="obligation-status" data-status={state.isOverdue ? 'overdue' : state.status}>{statusLabel(state, today)}</span>
 }
-function Due({ obligation, state, month }: { obligation: Obligation; state: ObligationMonthState; month: string }) {
+function Due({ obligation, state, month, compact = false }: { obligation: Obligation; state: ObligationMonthState; month: string; compact?: boolean }) {
   if (state.status === 'completed') return null
-  return <span>{state.dueDate ? `Due ${dateLabel(state.dueDate)}`
+  const fullDate = state.dueDate ? dateLabel(state.dueDate) : undefined
+  const shortDate = fullDate ? `${fullDate.split(' ')[0].slice(0, 3)} ${fullDate.split(' ')[1].replace(',', '')}` : undefined
+  return <span aria-label={compact && fullDate ? `Due ${fullDate}` : undefined}>{compact && fullDate ? <>
+    <span aria-hidden="true">Due {shortDate}</span><span className="obligation-visually-hidden">Due {fullDate}</span>
+  </> : state.dueDate ? `Due ${fullDate}`
     : month < obligation.startMonth ? `Starts ${monthLabel(obligation.startMonth)} · Due day ${obligation.dueDay}`
     : `Due day ${obligation.dueDay}`}</span>
 }
 
 export function ObligationsSection({ obligationId, initialMonth }: { obligationId?: string; initialMonth?: string }) {
+  const { formatAmount } = useMoney()
+  const prefix = useId()
+  const [isMonthPickerOpen, setMonthPickerOpen] = useState(false)
+  const monthButton = useRef<HTMLButtonElement>(null)
+  const monthInput = useRef<HTMLInputElement>(null)
   const { obligations, payments, loading, error: loadError, reload } = useObligations()
   const today = useLocalToday()
   const [month, setMonth] = useState(() => initialMonth ?? localCalendarDate().slice(0, 7))
@@ -102,19 +111,35 @@ export function ObligationsSection({ obligationId, initialMonth }: { obligationI
         {obligation && <button data-main-action disabled={busy || loading} onClick={(event) => openEditor({ kind: 'obligation', obligation, route: obligationId }, event.currentTarget)}>Edit</button>}
       </header>
       <div className="obligation-month" role="group" aria-label="Selected month">
-        <button aria-label="Previous month" disabled={month === '0001-01'} onClick={() => setMonth(previousMonth())}>‹</button>
-        <div><label htmlFor="obligation-month">{monthLabel(month)}</label>
-          <input id="obligation-month" aria-label="Select month" type="month" min="0001-01" max="9999-12" value={month}
-            onChange={(event) => { if (/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) setMonth(event.target.value) }} /></div>
-        <button aria-label="Next month" disabled={month === '9999-12'} onClick={() => setMonth(nextCalendarMonth(month)!)}>›</button>
+        <button className="button-quiet obligation-month-arrow" aria-label="Previous month" disabled={month === '0001-01'} onClick={() => setMonth(previousMonth())}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><path d="m15 5-7 7 7 7" /></svg>
+        </button>
+        <button ref={monthButton} className="button-quiet obligation-month-label" aria-label={`${isMonthPickerOpen ? 'Close month picker' : 'Choose month'}, ${monthLabel(month)}`}
+          aria-expanded={isMonthPickerOpen} aria-controls={`${prefix}-month-picker`} onClick={() => {
+            setMonthPickerOpen(!isMonthPickerOpen)
+            if (!isMonthPickerOpen) requestAnimationFrame(() => monthInput.current?.focus())
+          }}>
+          {isMonthPickerOpen ? 'Done' : <><span>{monthLabel(month).split(' ')[0]}</span>{' '}<span>{month.slice(0, 4)}</span></>}
+        </button>
+        <button className="button-quiet obligation-month-arrow" aria-label="Next month" disabled={month === '9999-12'} onClick={() => setMonth(nextCalendarMonth(month)!)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+      </div>
+      <div className="obligation-month-picker" id={`${prefix}-month-picker`} hidden={!isMonthPickerOpen}>
+        <label htmlFor="obligation-month" className="obligation-visually-hidden">Select month</label>
+        <input ref={monthInput} id="obligation-month" aria-label="Select month" type="month" min="0001-01" max="9999-12" value={month}
+          onChange={(event) => { if (/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) setMonth(event.target.value) }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') { event.preventDefault(); setMonthPickerOpen(false); monthButton.current?.focus() }
+          }} />
       </div>
       {loading && <p role="status" className="obligation-muted">Loading bills and payments…</p>}
       {(loadError || calculationError) && <div role="alert"><p className="obligation-error">{loadError ?? calculationError}</p><button onClick={() => { void reload() }}>Retry</button></div>}
       {error && <p className="obligation-error" role="alert">{error}</p>}
       {!loadError && !calculationError && summary && (obligationId === undefined ? <>
         <dl className="obligation-summary" aria-label={`${monthLabel(month)} summary`}>
-          <div><dt>Due this month</dt><dd>{formatCad(summary.expectedTotalDueCents)}</dd><small>{formatCad(summary.remainingTotalDueCents)} left to pay</small></div>
-          <div><dt>Paid this month</dt><dd>{formatCad(summary.paidDuringMonthCents)}</dd><small>By actual paid date</small></div>
+          <div><dt>Due this month</dt><dd>{formatAmount(summary.expectedTotalDueCents)}</dd><small>{formatAmount(summary.remainingTotalDueCents)} left to pay</small></div>
+          <div><dt>Paid this month</dt><dd>{formatAmount(summary.paidDuringMonthCents)}</dd><small>By actual paid date</small></div>
           <div><dt>Overdue</dt><dd>{summary.overdueObligations.length}</dd><small>In selected month</small></div>
         </dl>
         <div className="obligation-filters" role="group" aria-label="Filter obligations">
@@ -125,13 +150,13 @@ export function ObligationsSection({ obligationId, initialMonth }: { obligationI
         {(['bill', 'installment'] as const).filter((type) => filter === 'all' || filter === type).map((type) => {
           const items = obligations.filter((item) => item.type === type).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
           if (!items.length) return null
-          return <div className="obligation-group" key={type}><h3>{type === 'bill' ? 'Bills' : 'Installments'}</h3>
-            <ul className="obligation-list">{items.map((item) => {
+          return <div className="obligation-group" key={type}><h3 id={`${prefix}-${type}-heading`} className={filter === 'all' ? undefined : 'obligation-visually-hidden'}>{type === 'bill' ? 'Bills' : 'Installments'}</h3>
+            <ul className="obligation-list" aria-labelledby={`${prefix}-${type}-heading`}>{items.map((item) => {
               const monthly = summary.states.find((value) => value.obligationId === item.id)!
               return <li key={item.id}><a className="obligation-row" href={`#more/bills-installments/${encodeURIComponent(item.id)}`} data-obligation-id={item.id}>
-                <div className="obligation-row-heading"><strong>{item.name}</strong><span className="obligation-money">{formatCad(item.type === 'bill' ? item.expectedAmountCents : item.scheduledPaymentCents)}<small> / month</small></span></div>
-                {item.type === 'installment' && <><span className="obligation-muted">{formatCad(monthly.installmentBalance!.remainingAmountCents)} remaining</span><Progress obligation={item} state={monthly} /></>}
-                <div className="obligation-row-meta"><Due obligation={item} state={monthly} month={month} /><Status state={monthly} today={today} /></div>
+                <div className="obligation-row-heading"><strong>{item.name}</strong><span className="obligation-money">{formatAmount(item.type === 'bill' ? item.expectedAmountCents : item.scheduledPaymentCents)}{item.type === 'installment' && <small> / month</small>}</span></div>
+                {item.type === 'installment' && <><span className="obligation-remaining">{formatAmount(monthly.installmentBalance!.remainingAmountCents)} <span>remaining</span></span><Progress obligation={item} state={monthly} compact /></>}
+                <div className="obligation-row-meta"><Due obligation={item} state={monthly} month={month} compact /><Status state={monthly} today={today} /></div>
               </a></li>
             })}</ul></div>
         })}
@@ -140,14 +165,14 @@ export function ObligationsSection({ obligationId, initialMonth }: { obligationI
         <h3 className="obligation-name">{obligation.name}</h3>
         <div className="obligation-details-status"><Status state={state} today={today} /><Due obligation={obligation} state={state} month={month} /></div>
         <dl className="obligation-facts">
-          {obligation.type === 'bill' ? <div><dt>Expected monthly amount</dt><dd>{formatCad(obligation.expectedAmountCents)}</dd></div> : <>
-            <div><dt>Original amount</dt><dd>{formatCad(obligation.originalAmountCents)}</dd></div>
-            <div><dt>Scheduled monthly payment</dt><dd>{formatCad(obligation.scheduledPaymentCents)}</dd></div>
-            <div><dt>Total paid</dt><dd>{formatCad(state.installmentBalance!.totalPaidCents)}</dd></div>
-            <div><dt>Remaining balance</dt><dd>{formatCad(state.installmentBalance!.remainingAmountCents)}</dd></div>
-            {state.installmentBalance!.overpaymentCents > 0 && <div><dt>Overpayment</dt><dd>{formatCad(state.installmentBalance!.overpaymentCents)}</dd></div>}
+          {obligation.type === 'bill' ? <div><dt>Expected monthly amount</dt><dd>{formatAmount(obligation.expectedAmountCents)}</dd></div> : <>
+            <div><dt>Original amount</dt><dd>{formatAmount(obligation.originalAmountCents)}</dd></div>
+            <div><dt>Scheduled monthly payment</dt><dd>{formatAmount(obligation.scheduledPaymentCents)}</dd></div>
+            <div><dt>Total paid</dt><dd>{formatAmount(state.installmentBalance!.totalPaidCents)}</dd></div>
+            <div><dt>Remaining balance</dt><dd>{formatAmount(state.installmentBalance!.remainingAmountCents)}</dd></div>
+            {state.installmentBalance!.overpaymentCents > 0 && <div><dt>Overpayment</dt><dd>{formatAmount(state.installmentBalance!.overpaymentCents)}</dd></div>}
           </>}
-          <div><dt>Paid toward {monthLabel(month)}</dt><dd>{formatCad(state.paidAmountCents)}</dd></div>
+          <div><dt>Paid toward {monthLabel(month)}</dt><dd>{formatAmount(state.paidAmountCents)}</dd></div>
           <div><dt>Due day</dt><dd>{obligation.dueDay}</dd></div>
           <div><dt>Start month</dt><dd>{monthLabel(obligation.startMonth)}</dd></div>
           <div><dt>Active</dt><dd>{obligation.isActive ? 'Yes' : 'No · Inactive'}</dd></div>
@@ -167,9 +192,9 @@ export function ObligationsSection({ obligationId, initialMonth }: { obligationI
         <div className="obligation-history"><h3>Payment history</h3>
           {!history.length && <p className="obligation-muted">No payments recorded yet.</p>}
           <ul>{history.map((payment) => <li key={payment.id} className="obligation-payment-row">
-            <div><strong className="obligation-money">{formatCad(payment.amountCents)}</strong><span>For {monthLabel(payment.dueMonth)}</span><span>Paid {dateLabel(payment.paidDate)}</span>{payment.note && <p>{payment.note}</p>}</div>
-            <button className="button-quiet button-destructive" disabled={busy || loading} aria-label={`Delete ${formatCad(payment.amountCents)} payment paid ${dateLabel(payment.paidDate)}`} onClick={() => {
-              if (window.confirm(`Delete this ${formatCad(payment.amountCents)} payment? The balance and status will be recalculated.`)) void action(async () => {
+            <div><strong className="obligation-money">{formatAmount(payment.amountCents)}</strong><span>For {monthLabel(payment.dueMonth)}</span><span>Paid {dateLabel(payment.paidDate)}</span>{payment.note && <p>{payment.note}</p>}</div>
+            <button className="button-quiet button-destructive" disabled={busy || loading} aria-label={`Delete ${formatAmount(payment.amountCents)} payment paid ${dateLabel(payment.paidDate)}`} onClick={() => {
+              if (window.confirm(`Delete this ${formatAmount(payment.amountCents)} payment? The balance and status will be recalculated.`)) void action(async () => {
                 await obligationPaymentsRepository.delete(payment.id)
                 restore.current = true; trigger.current = null
               })

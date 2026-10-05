@@ -1,12 +1,13 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { readApplicationSnapshot, readFinancialSnapshot } from '../../persistence/dataBackup'
+import { readBackupSource } from '../../persistence/dataBackup'
 import { useTheme } from '../appearance/themePreference'
 import { BackupDialog } from './BackupDialog'
 import { createBackup, exportFilename, parseFullBackup, type BackupSection, type FullBackup } from './backupFormat'
 import { CustomExport } from './CustomExport'
 import { CsvImportPreview } from './CsvImportPreview'
 import { RestorePreview } from './RestorePreview'
-import { accountsCsv, categoriesCsv, parseTransactionCsv, transactionsCsv, type CsvRowStatus, type CsvSourceRow } from './transactionCsv'
+import { accountsCsv, categoriesCsv, parseTransactionCsv, transactionCsvCurrency, transactionsCsv, type CsvRowStatus, type CsvSourceRow } from './transactionCsv'
 import { useDataBackup } from './useDataBackup'
 import type { Transaction } from '../../domain/models'
 import './dataBackup.css'
@@ -15,7 +16,7 @@ type ExportKind = 'backup' | 'transactions' | 'accounts' | 'categories' | 'custo
 type Preview = { kind: 'custom' } | { kind: 'restore'; backup: FullBackup; filename: string }
   | { kind: 'csv'; source: CsvSourceRow[]; filename: string }
 const exports: { kind: ExportKind; title: string; format: string; description: string }[] = [
-  { kind: 'backup', title: 'Full Backup', format: 'JSON', description: 'All financial data, bills, installments, payments, and appearance' },
+  { kind: 'backup', title: 'Full Backup', format: 'JSON', description: 'All financial data, bills, installments, workspace settings, and appearance' },
   { kind: 'transactions', title: 'Transactions', format: 'CSV', description: 'All transaction history' },
   { kind: 'accounts', title: 'Accounts', format: 'CSV', description: 'Opening balances and credit limits' },
   { kind: 'categories', title: 'Categories', format: 'CSV', description: 'Income and expense categories' },
@@ -34,6 +35,7 @@ function errorMessage(error: unknown) { return error instanceof Error ? error.me
 export function DataBackupSection() {
   const { snapshot, isLoading, isWriting, loadError, reload, restore, importTransactions } = useDataBackup()
   const theme = useTheme()
+  const { currencyCode } = useMoney()
   const [preview, setPreview] = useState<Preview | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
@@ -43,6 +45,8 @@ export function DataBackupSection() {
   const errorRef = useRef<HTMLParagraphElement>(null)
   const pendingFocus = useRef(false)
   const busy = preparing || isWriting || isLoading
+  const csvCurrency = preview?.kind === 'csv' ? transactionCsvCurrency(preview.source) : null
+  const csvError = csvCurrency && csvCurrency !== currencyCode ? `This file uses ${csvCurrency}, but this workspace uses ${currencyCode}.` : ''
   useEffect(() => {
     if (preview || busy || !pendingFocus.current) return
     pendingFocus.current = false
@@ -61,10 +65,12 @@ export function DataBackupSection() {
       const json = kind === 'backup' || kind === 'custom-backup'
       let content: string
       if (json) {
-        content = JSON.stringify(createBackup(await readApplicationSnapshot(), theme, sections, kind === 'backup' ? 'full' : 'custom'), null, 2)
+        const current = await readBackupSource()
+        content = JSON.stringify(createBackup(current.snapshot, theme, sections, kind === 'backup' ? 'full' : 'custom', new Date()), null, 2)
       } else {
-        const current = await readFinancialSnapshot()
-        content = kind === 'transactions' ? transactionsCsv(current) : kind === 'accounts' ? accountsCsv(current.accounts) : categoriesCsv(current.categories)
+        const source = await readBackupSource()
+        const current = source.snapshot
+        content = kind === 'transactions' ? transactionsCsv(current, source.currencyCode) : kind === 'accounts' ? accountsCsv(current.accounts, source.currencyCode) : categoriesCsv(current.categories)
       }
       const filename = exportFilename(kind)
       downloadFile(content, filename, json ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8')
@@ -81,27 +87,27 @@ export function DataBackupSection() {
     try {
       const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
       if (kind === 'restore') setPreview({ kind, backup: parseFullBackup(text), filename: file.name })
-      else setPreview({ kind, source: parseTransactionCsv(text), filename: file.name })
+      else setPreview({ kind, source: parseTransactionCsv(text, (await readBackupSource()).currencyCode), filename: file.name })
     } catch (error) { setError(`File could not be opened. ${errorMessage(error)} Current data has not been changed.`) }
     finally { setPreparing(false) }
   }
   async function replaceData() {
     if (preview?.kind !== 'restore' || busy || loadError) return
     const legacyWarning = preview.backup.schemaVersion === 1 ? ' This version 1 backup contains no Bills & Installments; all current obligations and recorded payments will be removed.' : ''
-    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} This cannot be undone.`)) return
+    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} Workspace currency will become ${preview.backup.currency}. Country and fiscal year preferences will be replaced with the previewed settings. This cannot be undone.`)) return
     setError(''); setStatus('')
     try {
       const persisted = await restore(preview.backup)
-      setStatus(persisted ? 'All data and appearance restored. Current local data was replaced.'
-        : 'All data restored. Appearance was applied for this session, but the preference could not be saved to browser storage.')
+      setStatus(persisted ? 'All data, workspace settings, and appearance restored. Current local data was replaced.'
+        : 'All data and workspace settings restored. Appearance was applied for this session, but the preference could not be saved to browser storage.')
       pendingFocus.current = true; setPreview(null)
-    } catch (error) { setError(`Restore failed. Previous financial data, bills, installments, and payments are intact. ${errorMessage(error)}`) }
+    } catch (error) { setError(`Restore failed. Previous financial data, bills, installments, payments, and workspace settings are intact. ${errorMessage(error)}`) }
   }
-  async function importRows(transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>) {
-    if (busy || loadError) return
+  async function importRows(transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>, fileCurrency: string) {
+    if (busy || loadError || Boolean(csvError)) return
     setError(''); setStatus('')
     try {
-      const imported = await importTransactions(transactions)
+      const imported = await importTransactions(transactions, fileCurrency)
       const skipped = counts.Duplicate + counts['Needs mapping'] + counts.Invalid + counts.Conflict + counts.Ready - imported
       setStatus(`${imported} ${imported === 1 ? 'transaction' : 'transactions'} imported. ${counts.Duplicate} duplicates skipped.${skipped > counts.Duplicate ? ` ${skipped - counts.Duplicate} other rows not imported.` : ''}`)
       pendingFocus.current = true; setPreview(null)
@@ -131,7 +137,7 @@ export function DataBackupSection() {
           </button>
         </li>)}
       </ul>
-      <p className="backup-help backup-privacy">Backup files contain your financial data. Store them securely.</p>
+      <p className="backup-help backup-privacy">Backup files contain your financial data. Store them securely. JSON backups include workspace settings and currency.</p>
     </section>
     <section className="backup-section" aria-labelledby="backup-import-heading">
       <h3 id="backup-import-heading">Import / Restore</h3>
@@ -143,7 +149,7 @@ export function DataBackupSection() {
       </div>
       <div className="backup-file-choice">
         <label htmlFor="backup-csv-file">Import Transactions <span>CSV</span></label>
-        <p id="backup-csv-help" className="backup-help">Use a My Finance Transactions export. Preview, map references, and choose Ready rows. Bank statement, Accounts, and Categories CSV imports are not supported.</p>
+        <p id="backup-csv-help" className="backup-help">Use a My Finance Transactions export in the same currency as this workspace. Legacy CAD exports are also supported in CAD workspaces. Preview, map references, and choose Ready rows. Bank statement, Accounts, and Categories CSV imports are not supported.</p>
         <input id="backup-csv-file" type="file" accept=".csv,text/csv" disabled={busy || Boolean(loadError)}
           aria-describedby="backup-csv-help" onChange={(event) => { void readFile(event, 'csv') }} />
       </div>
@@ -159,6 +165,6 @@ export function DataBackupSection() {
       <RestorePreview backup={preview.backup} current={snapshot} filename={preview.filename} />
     </BackupDialog>}
     {preview?.kind === 'csv' && <CsvImportPreview source={preview.source} filename={preview.filename} snapshot={snapshot}
-      busy={busy} error={error || loadError || ''} available={!loadError} onClose={closePreview} onImport={(transactions, counts) => { void importRows(transactions, counts) }} />}
+      busy={busy} error={error || loadError || csvError} available={!loadError && !csvError} onClose={closePreview} onImport={(transactions, counts, fileCurrency) => { void importRows(transactions, counts, fileCurrency) }} />}
   </section>
 }

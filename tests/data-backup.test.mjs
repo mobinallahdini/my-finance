@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createBackup, exportFilename, includedSections, parseFullBackup, restoreSnapshot, validateFullBackup } from '../src/features/dataBackup/backupFormat.ts'
+import { createBackup as exportBackup, exportFilename, includedSections, parseFullBackup, restoreSnapshot, validateFullBackup } from '../src/features/dataBackup/backupFormat.ts'
 import { calculateInstallmentBalance, calculateObligationMonth } from '../src/domain/obligationCalculations.ts'
 import { parseCsv, writeCsv, protectCsvText, unprotectCsvText, csvTextEncoding } from '../src/features/dataBackup/csv.ts'
-import { accountsCsv, categoriesCsv, parseTransactionCsv, previewTransactionCsv, transactionsCsv, transactionIdentity,
+import { accountsCsv as exportAccounts, categoriesCsv, parseTransactionCsv as parseTransactions, previewTransactionCsv as previewTransactions, transactionsCsv as exportTransactions, transactionIdentity,
   transactionCsvColumns } from '../src/features/dataBackup/transactionCsv.ts'
+
+// These existing fixtures explicitly use a CAD workspace; legacy v2 files remain independent fixtures.
+const settings = { id:'application', countryCode:'CA', currencyCode:'CAD', profileType:'personal', fiscalYearStartMonth:1, onboardingCompleted:true }
+const createBackup = (data, ...args) => exportBackup({ ...data, applicationSettings: settings }, ...args)
+const transactionsCsv = data => exportTransactions(data, 'CAD')
+const accountsCsv = data => exportAccounts(data, 'CAD')
+const parseTransactionCsv = text => parseTransactions(text, 'CAD')
+const previewTransactionCsv = (source, data, mappings) => previewTransactions(source, data, 'CAD', mappings)
 
 const fixture = () => ({
   accounts: [{ id: 'bank', name: 'Main, "Bank"', type: 'bank', openingBalance: 500000 },
@@ -25,9 +33,9 @@ const applicationFixture = () => ({ ...fixture(),
     {id:'principal-pay',obligationId:'installment',dueMonth:'2026-09',paidDate:'2026-09-15',amountCents:38000},
   ],
 })
-const backup = () => createBackup(applicationFixture(), 'ocean', undefined, 'full', new Date('2026-10-05T14:32:00.000Z'))
+const backup = () => ({format:'my-finance-backup',schemaVersion:2,exportedAt:'2026-10-05T14:32:00.000Z',currency:'CAD',kind:'full',sections:['accounts','categories','transactions','obligations','obligationPayments','preferences'],data:applicationFixture(),preferences:{theme:'ocean'}})
 
-test('Full Backup retains exact records, references, notes and theme, without UI state', () => {
+test('Legacy v2 Full Backup retains exact records, references, notes and theme, without UI state', () => {
   const file = backup()
   assert.equal(file.format, 'my-finance-backup'); assert.equal(file.schemaVersion, 2); assert.equal(file.currency, 'CAD')
   assert.equal(file.exportedAt, '2026-10-05T14:32:00.000Z')
@@ -38,14 +46,14 @@ test('Full Backup retains exact records, references, notes and theme, without UI
   assert.equal(file.data.transactions[0].amount, 4275)
 })
 test('Custom sections explainable dependencies and partial restore rejection', () => {
-  assert.deepEqual(includedSections(['transactions']), ['accounts', 'categories', 'transactions'])
+  assert.deepEqual(includedSections(['transactions']), ['accounts', 'categories', 'transactions', 'applicationSettings'])
   const partial = createBackup(applicationFixture(), 'sage', ['transactions'], 'custom')
-  assert.deepEqual(partial.data, fixture()); assert.equal(partial.preferences, undefined)
+  assert.deepEqual(partial.data, { ...fixture(), applicationSettings: settings }); assert.equal(partial.preferences, undefined)
   assert.throws(() => validateFullBackup(partial), /partial Custom Backup/)
   const complete = createBackup(applicationFixture(), 'dark', ['transactions', 'obligations', 'preferences'], 'custom')
   assert.equal(validateFullBackup(complete).preferences.theme, 'dark')
   const preferences = createBackup(applicationFixture(), 'ocean', ['preferences'], 'custom')
-  assert.deepEqual(preferences.data, {}); assert.deepEqual(preferences.sections, ['preferences'])
+  assert.deepEqual(preferences.data, { applicationSettings: settings }); assert.deepEqual(preferences.sections, ['applicationSettings', 'preferences'])
   assert.throws(() => createBackup(applicationFixture(), 'sage', [], 'custom'), /Select at least/)
 })
 test('Filenames use local calendar fields, independently of ISO export timestamps', () => {
@@ -57,7 +65,7 @@ test('Filenames use local calendar fields, independently of ISO export timestamp
 
 const invalidBackups = [
   ['wrong format', b => { b.format = 'other' }], ['unsupported version', b => { b.schemaVersion = 3 }],
-  ['wrong currency', b => { b.currency = 'USD' }], ['invalid ISO timestamp', b => { b.exportedAt = 'yesterday' }],
+  ['unsupported currency', b => { b.currency = 'JPY' }], ['invalid ISO timestamp', b => { b.exportedAt = 'yesterday' }],
   ['rollover timestamp', b => { b.exportedAt = '2026-02-30T00:00:00.000Z' }], ['invalid theme', b => { b.preferences.theme = 'neon' }],
   ['missing preferences', b => { delete b.preferences }], ['missing accounts', b => { delete b.data.accounts }],
   ['wrong section metadata', b => { b.sections = ['accounts', 'accounts', 'transactions', 'preferences'] }],
@@ -93,7 +101,7 @@ test('Safe integer boundaries and valid leap dates retain exact cents', () => {
 
 test('Version 2 preserves tracking IDs, exact cents, history and derived results', () => {
   const data = applicationFixture(), restored = restoreSnapshot(parseFullBackup(JSON.stringify(backup())))
-  assert.deepEqual(restored, data)
+  assert.deepEqual(restored, { ...data, applicationSettings: settings })
   assert.equal(calculateInstallmentBalance(restored.obligations[1], restored.obligationPayments).remainingAmountCents, 62000)
   assert.equal(calculateObligationMonth(restored.obligations[0], restored.obligationPayments, '2026-10', '2026-10-05').status, 'partially_paid')
   const paid = [...restored.obligationPayments, {id:'second',obligationId:'bill-雪',dueMonth:'2026-10',paidDate:'2026-10-05',amountCents:6000}]
@@ -102,12 +110,12 @@ test('Version 2 preserves tracking IDs, exact cents, history and derived results
 })
 
 test('Tracking Custom selection always exports obligations and payments together', () => {
-  assert.deepEqual(includedSections(['obligations']), ['obligations','obligationPayments'])
-  assert.deepEqual(includedSections(['obligationPayments']), ['obligations','obligationPayments'])
+  assert.deepEqual(includedSections(['obligations']), ['obligations','obligationPayments','applicationSettings'])
+  assert.deepEqual(includedSections(['obligationPayments']), ['obligations','obligationPayments','applicationSettings'])
   const data = applicationFixture()
   for (const section of ['obligations','obligationPayments']) {
     const file = createBackup(data, 'dark', [section], 'custom')
-    assert.deepEqual(file.data, {obligations:data.obligations,obligationPayments:data.obligationPayments})
+    assert.deepEqual(file.data, {obligations:data.obligations,obligationPayments:data.obligationPayments,applicationSettings:settings})
     assert.throws(() => validateFullBackup(file), /partial Custom/)
   }
   assert.throws(() => createBackup(data,'sage',['transactions','preferences'],'full'), /every section/)
@@ -120,7 +128,7 @@ test('Version 1 retains its original graph and normalizes to empty tracking tabl
     const parsed = parseFullBackup(JSON.stringify(file))
     assert.equal(parsed.schemaVersion, 1)
     assert.deepEqual(parsed.data, fixture())
-    assert.deepEqual(restoreSnapshot(parsed), {...fixture(),obligations:[],obligationPayments:[]})
+    assert.deepEqual(restoreSnapshot(parsed), {...fixture(),obligations:[],obligationPayments:[],applicationSettings:settings})
     assert.deepEqual(validateFullBackup(parsed), parsed)
   }
   file.data.obligations = []
@@ -179,8 +187,8 @@ test('Spreadsheet protection is reversible for all text, including apostrophe-pr
 test('All CSV schemas preserve exact decimals and text, with unused columns blank', () => {
   const data = fixture(); const exported = parseCsv(transactionsCsv(data))
   assert.deepEqual(exported[0], [...transactionCsvColumns]); assert.equal(exported[1][3], '42.75')
-  assert.equal(exported[1][8], ''); assert.equal(exported[3][4], ''); assert.equal(exported[3][6], '')
-  assert.equal(exported[1].at(-1), csvTextEncoding)
+  assert.equal(exported[1][9], ''); assert.equal(exported[3][5], ''); assert.equal(exported[3][7], '')
+  assert.equal(exported[1][exported[0].indexOf('text_encoding')], csvTextEncoding)
   const accounts = parseCsv(accountsCsv(data.accounts)); assert.equal(accounts[2][3], '-1.00'); assert.equal(accounts[1][4], ''); assert.equal(accounts[3][4], '2000.00')
   assert.deepEqual(parseCsv(categoriesCsv(data.categories))[0], ['id', 'name', 'type', 'text_encoding'])
 })
@@ -192,7 +200,7 @@ test('Exported CSV re-import classifies exact duplicates including multiline and
   assert.deepEqual(previewTransactionCsv(source, { ...data, transactions: [] }).map(row => row.status), ['Ready', 'Ready', 'Ready'])
 })
 test('ID conflict never changes the original or generates a replacement ID', () => {
-  const data = fixture(); const csv = parseTransactionCsv(transactionsCsv(data)); csv[0].fields.amount_cad = '50.00'
+  const data = fixture(); const csv = parseTransactionCsv(transactionsCsv(data)); csv[0].fields.amount = '50.00'
   const preview = previewTransactionCsv(csv, data); assert.equal(preview[0].status, 'Conflict')
   assert.equal(preview[0].transaction.id, 'expense-id'); assert.equal(data.transactions[0].amount, 4275)
 })
@@ -200,7 +208,7 @@ test('Within-file identical IDs skip copies; differing IDs conflict on every occ
   const data = fixture(); const row = parseTransactionCsv(transactionsCsv(data))[0]; const copy = structuredClone(row); copy.rowNumber = 9
   const empty = { ...data, transactions: [] }
   assert.deepEqual(previewTransactionCsv([row, copy], empty).map(row => row.status), ['Ready', 'Duplicate'])
-  copy.fields.amount_cad = '99.00'; assert.deepEqual(previewTransactionCsv([row, copy], empty).map(row => row.status), ['Conflict', 'Conflict'])
+  copy.fields.amount = '99.00'; assert.deepEqual(previewTransactionCsv([row, copy], empty).map(row => row.status), ['Conflict', 'Conflict'])
 })
 test('Mapping uses exact IDs before names; unique normalized names and category type are fallbacks', () => {
   const data = fixture(); const source = parseTransactionCsv(transactionsCsv(data)); source[0].fields.account_name = 'WRONG NAME'
@@ -222,9 +230,9 @@ test('Missing/ambiguous references need explicit mapping and never create entiti
 const invalidCsvRows = [
   ['missing transaction ID', f => { f.id = '' }], ['unknown type', f => { f.type = 'bill' }],
   ['invalid date', f => { f.date = '2026-02-29' }], ['year zero', f => { f.date = '0000-01-01' }],
-  ['zero amount', f => { f.amount_cad = '0.00' }], ['negative amount', f => { f.amount_cad = '-1' }],
-  ['too many decimals', f => { f.amount_cad = '1.001' }], ['symbol amount', f => { f.amount_cad = '$1.00' }],
-  ['comma amount', f => { f.amount_cad = '1,000.00' }], ['unsafe amount', f => { f.amount_cad = '90071992547409.92' }],
+  ['zero amount', f => { f.amount = '0.00' }], ['negative amount', f => { f.amount = '-1' }],
+  ['too many decimals', f => { f.amount = '1.001' }], ['symbol amount', f => { f.amount = '$1.00' }],
+  ['comma amount', f => { f.amount = '1,000.00' }], ['unsafe amount', f => { f.amount = '90071992547409.92' }],
   ['category mismatch', f => { f.category_id = 'income' }], ['cross type fields', f => { f.from_account_id = 'cash' }],
 ]
 for (const [name, change] of invalidCsvRows) test(`CSV rejects ${name}`, () => {
@@ -240,14 +248,14 @@ test('CSV rejects income to card, mismatched income category and same transfer e
 })
 test('Exact decimal boundary round trips without floating-point rounding', () => {
   const data = fixture(); data.transactions[0].amount = Number.MAX_SAFE_INTEGER
-  const rows = parseTransactionCsv(transactionsCsv(data)); assert.equal(rows[0].fields.amount_cad, '90071992547409.91')
+  const rows = parseTransactionCsv(transactionsCsv(data)); assert.equal(rows[0].fields.amount, '90071992547409.91')
   assert.equal(previewTransactionCsv(rows, data)[0].transaction.amount, Number.MAX_SAFE_INTEGER)
 })
 test('Header/encoding validation never guesses other CSV schemas', () => {
   assert.throws(() => parseTransactionCsv('date,amount\n2026-10-05,1.00'), /documented/)
-  const data = parseCsv(transactionsCsv(fixture())); data[1][13] = 'other'
+  const data = parseCsv(transactionsCsv(fixture())); data[1][14] = 'other'
   assert.equal(previewTransactionCsv(parseTransactionCsv(writeCsv(data[0], data.slice(1))), fixture())[0].status, 'Invalid')
-  data[1][13] = csvTextEncoding; data[1][0] = '=unsafe-unencoded-id'
+  data[1][14] = csvTextEncoding; data[1][0] = '=unsafe-unencoded-id'
   assert.equal(previewTransactionCsv(parseTransactionCsv(writeCsv(data[0], data.slice(1))), fixture())[0].status, 'Invalid')
   data[1].pop(); assert.equal(previewTransactionCsv(parseTransactionCsv(writeCsv(data[0], data.slice(1))), fixture())[0].status, 'Invalid')
 })

@@ -1,0 +1,13 @@
+.finance-bootstrap, .finance-settings { max-width: 38rem; margin-inline: auto; padding: var(--space-4); }
+.finance-bootstrap, .finance-onboarding { margin-top: var(--space-6); padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0px)); padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); }
+.finance-settings h1, .finance-settings h2 { margin: 0 0 var(--space-3); font-size: var(--font-size-page-title); line-height: var(--line-height-heading); overflow-wrap: anywhere; }
+.finance-brand { color: var(--color-action); font-weight: var(--font-weight-emphasis); margin-bottom: var(--space-3); }
+.finance-introduction { color: var(--color-text-secondary); margin-bottom: var(--space-6); }
+.finance-fields { margin: 0; padding: 0; border: 0; min-width: 0; }
+.finance-field { display: grid; gap: var(--space-2); margin-bottom: var(--space-6); min-width: 0; }
+.finance-field label { font-weight: var(--font-weight-emphasis); }
+.finance-field select { width: 100%; min-width: 0; max-width: 100%; }
+.finance-field p { color: var(--color-text-secondary); font-size: var(--font-size-meta); overflow-wrap: anywhere; }
+.finance-error { color: var(--color-danger); margin-bottom: var(--space-3); }
+.finance-save { width: 100%; margin-block: var(--space-3); white-space: normal; }
+.finance-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

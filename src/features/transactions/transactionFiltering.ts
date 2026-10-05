@@ -1,5 +1,5 @@
 import type { Account, Category, Transaction } from '../../domain/models'
-import { dollarsForInput, formatCad, parseDollars } from '../accounts/money'
+import { dollarsForInput, formatMoney, parseDollars } from '../accounts/money'
 import { localCalendarDate, transactionTypeLabels } from './transactionHelpers'
 import { readableMonth } from './transactionPresentation'
 
@@ -68,7 +68,7 @@ export function validateFilterDraft(draft: TransactionFilterDraft): { value: Tra
   for (const field of ['minimum', 'maximum'] as const) {
     if (!draft[field].trim()) continue
     try { amounts[field] = parseDollars(draft[field]) }
-    catch (error) { errors[field] = error instanceof Error ? error.message : 'Enter zero or a positive CAD amount.' }
+    catch (error) { errors[field] = error instanceof Error ? error.message : 'Enter zero or a positive amount.' }
   }
   if (!errors.minimum && !errors.maximum && amounts.minimum !== null && amounts.maximum !== null && amounts.minimum > amounts.maximum) {
     errors.maximum = 'Maximum amount must be at least the minimum amount.'
@@ -104,11 +104,12 @@ export function filterTransactions(
       ? [accountName(transaction.fromAccountId), accountName(transaction.toAccountId)]
       : [categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`, accountName(transaction.accountId)]
     text.push(transactionTypeLabels[transaction.type], transaction.note ?? '')
+    if (transaction.type === 'expense') text.push(transaction.receiptNumber ?? '')
     return text.some((value) => value.toLowerCase().includes(query))
   })
 }
 
-export function filterChips(filters: TransactionFilterState, accounts: readonly Account[], categories: readonly Category[]): { group: FilterGroup; label: string }[] {
+export function filterChips(filters: TransactionFilterState, accounts: readonly Account[], categories: readonly Category[], currencyCode: string): { group: FilterGroup; label: string }[] {
   const chips: { group: FilterGroup; label: string }[] = []
   if (filters.dateMode === 'month') chips.push({ group: 'date', label: readableMonth(filters.month) })
   if (filters.dateMode === 'range' && (filters.fromDate || filters.toDate)) {
@@ -118,8 +119,8 @@ export function filterChips(filters: TransactionFilterState, accounts: readonly 
   }
   if (filters.query.trim()) chips.push({ group: 'query', label: `Search: “${filters.query.trim()}”` })
   if (filters.minimum !== null || filters.maximum !== null) {
-    const label = filters.minimum !== null && filters.maximum !== null ? `${formatCad(filters.minimum)} – ${formatCad(filters.maximum)}`
-      : filters.minimum !== null ? `At least ${formatCad(filters.minimum)}` : `Up to ${formatCad(filters.maximum!)}`
+    const label = filters.minimum !== null && filters.maximum !== null ? `${formatMoney(filters.minimum, currencyCode)} – ${formatMoney(filters.maximum, currencyCode)}`
+      : filters.minimum !== null ? `At least ${formatMoney(filters.minimum, currencyCode)}` : `Up to ${formatMoney(filters.maximum!, currencyCode)}`
     chips.push({ group: 'amount', label })
   }
   if (filters.types.length !== filterTypes.length) {

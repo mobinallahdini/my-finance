@@ -1,242 +1,322 @@
-# Data & Backup — JSON schema version 2
+# Data & Backup - JSON schema version 3
 
-More → Data & Backup exports and imports files entirely in the browser. Files are
-not uploaded. Financial data stays in the existing IndexedDB `my-finance` database,
-at database version 2 (unchanged by this backup upgrade). Theme preference stays under `my-finance-theme` in
-localStorage. Files contain private financial information and are not encrypted;
-store them securely. Clearing site/browser data may erase the local database.
+More -> Data & Backup reads and writes files entirely in the browser. Nothing is
+uploaded. Financial, tracking and workspace settings are stored in IndexedDB
+`my-finance`, still at Dexie schema 3. File schema version is independent of the
+database version. Theme stays under `my-finance-theme` in localStorage.
+Files contain private financial information and are not encrypted. Store them
+securely; clearing browser/site data may erase the local workspace.
 
 ## Full Backup JSON
 
-Full Backup is the recommended recovery and device/browser migration format.
-Every backup uses this family:
+New exports use schema 3 and include all six stores, plus appearance:
 
 ```json
 {
   "format": "my-finance-backup",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "exportedAt": "2026-10-05T14:32:00.000Z",
   "currency": "CAD",
   "kind": "full",
-  "sections": ["accounts", "categories", "transactions", "obligations", "obligationPayments", "preferences"],
+  "sections": ["accounts", "categories", "transactions", "obligations", "obligationPayments", "applicationSettings", "preferences"],
   "data": {
     "accounts": [],
     "categories": [],
     "transactions": [],
     "obligations": [],
-    "obligationPayments": []
+    "obligationPayments": [],
+    "applicationSettings": {
+      "id": "application",
+      "countryCode": "CA",
+      "currencyCode": "CAD",
+      "profileType": "personal",
+      "fiscalYearStartMonth": 1,
+      "onboardingCompleted": true
+    }
   },
   "preferences": { "theme": "sage" }
 }
 ```
 
-`exportedAt` is an ISO UTC timestamp with milliseconds. Filenames use the local
-calendar date: `my-finance-backup-YYYY-MM-DD.json`. Export reads all five financial/tracking tables
-in one read transaction, so related records come from a consistent snapshot.
+The metadata `currency` comes from `applicationSettings.currencyCode`; validation
+rejects contradictory values. Country, currency, internal `profileType`, fiscal month,
+and the saved onboarding flag are serialized exactly. No editor state, route,
+search, filters, calculated balance, principal, status, progress, or due date is
+serialized. Existing financial/tracking fields, IDs, dates, notes, references
+and safe integer minor units keep their meanings. Expenses may also contain optional
+`taxAmountCents` and `receiptNumber`; subtotal is never stored. There is no exchange
+conversion.
 
-Records preserve their existing domain shape:
+`exportedAt` is an ISO UTC timestamp with milliseconds. Export reads all six
+stores under one transaction, so values and settings cannot come from different
+workspace states during another tab's edits. Full Backup remains the canonical
+recovery format. JSON never converts integer minor units into floating numbers.
 
-- Accounts: `id`, `name`, `type` (`bank`, `cash`, `credit_card`), integer-cent
-  `openingBalance`, and optional integer-cent `creditLimit` for credit cards.
-- Categories: `id`, `name`, `type` (`expense`, `income`).
-- Transactions: `id`, `type`, `date` (YYYY-MM-DD), positive integer-cent `amount`,
-  optional string `note`, and the fields belonging to that transaction variant.
-  Expense/Income use `accountId` and `categoryId`. Transfer uses `fromAccountId`
-  and `toAccountId`, with different endpoints and no account/category fields.
-- Preferences: `theme` (`sage`, `ocean`, `dark`).
-- Obligations: shared `id`, trimmed nonempty `name`, `type`, `dueDay` (1–31),
-  `startMonth` (YYYY-MM), `isActive`, optional string `note`. Bills have positive
-  integer-cent `expectedAmountCents`; installments have positive integer-cent
-  `originalAmountCents` and `scheduledPaymentCents`. Cross-type fields are rejected.
-- Obligation payments: `id`, `obligationId`, `dueMonth` (YYYY-MM), `paidDate`
-  (YYYY-MM-DD), positive integer-cent `amountCents`, optional string `note`.
-  Due month must be at or after the referenced obligation's start month. Paid
-  date may precede or follow due month. Archived obligations and deliberate
-  overpayments remain valid under existing domain rules.
+The settings validator checks fixed ID, standardized country/currency codes,
+`profileType` (`personal` or `business`), integer fiscal month 1-12, boolean completion and unknown
+fields. Existing graph validation still rejects missing sections, duplicate IDs,
+unsafe/fractional/nonpositive amounts, invalid calendar dates, orphan references,
+category type mismatches, Income into credit cards, invalid Transfer endpoints,
+and invalid bill/installment/payment shapes. Tracking history preserves archived
+obligations, deliberate overpayments and paid dates separate from due months.
+Both complete graphs and settings validate before any write. Themes are limited
+to Sage, Ocean and Dark. Unsupported file schema versions are rejected.
 
-JSON never converts cents to floating-point dollars. IDs, notes, dates, signed
-opening balances, credit limits, and references remain exact. Remaining principal,
-status, progress, calculated due dates, and all other calculated balances,
-route, filters, searches, editor state, and scroll position are not exported.
+V1.1 has one workspace. `profileType` is compatibility metadata only: new setup
+saves `personal`, while existing `personal` and `business` values are preserved
+exactly in v3 exports and restores. It is hidden in onboarding, Finance settings,
+restore preview, and restore confirmation. No normalization or schema migration
+is introduced; both values have identical financial behavior. Multiple
+workspaces/profiles are planned for a future version.
 
-Validation rejects malformed JSON, missing sections, duplicate IDs in
-each entity table, unsupported fields/versions/currency, invalid record types,
-unsafe/fractional cents, invalid calendar dates, nonpositive transaction amounts,
-invalid references, category type mismatch, Income into credit cards, and invalid
-Transfer variants. Names must be nonempty strings and notes must be strings.
-Category name uniqueness remains an entry-form policy; restore preserves IDs and
-does not rename or deduplicate categories. References use the same validation
-policy as normal transaction writes. Invalid theme values fail validation.
-Tracking shape and reference checks reuse `validateObligation`,
-`validateObligationPayment`, and `validateObligationPaymentReference`. IDs must be
-unique within each table; no payment may reference a missing obligation. Both
-complete graphs must validate before the first database write.
+## Compatibility with versions 1 and 2
 
-Version 1 files keep their original four sections and financial record graph.
-They remain restorable, including complete Custom Backups. Because they contain
-no obligations/payments, replacement restore uses empty arrays for both tracking
-tables. Preview and final confirmation explicitly explain that current Bills &
-Installments data will be removed. Existing tracking data is never silently kept.
-Version 1 files with unsupported tracking fields are rejected instead of guessed.
+Valid Full Backups and complete Custom Backups from both formats remain accepted.
+Partial graph restores remain rejected. Preview explains reconstructed preferences.
 
-## Custom Backup JSON
+- Version 1 is CAD-only. Its original accounts/categories/transactions graph is
+  retained; obligations and payments are replaced with empty arrays. Settings
+  become CA/CAD/personal/January/completed, independent of the destination's region.
+  Preview and final confirmation warn that all current tracking data is removed.
+- Version 2 restores all five financial/tracking tables and its supported currency
+  metadata. If settings were not stored, currency becomes the file currency,
+  internal `profileType` becomes `personal`, fiscal start becomes January, and setup is completed.
+  Country uses the destination's already-selected Country / Region, since currency
+  does not identify residence. A programmatic restore without a known destination
+  region uses CA as a documented fallback. Preview shows the effective region and
+  explicitly explains the reconstructed defaults.
+- An optional settings record in v2 is accepted only after the same settings
+  validation and matching-currency check. Valid stored preferences are preserved.
 
-Custom uses the same metadata and `kind: "custom"`, with `sections` declaring
-exactly what is included. The filename is `my-finance-custom-backup-YYYY-MM-DD.json`.
-Users choose Accounts, Categories, Transactions, Bills & Installments, and/or Preferences. Selecting
-Transactions visibly includes **all Accounts and Categories**, ensuring every
-transaction has its interpretation and references. Dependent checkboxes are
-checked and disabled while Transactions is selected. At least one section is
-required. Preferences-only exports have an empty `data` object.
-Bills & Installments is one selection which always includes **both** obligations
-and obligationPayments. Selecting either tracking section through the export
-API automatically includes the other, preventing dangling payment references.
-The UI explains that recorded payments are included automatically. Tracking-only
-exports are partial and export-only.
+Restoring a valid workspace completes setup, so no format requires blocking
+onboarding afterward. V3 export/validation preserve a boolean false completion
+flag if one is supplied programmatically; restoring it marks completion true as
+part of successfully recovering the workspace. Normal app exports always have
+completed settings because Data & Backup is behind onboarding.
 
-Partial custom exports are export-only. Restore accepts a Custom Backup only if
-every section for its declared version is present and it passes every Full Backup
-validation rule (six sections in v2, four in v1). Partial graph restores are rejected.
+V3 files require this application version; the released v1.0 reader supports
+only its older formats. Non-CAD v2 backups also require a currency-aware reader.
 
-## CSV exports and text encoding
+## Custom JSON policy
 
-CSV uses UTF-8, quoted fields, doubled embedded quotes, CRLF record separators,
-and exact decimal CAD amounts (for example `42.75`, `2000.00`, `-123.45`). Integer
-cents are formatted/parsed through the existing BigInt-based money helpers;
-symbols, grouping commas, exponents, and more than two decimal places are not
-accepted as money. Account opening balances may be negative. Credit limits are
-nonnegative and blank when absent or not applicable.
+Every Custom Backup includes the exact application settings and matching currency
+as structural interpretation, even a Categories-only or Preferences-only export.
+Settings have no removable checkbox; the UI explains their automatic inclusion.
+Appearance remains optional under Preferences. At least one selectable section
+is required, preserving the existing selection policy.
 
-Each schema has a `text_encoding` column with the fixed value
-`my-finance-apostrophe-v1`. **Every nonempty text field** is prefixed with one
-apostrophe before CSV quoting, including IDs, type, dates, names, and notes.
-An original apostrophe is therefore doubled. Empty text fields remain blank.
-The prefix keeps text such as `=SUM(...)`, `+...`, `-...`, `@...`, or formulas
-preceded by whitespace/control characters from being treated as spreadsheet
-formulas. Some spreadsheet import modes display the literal apostrophe; that
-is intentional. Numeric money columns contain only generated decimal numbers
-and receive no text prefix.
+Transactions automatically include all Accounts and Categories. Bills &
+Installments always includes both obligations and recorded payments, preventing
+orphan references. Full restore accepts a Custom Backup only when every section
+for its version is included (seven in v3, six in v2, four in v1) and every Full
+Backup validation rule passes. Partial Custom Backups are export-only.
 
-My Finance verifies the marker and removes **exactly one** apostrophe from each
-nonempty text field. This preserves original apostrophes, whitespace, quotes,
-commas, newlines (including CRLF inside notes), and Unicode without ambiguity.
-Do not remove the encoding marker/prefixes if you want a reliable re-import.
+## Atomic replacement restore
 
-Transactions (`my-finance-transactions-YYYY-MM-DD.csv`):
+File selection, parsing and preview perform no writes. The preview shows readable
+Country / Region, currency, profile, fiscal month, creation time, entity counts,
+theme, current local counts and replacement mode. The final action requires an
+explicit native confirmation. Cancel preserves every record, setting and theme.
+There is no merge mode.
 
-```text
-id,type,date,amount_cad,category_id,category_name,account_id,account_name,from_account_id,from_account_name,to_account_id,to_account_name,note,text_encoding
-```
+The copied, fully validated workspace replaces Accounts, Categories, Transactions,
+Obligations, Obligation Payments and Application Settings in **one** IndexedDB
+read/write transaction. All six stores commit together or all clears/writes roll
+back. Settings are replaced completely, with the fixed application ID. No normal
+account/category/history protection rule is changed outside this replacement
+operation. Financial calculations remain derived and unchanged.
 
-All history is exported, ordered by transaction date descending, then ID ascending.
-Expense/Income populate account and category columns; Transfer populates From/To
-columns. Unused columns are blank. Names aid inspection and reference mapping;
-IDs retain identity.
+After successful database commit, the existing theme mechanism applies and
+persists appearance. localStorage cannot participate in IndexedDB rollback. If
+its write fails, financial/tracking/settings restoration stays successful, theme
+applies for the session, and the result states the preference could not be saved.
+It does not report that database restoration failed.
 
-Accounts (`my-finance-accounts-YYYY-MM-DD.csv`):
+The existing refresh event rereads mounted financial/tracking features; Dexie
+liveQuery updates the settings provider. Country, currency, profile and fiscal
+preferences, money formatting and theme update without requiring reload.
+
+## Currency-aware CSV schemas
+
+Transactions CSV v2 uses these columns:
 
 ```text
-id,name,type,opening_balance_cad,credit_limit_cad,text_encoding
+id,type,date,amount,currency_code,category_id,category_name,account_id,account_name,from_account_id,from_account_name,to_account_id,to_account_name,note,text_encoding,tax_amount,receipt_number
 ```
 
-Categories (`my-finance-categories-YYYY-MM-DD.csv`):
+Each nonblank row has the same validated, supported `currency_code`, taken from
+the workspace settings in the export snapshot. It is plain uppercase ISO metadata
+such as CAD, USD or EUR. CSV currency is file interpretation only; no currency is
+added to domain transactions or accounts. No FX conversion is offered.
+
+Expense rows may carry optional `tax_amount` (exact decimal cents) and
+`receipt_number` (spreadsheet-protected text). Tax is included in the existing
+`amount`, must be positive and no greater than it, and never changes balances or
+expense totals. Income/Transfer must leave both columns blank. Previous v2 and
+legacy CAD headers lacking both columns remain accepted, with metadata absent.
+Tax and receipt differences participate in ID conflict detection. Full Backup v3
+preserves the optional Expense properties without a schema change; older v1/v2/v3
+files remain valid without synthesized metadata. See [Expense tax and receipt
+details](expense-tax-receipts.md) for validation and editor behavior.
+
+Accounts CSV now uses:
+
+```text
+id,name,type,opening_balance,credit_limit,currency_code,text_encoding
+```
+
+All monetary records use current workspace currency. Opening balances may be
+negative; credit limits are nonnegative and blank when absent or inapplicable.
+Accounts CSV import remains unsupported.
+
+Categories CSV has no monetary values and remains byte-for-byte unchanged:
 
 ```text
 id,name,type,text_encoding
 ```
 
-Accounts/Categories CSV files are for inspection, spreadsheets, and portability.
-They cannot be imported in this version; use Full Backup to restore entities.
+Categories CSV import remains unsupported. No Bills & Installments CSV is added.
 
-## Full Restore: Replace only
+CSV is UTF-8, with all fields quoted, embedded quotes doubled and CRLF separators.
+Decimal amounts use the existing exact BigInt helpers: `42.75`, `2000.00`,
+`-123.45`. There is no floating storage or numeric conversion between currencies.
+Symbols, grouping commas, exponents and more than two decimal places are rejected.
+Only supported two-decimal currencies are accepted. JPY-style zero decimal and
+KWD-style three decimal interpretation are not implemented.
 
-Selecting a JSON file only reads, parses, and validates it. The preview shows
-creation time, counts, theme, current dataset counts, and Replace mode. The
-`Replace current data` action requires a separate explicit destructive
-confirmation. Cancellation writes nothing. There is no Merge mode.
+The unchanged `text_encoding` marker is `my-finance-apostrophe-v1`. Every nonempty
+user text field (IDs, names, type, dates, notes) gets one apostrophe prefix before
+CSV quoting. Import removes exactly one. This protects formula-like text and
+preserves original apostrophes, whitespace, commas, quotes, multiline notes and
+Unicode. Generated money, validated `currency_code`, and the fixed encoding marker
+have no apostrophe prefix. They cannot contain user-supplied formulas. Spreadsheet
+modes may display the text apostrophe literally; do not remove it for re-import.
 
-The entire validated graph is copied and revalidated before replacement. One
-Dexie read/write transaction covers Accounts, Categories, Transactions,
-Obligations, and Obligation Payments.
-All clears and bulk writes happen in that transaction. A rejection/failed write
-aborts it: either the full application snapshot commits, or the previous financial and tracking
-data remains intact. Direct table access in this dedicated operation intentionally
-avoids per-entity delete protection only after validating the complete graph.
-Normal account/category edit/delete integrity protection remains in place.
+Transactions retain date-descending, ID-ascending order. Expense/Income populate
+account/category fields; Transfer uses From/To fields; unused columns stay blank.
+IDs retain identity and names assist inspection/mapping. Column order may vary
+on import; duplicate, missing and unknown columns are rejected.
 
-Only after a successful application commit is the validated theme applied and
-persisted. localStorage is not part of the IndexedDB transaction. If storing
-the preference fails, data restoration remains successful, the theme
-applies for the current session, and the result explicitly reports that the
-appearance preference could not be saved. It does not report total restore failure.
+## Legacy CSV and currency checks
 
-## Transactions CSV import
+Legacy Transactions CSV v1 uses `amount_cad` and has no `currency_code`. All its
+original columns and encoding marker remain required. Import normalizes it to
+`amount` with implied CAD, then applies the exact same workspace-currency check.
+Legacy CAD CSV is allowed in CAD workspaces and blocked in USD/EUR workspaces.
 
-This importer supports the documented My Finance schema, not arbitrary bank
-statement formats. All documented columns, including `text_encoding`, are required;
-their order may vary. Duplicate/missing/unknown headers are rejected. Transaction
-IDs are required: imports never manufacture IDs to hide collisions. UTF-8 input
-and an optional leading BOM are supported. The state-machine parser supports
-quoted commas, escaped quotes, multiline fields, CRLF/LF records, and blank rows.
-Malformed quoting rejects the file; malformed records get a visible Invalid state.
-Nothing is written during file selection, parsing, validation, or mapping.
+A mismatch blocks preview/import with a clear message:
 
-Each logical row receives a status:
+> This file uses USD, but this workspace uses CAD.
 
-- **Ready:** valid and selected by default; may be deselected.
-- **Duplicate:** the ID already exists with effectively identical financial
-  data, or is an identical later copy in this file. Skipped. Empty/absent notes
-  compare equally; other note whitespace, dates, amounts, types, and references
-  are exact. Display names do not affect equality.
-- **Conflict:** the same ID has different data, or repeated rows cannot agree
-  on a complete identical record. Conflicting rows are never overwritten/imported.
-- **Needs mapping:** references cannot be uniquely resolved.
-- **Invalid:** malformed fields or a financial/reference rule is violated.
+Mixed row currencies and missing/unsupported codes reject the entire file,
+including when the mismatched row has other invalid fields. CSV import never
+changes workspace settings or currency. Currency can be changed separately in
+Finance settings only with the existing safety behavior.
 
-Reference resolution prioritizes exact persisted IDs. Failing that, account names
-use trimmed, case-insensitive exact matches only when unique. Categories use the
-same name normalization plus the required Expense/Income type. An exact category
-ID of the wrong type is Invalid, not silently remapped by name. Ambiguous names
-are never guessed. Users can explicitly map to existing entities. No accounts
-or categories are created automatically. Income choices omit credit cards;
-final validation still rejects them. Transfer endpoints must remain distinct.
+A header-only file is valid and contains no transactions or amounts to interpret;
+per-row currency metadata is absent when there are no rows. Its empty preview has
+no importable selection. This convention does not infer or change currency.
 
-Preview lists 20 rows per page. Status filtering and pagination expose every
-problem row. It shows date, type, exact amount, resolved account/category or
-Transfer direction, status/error, and an optional note disclosure. Only selected
-Ready rows are submitted; result text reports imported and skipped counts.
+An optional UTF-8 BOM, quoted commas, escaped quotes, multiline fields, LF/CRLF
+records and blank rows are supported. Malformed quoting rejects the file.
+Other malformed records get a visible Invalid status. This importer accepts the
+My Finance schema, not arbitrary bank-statement formats.
 
-Immediately before writing, the selected batch is copied and validated again
-against current Accounts/Categories and transaction IDs inside **one** Dexie
-read/write transaction. A stale reference or new ID collision rejects the whole
-batch rather than silently skipping part of it. Bulk-write failure aborts every
-selected addition. Existing records are never overwritten. The preview remains
-open with an error, and current data is reread for another review.
+## Transaction preview and import rules
 
-Successful restore/import dispatches the existing shared data-refresh event.
-Home (including Upcoming payments), Accounts, Account Details, Transactions,
-Bills & Installments, and payment history read current persisted data;
-balances remain derived. Transfers retain existing semantics and stay excluded
-from Expense/Income totals. Object URLs used for downloads are revoked.
+- Ready: valid, selected by default and optionally deselected.
+- Duplicate: effectively identical existing ID or repeated file row; skipped.
+  Empty and absent notes compare equally. Other note whitespace, dates, amounts,
+  types and references are exact. Display names do not affect equality.
+- Conflict: same ID with different or unresolved data; never overwritten/imported.
+- Needs mapping: references cannot be uniquely resolved.
+- Invalid: malformed fields or financial/reference validation fails.
 
-## Compatibility and checks
+Exact persisted IDs take precedence. Failing that, names use trimmed,
+case-insensitive matches only when unique; categories also require the right
+Expense/Income type. A matching category ID with the wrong type is Invalid.
+Ambiguous names are never guessed. Explicit mappings target existing entities;
+no accounts/categories or transaction IDs are manufactured. Income cannot target
+credit cards; Transfer endpoints must differ. Existing business rules are reused.
 
-Backup schemas 1 and 2 are accepted through separate validators; new exports use
-version 2. File schema version is independent of the IndexedDB version. Unknown
-backup schema versions are rejected. Future versions must provide an
-explicit, validated migration before acceptance; arbitrary future compatibility
-is not promised. Encryption, cloud/automatic/scheduled backup, Full Backup merge,
-entity CSV imports, PWA, and multi-currency are outside this step. Full Backup JSON
-is the canonical recovery format for Bills & Installments; no tracking CSV is added.
+Preview uses file currency for exact amounts, status filtering and 20-row pages.
+Only selected Ready rows are submitted. If workspace currency changes while the
+preview is open, a blocking message appears and import is disabled. Before writes,
+selected records are copied and validated again against current accounts,
+categories, IDs **and workspace currency** under one IndexedDB transaction.
+A stale reference, ID collision, currency mismatch or bulk-write failure rejects
+all additions. Existing records and settings are never overwritten by CSV import.
+The preview stays open for review and result text reports imported/skipped counts.
 
-Run `npm test` (Node 22.18+ or Node 24, for built-in TypeScript stripping),
-`npm run build`, `npm run lint`, and `git diff --check`. Pure format/parser/graph
-tests use Node's built-in test runner, without new dependencies. Browser checks
-exercise actual IndexedDB transaction rollback, file downloads/selections,
-confirmation, mapping/import, themes, responsive layouts, and focus handling.
-Run `npm run test:backup:browser`, `npm run test:obligations:browser`, and
-`npm run test:obligations:ui` against a running Vite server. These Node 24/Chrome
-checks use disposable profiles and real IndexedDB; override `BILLS_APP_URL` and
-`CHROME_BIN` when needed. Backup checks save downloaded files and review screenshots
-in a temporary `my-finance-backup-review-*` directory and verify final-store failure
-rolls back all five tables, v1 clears tracking data, and restored UI/theme matches.
+## Filenames, limitations and validation
+
+Filename conventions are unchanged: `my-finance-backup-YYYY-MM-DD.json`,
+`my-finance-custom-backup-YYYY-MM-DD.json`, and
+`my-finance-{transactions|accounts|categories}-YYYY-MM-DD.csv`, using local dates.
+No currency is added to filenames. Downloads remain local Blob URLs, revoked
+after use; PWA caching remains restricted to application assets.
+
+There is one workspace currency, no FX conversion, account/transaction currencies,
+multiple workspaces, tax reports, charts, cloud sync, merge restoration, encryption,
+or entity CSV imports. PWA logic, theme keys and financial calculations are unchanged.
+
+Run `npm test`, `npm run build`, `npm run lint`, and `git diff --check`.
+Run all existing browser suites plus `npm run test:workspace-backup:browser`
+with Vite running. Node 24 and Chrome are used without automation dependencies.
+`BILLS_APP_URL` and `CHROME_BIN` override the development URL/browser.
+The new suite checks v3 downloads, USD CSV, mismatch/mixed/legacy behavior,
+settings/formatting updates, native cancel/confirm, six-store rollback, actual
+settings-write failure, theme-storage failure, v1/v2 defaults, all themes,
+320px/390px/desktop and 200% text. Production PWA tests exercise offline v3
+restore/current CSV import, hosting paths, asset-only caching and safe updates.
+
+## Implementation file inventory and validation
+
+Created:
+
+- `tests/workspace-backup.test.mjs`
+- `tests/workspace-backup.browser.mjs`
+
+Modified:
+
+- `README.md`
+- `docs/data-backup.md`
+- `docs/finance-settings.md`
+- `package.json` (browser test command only; no dependency changes)
+- `src/domain/financeSettings.ts`
+- `src/features/dataBackup/CsvImportPreview.tsx`
+- `src/features/dataBackup/CustomExport.tsx`
+- `src/features/dataBackup/DataBackupSection.tsx`
+- `src/features/dataBackup/RestorePreview.tsx`
+- `src/features/dataBackup/backupFormat.ts`
+- `src/features/dataBackup/transactionCsv.ts`
+- `src/features/dataBackup/useDataBackup.ts`
+- `src/persistence/README.md`
+- `src/persistence/dataBackup.ts`
+- `src/persistence/snapshotValidation.ts`
+- `tests/data-backup.browser.mjs`
+- `tests/data-backup.test.mjs`
+- `tests/finance-settings.browser.mjs`
+- `tests/finance-settings.test.mjs`
+- `tests/obligations.browser.mjs`
+- `tests/pwa.browser.mjs`
+
+Validation passed using Node 24.14.0 and Chrome:
+
+| Command | Result |
+| --- | --- |
+| `npm test` | 279 passed |
+| `npm run test:obligations:browser` | 99 passed |
+| `npm run test:obligations:ui` | 263 passed |
+| `npm run test:backup:browser` | 184 passed |
+| `npm run test:settings:browser` | 92 passed |
+| `npm run test:workspace-backup:browser` | 48 passed |
+| `npm run test:pwa:browser` | 214 passed |
+| `npm run build` | Passed |
+| `npm run lint` | Passed |
+| `git diff --check` | Passed |
+
+The 1,179 unit tests and browser checks include existing financial, tracking,
+onboarding, theme, navigation, transaction filtering and production offline
+regressions. No financial calculation, database schema, PWA source, Vite setting,
+dependency or lockfile changes are included.

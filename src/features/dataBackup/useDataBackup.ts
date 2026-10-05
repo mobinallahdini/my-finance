@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Transaction } from '../../domain/models'
-import { importTransactionBatch, readApplicationSnapshot, replaceApplicationSnapshot } from '../../persistence/dataBackup'
+import { importTransactionBatch, readApplicationSnapshot, replaceWorkspaceSnapshot } from '../../persistence/dataBackup'
 import type { ApplicationSnapshot } from '../../persistence/snapshotValidation'
 import { setTheme } from '../appearance/themePreference'
 import { notifyDataChanged, useDataRefresh } from '../shared/dataRefresh'
 import { restoreSnapshot, validateFullBackup, type FullBackup } from './backupFormat'
+import { useFinanceSettings } from '../financeSettings/settingsContext'
 
 export function useDataBackup() {
+  const { settings } = useFinanceSettings()
   const [snapshot, setSnapshot] = useState<ApplicationSnapshot>({ accounts: [], categories: [], transactions: [], obligations: [], obligationPayments: [] })
   const [isLoading, setIsLoading] = useState(true)
   const [isWriting, setIsWriting] = useState(false)
@@ -37,13 +39,13 @@ export function useDataBackup() {
   async function restore(backup: FullBackup) {
     const validated = validateFullBackup(structuredClone(backup))
     return write(async () => {
-      await replaceApplicationSnapshot(restoreSnapshot(validated))
+      await replaceWorkspaceSnapshot(restoreSnapshot(validated, settings?.countryCode))
       // Appearance persistence cannot roll back or misreport a successful data commit.
       return setTheme(validated.preferences.theme)
     })
   }
-  async function importTransactions(transactions: readonly Transaction[]) {
-    try { return await write(() => importTransactionBatch(transactions)) }
+  async function importTransactions(transactions: readonly Transaction[], currencyCode: string) {
+    try { return await write(() => importTransactionBatch(transactions, currencyCode)) }
     catch (error) { reload(); throw error }
   }
   return { snapshot, isLoading, isWriting, loadError, reload, restore, importTransactions }
