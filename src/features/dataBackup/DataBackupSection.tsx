@@ -94,7 +94,7 @@ export function DataBackupSection() {
   async function replaceData() {
     if (preview?.kind !== 'restore' || busy || loadError) return
     const legacyWarning = preview.backup.schemaVersion === 1 ? ' This version 1 backup contains no Bills & Installments; all current obligations and recorded payments will be removed.' : ''
-    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} Workspace currency will become ${preview.backup.currency}. Country, profile type, and fiscal year preferences will be replaced with the previewed settings. This cannot be undone.`)) return
+    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} Workspace currency will become ${preview.backup.currency}. Country and fiscal year preferences will be replaced with the previewed settings. This cannot be undone.`)) return
     setError(''); setStatus('')
     try {
       const persisted = await restore(preview.backup)

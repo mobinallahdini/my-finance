@@ -3,7 +3,7 @@
 A local-first personal finance app with Expense, Income, and Transfer tracking;
 accounts and credit-card balances; advanced transaction filtering; a monthly
 dashboard; Bills & Installments with payment history; Sage, Ocean, and Dark themes;
-first-run workspace setup; country, currency, Personal / Business and fiscal preferences;
+first-run setup for a single workspace; country, currency, and fiscal preferences;
 JSON backup/restore; currency-aware CSV import/export; and an
 installable PWA shell.
 
@@ -45,6 +45,10 @@ Development is on `feature/v1.1-onboarding-currency`; the released v1.0.0 remain
 on `main`. [Onboarding and finance settings](docs/finance-settings.md) documents
 schema v3, exact legacy preservation, currency restrictions, confirmation,
 startup, and workspace-currency behavior. No financial values are converted.
+
+V1.1 has one workspace. Onboarding and Finance settings expose Country / Region,
+Currency, and Fiscal year start. Multiple workspaces/profiles are planned for a
+future version; there is no Personal / Business selection in v1.1.
 
 Optional Expense Tax / VAT and receipt metadata are documented in [Expense tax and receipt details](docs/expense-tax-receipts.md). Transaction amounts remain the total paid.
 

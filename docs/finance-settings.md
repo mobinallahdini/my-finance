@@ -14,7 +14,7 @@ Dexie schema 3 retains versions 1 and 2 verbatim and adds the
   id: 'application',
   countryCode: 'CA',           // ISO 3166-1 alpha-2
   currencyCode: 'CAD',         // supported ISO 4217 code
-  profileType: 'personal',    // or 'business'
+  profileType: 'personal',    // internal compatibility metadata; legacy 'business' accepted
   fiscalYearStartMonth: 1,    // integer 1–12
   onboardingCompleted: true
 }
@@ -41,8 +41,9 @@ are observed with Dexie liveQuery, including changes from another tab.
 Setup requires Country / Region and an explicit Currency selection. A valid region
 from browser locales is an editable suggestion only; locales without a region
 leave the country unselected. Currency is independent and starts unselected.
-Personal and January are the default metadata choices. More → Finance settings
-opens a separate destination containing the same four editable preferences.
+Fiscal year start defaults to January. More → Finance settings opens a separate
+destination containing the same three editable preferences: Country / Region,
+Currency, and Fiscal year start. Neither form exposes a profile/workspace type.
 
 The country catalog contains 249 ISO 3166-1 alpha-2 codes. Intl.DisplayNames supplies
 readable country/currency names; browsers without it retain usable code labels.
@@ -57,9 +58,16 @@ three-decimal KWD/BHD are excluded. Monetary values remain safe integer minor un
 with exactly two decimal places. IRR follows ISO's two-decimal definition even
 when a browser's default currency formatting would omit fractional digits.
 
-Personal / Business describes the current single workspace. It creates no new
-dataset or tax behavior. Fiscal start month is saved for future annual/fiscal
-reporting and does not change calendar-month totals or obligation due months.
+V1.1 has a single workspace. Multiple workspaces/profiles are planned for a future
+version; no release number is promised. `profileType` stays in the existing schema
+and backup format as internal compatibility metadata. New onboarding saves
+`personal`. Existing `personal` or `business` values are preserved during startup,
+settings edits, export, and restore, including interrupted onboarding. Neither
+value affects current financial or tax behavior. There is no normalization, new
+Dexie version, or data migration in this UI change.
+
+Fiscal start month is saved for future annual/fiscal reporting and does not change
+calendar-month totals or obligation due months.
 Theme remains separate under the existing localStorage key and Sage default.
 
 ## Currency safety and presentation
@@ -94,7 +102,9 @@ application settings, financial/tracking records and theme. Metadata currency
 must agree with settings. Restore replaces all six stores atomically, updates the
 provider without a reload and completes setup. V1 restores Canadian legacy
 settings; v2 reconstructs missing metadata using the destination country,
-backup currency, Personal and January. Preview explicitly explains these defaults.
+backup currency, internal `personal` metadata and January. Preview explains the
+visible region/currency/fiscal defaults without displaying profile type. Restore
+confirmation also omits profile type; the stored value still restores exactly.
 
 Transactions and Accounts CSV have neutral amount columns plus `currency_code`.
 CSV actions are available for every supported workspace currency. Import blocks
@@ -110,7 +120,8 @@ With Vite running, run all existing browser suites and
 `BILLS_APP_URL` overrides the default development URL. The settings suite uses an
 isolated Chrome profile and seeds the actual released Dexie v2 schema, verifies
 exact preservation of all five tables/theme, explicit first-run setup/reload,
-settings edits/cancel/confirmation, active currency presentation, JSON metadata,
+settings edits/cancel/confirmation, preservation of both internal profile values,
+the absence of profile choices, active currency presentation, JSON metadata,
 CSV currency safety, restore rollback, and recoverable startup failures.
 
 The suites cover Sage/Ocean/Dark, 320px/390px/desktop, 200% text, native labelled

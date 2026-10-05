@@ -32,7 +32,8 @@ schema version is needed. Database version remains 3.
 
 ## Editor, search and presentation
 
-Both Personal and Business use the same Expense editor. New Expenses show a
+The single workspace uses the same Expense editor regardless of preserved internal
+`profileType` metadata. New Expenses show a
 secondary **Tax & receipt (optional)** disclosure, closed by default. Editing an
 Expense containing metadata opens it automatically. It provides currency-aware
 Tax / VAT and Receipt number labels, explanatory help, associated validation

@@ -17,11 +17,10 @@ export function RestorePreview({ backup, current, filename }: { backup: FullBack
       <dl className="backup-restore-summary">
         <div><dt>Country / Region</dt><dd>{countries.find(item => item.code === restored.countryCode)?.label ?? restored.countryCode}</dd></div>
         <div><dt>Currency</dt><dd>{currencies.find(item => item.code === restored.currencyCode)?.label ?? restored.currencyCode}</dd></div>
-        <div><dt>Profile type</dt><dd>{restored.profileType === 'business' ? 'Business' : 'Personal'}</dd></div>
         <div><dt>Fiscal year starts</dt><dd>{fiscalMonth}</dd></div>
       </dl>
       {settingsWereReconstructed(backup) && <p className="backup-help">This older backup did not save workspace preferences. {backup.schemaVersion === 1
-        ? 'Country / Region is Canada and currency is CAD.' : 'Your current Country / Region is used; currency comes from the backup.'} Personal use and January fiscal start are restored as defaults. Setup stays complete.</p>}
+        ? 'Country / Region is Canada and currency is CAD.' : 'Your current Country / Region is used; currency comes from the backup.'} January fiscal start is restored as the default. Setup stays complete.</p>}
     </section>
     <dl className="backup-restore-summary">
       <div><dt>Backup created</dt><dd><time dateTime={backup.exportedAt}>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(backup.exportedAt))}</time></dd></div>

@@ -174,12 +174,18 @@ try {
   for(const record of added) assert.deepEqual(imported.transactions.find(value=>value.id===record.id),record)
   assert.deepEqual(await settings(),usdSettings)
   results.push('Matching USD CSV imports exact Expense/Income/Transfer values without changing settings')
-  await restoreFile(file);assert.deepEqual(await workspace(),baseline)
+  await chooseFile(file);await wait(`!!document.querySelector('dialog[open]')`)
+  await check(`document.querySelectorAll('.backup-workspace dt').length===3&&!/Personal|Business|profile type/i.test(document.querySelector('.backup-workspace').textContent)`, 'Existing business v3 backup preview exposes only meaningful settings')
+  await click('Replace current data');await wait(`!document.querySelector('dialog[open]')&&!document.querySelector('[aria-busy="true"]')`);await delay(80)
+  assert.deepEqual(await workspace(),baseline)
+  assert.equal((await settings()).profileType,'business')
+  assert.ok(!/profile type|Personal|Business/i.test(confirmations.at(-1)),'Restore confirmation does not expose internal profile metadata')
+  results.push('V3 business metadata round-trips exactly without UI or confirmation exposure')
 
   const eurSettings={...usdSettings,countryCode:'DE',currencyCode:'EUR',profileType:'personal',fiscalYearStartMonth:7}
   const replacement={...file,currency:'EUR',data:{...file.data,applicationSettings:eurSettings},preferences:{theme:'dark'}}
   await chooseFile(replacement);await wait(`!!document.querySelector('dialog[open]')`)
-  await check(`document.querySelector('#restore-workspace-heading').textContent==='Workspace'&&document.querySelector('.backup-workspace').textContent.includes('Germany')&&document.querySelector('.backup-workspace').textContent.includes('Euro')&&document.querySelector('.backup-workspace').textContent.includes('Personal')&&document.querySelector('.backup-workspace').textContent.includes('July')`, 'V3 restore preview shows readable country, currency, profile and fiscal month')
+  await check(`document.querySelector('#restore-workspace-heading').textContent==='Workspace'&&document.querySelector('.backup-workspace').textContent.includes('Germany')&&document.querySelector('.backup-workspace').textContent.includes('Euro')&&!/Personal|Business|profile type/i.test(document.querySelector('.backup-workspace').textContent)&&document.querySelector('.backup-workspace').textContent.includes('July')`, 'V3 restore preview shows readable country, currency and fiscal month without profile type')
   accept=false;await click('Replace current data');accept=true
   assert.deepEqual(await workspace(),baseline,'Cancel preserves all six stores')
   await click('Replace current data');await wait(`!document.querySelector('dialog[open]')&&!document.querySelector('[aria-busy="true"]')`);await delay(70)
@@ -190,7 +196,7 @@ try {
   await route('accounts/bank')
   await check(`document.querySelector('.account-details-summary').textContent.includes('€2,857.25')`, 'Account Details recalculates with unchanged values and restored currency')
   await route('more/finance-settings')
-  await check(`document.querySelector('select[id$="-country"]').value==='DE'&&document.querySelector('select[id$="-currency"]').value==='EUR'&&document.querySelector('input[value="personal"]').checked&&document.querySelector('select[id$="-fiscal"]').value==='7'`, 'All restored Finance Settings values display without a reload')
+  await check(`document.querySelector('select[id$="-country"]').value==='DE'&&document.querySelector('select[id$="-currency"]').value==='EUR'&&!document.querySelector('.finance-settings input[type="radio"]')&&document.querySelector('select[id$="-fiscal"]').value==='7'`, 'All restored Finance Settings values display without a reload')
   await route('more/data-backup')
   const beforeFailure=await workspace(),beforeTheme=await evaluate(`localStorage.getItem('my-finance-theme')`)
   await check(`(async()=>{const {database}=await import('/src/persistence/database.ts'),m=await import('/src/persistence/dataBackup.ts');const before=(await m.readBackupSource()).snapshot;const original=database.obligationPayments.bulkAdd;let reached=false;database.obligationPayments.bulkAdd=async function(records){reached=true;await original.call(this,records);throw new Error('Injected final-store failure')};let rejected=false;try{await m.replaceWorkspaceSnapshot(${JSON.stringify(baseline)})}catch{rejected=true}finally{database.obligationPayments.bulkAdd=original}return rejected&&reached&&JSON.stringify((await m.readBackupSource()).snapshot)===JSON.stringify(before)})()`, 'Final-store failure rolls back all six clears/writes, including replaced settings')
@@ -212,13 +218,13 @@ try {
   const {applicationSettings,...records}=file.data
   const v2={...file,schemaVersion:2,sections:file.sections.filter(section=>section!=='applicationSettings'),data:records}
   await chooseFile(v2);await wait(`!!document.querySelector('dialog[open]')`)
-  await check(`document.querySelector('.backup-workspace').textContent.includes('Your current Country / Region is used')&&document.querySelector('.backup-workspace').textContent.includes('January')&&document.querySelector('.backup-workspace').textContent.includes('Personal')`, 'Legacy v2 preview explicitly reconstructs destination country, Personal and January')
+  await check(`document.querySelector('.backup-workspace').textContent.includes('Your current Country / Region is used')&&document.querySelector('.backup-workspace').textContent.includes('January')&&!/Personal|Business|profile type/i.test(document.querySelector('.backup-workspace').textContent)`, 'Legacy v2 preview explains visible country and January defaults without profile type')
   await click('Replace current data');await wait(`!document.querySelector('dialog[open]')&&!document.querySelector('[aria-busy="true"]')`);await delay(60)
   assert.deepEqual(await settings(),{...cadSettings,countryCode:'DE',currencyCode:'USD'})
   assert.equal(applicationSettings.countryCode,'GB');assert.deepEqual(await snapshot(),records)
   const v1={...file,schemaVersion:1,currency:'CAD',sections:['accounts','categories','transactions','preferences'],data:{accounts:records.accounts,categories:records.categories,transactions:records.transactions}}
   await chooseFile(v1);await wait(`!!document.querySelector('dialog[open]')`)
-  await check(`document.querySelector('.backup-workspace').textContent.includes('Canada')&&document.querySelector('.backup-workspace').textContent.includes('Personal')&&document.querySelector('.backup-workspace').textContent.includes('January')`, 'Legacy v1 preview explains Canadian defaults')
+  await check(`document.querySelector('.backup-workspace').textContent.includes('Canada')&&!/Personal|Business|profile type/i.test(document.querySelector('.backup-workspace').textContent)&&document.querySelector('.backup-workspace').textContent.includes('January')`, 'Legacy v1 preview explains Canadian defaults')
   await click('Replace current data');await wait(`!document.querySelector('dialog[open]')&&!document.querySelector('[aria-busy="true"]')`);await delay(60)
   assert.deepEqual(await settings(),cadSettings);assert.deepEqual(await snapshot(),{...v1.data,obligations:[],obligationPayments:[]})
   await check(`!document.querySelector('.finance-onboarding')&&!!document.querySelector('.app-shell')`, 'V1/v2 compatibility restores completed setup and skips onboarding')

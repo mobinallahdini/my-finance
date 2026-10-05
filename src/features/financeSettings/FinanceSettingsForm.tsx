@@ -11,7 +11,6 @@ export function FinanceSettingsForm({ onboarding = false }: { onboarding?: boole
   const { settings, save } = useFinanceSettings()
   const [countryCode, setCountry] = useState(settings?.countryCode ?? suggestedCountry(navigator.languages))
   const [currencyCode, setCurrency] = useState(settings?.currencyCode ?? '')
-  const [profileType, setProfile] = useState<ApplicationSettings['profileType']>(settings?.profileType ?? 'personal')
   const [fiscalMonth, setFiscal] = useState(settings?.fiscalYearStartMonth ?? 1)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -26,7 +25,8 @@ export function FinanceSettingsForm({ onboarding = false }: { onboarding?: boole
     event.preventDefault()
     if (saving.current) return
     saving.current = true; setBusy(true); setError(''); setStatus('')
-    const next: ApplicationSettings = { id: applicationSettingsId, countryCode, currencyCode, profileType, fiscalYearStartMonth: fiscalMonth, onboardingCompleted: true }
+    // Keep legacy profile metadata intact; new single workspaces default to personal.
+    const next: ApplicationSettings = { id: applicationSettingsId, countryCode, currencyCode, profileType: settings?.profileType ?? 'personal', fiscalYearStartMonth: fiscalMonth, onboardingCompleted: true }
     try {
       try { await save(next) }
       catch (caught) {
@@ -56,9 +56,6 @@ export function FinanceSettingsForm({ onboarding = false }: { onboarding?: boole
           <select id={`${prefix}-currency`} required value={currencyCode} onChange={event => setCurrency(event.target.value)} aria-describedby={`${prefix}-currency-help`}>
             <option value="">Choose currency</option>{currencies.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
           </select><p id={`${prefix}-currency-help`}>One currency for this workspace. Only currencies with two decimal minor units are supported. No currency conversion.</p></div>
-        <fieldset className="finance-profile"><legend>Use My Finance for</legend>
-          {(['personal', 'business'] as const).map(type => <label key={type}><input type="radio" name={`${prefix}-profile`} value={type} checked={profileType === type} onChange={() => setProfile(type)} />{type === 'personal' ? 'Personal' : 'Business'}</label>)}
-        </fieldset>
         <div className="finance-field"><label htmlFor={`${prefix}-fiscal`}>Fiscal year starts in</label>
           <select id={`${prefix}-fiscal`} value={fiscalMonth} onChange={event => setFiscal(Number(event.target.value))} aria-describedby={`${prefix}-fiscal-help`}>
             {months.map((month, index) => <option value={index + 1} key={month}>{month}</option>)}
@@ -67,7 +64,6 @@ export function FinanceSettingsForm({ onboarding = false }: { onboarding?: boole
       {error && <p className="finance-error" ref={errorRef} role="alert" tabIndex={-1}>{error}</p>}
       <p role="status">{status}</p>
       <button className="button-primary finance-save" disabled={busy} type="submit">{busy ? 'Saving…' : onboarding ? 'Start using My Finance' : 'Save settings'}</button>
-      {!onboarding && <p className="finance-help">Personal / Business describes this workspace. Separate profiles and tax fields are not available yet.</p>}
     </form>
   </Container>
 }

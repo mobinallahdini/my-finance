@@ -39,7 +39,7 @@ New exports use schema 3 and include all six stores, plus appearance:
 ```
 
 The metadata `currency` comes from `applicationSettings.currencyCode`; validation
-rejects contradictory values. Country, currency, Personal/Business, fiscal month,
+rejects contradictory values. Country, currency, internal `profileType`, fiscal month,
 and the saved onboarding flag are serialized exactly. No editor state, route,
 search, filters, calculated balance, principal, status, progress, or due date is
 serialized. Existing financial/tracking fields, IDs, dates, notes, references
@@ -53,7 +53,7 @@ workspace states during another tab's edits. Full Backup remains the canonical
 recovery format. JSON never converts integer minor units into floating numbers.
 
 The settings validator checks fixed ID, standardized country/currency codes,
-Personal/Business, integer fiscal month 1-12, boolean completion and unknown
+`profileType` (`personal` or `business`), integer fiscal month 1-12, boolean completion and unknown
 fields. Existing graph validation still rejects missing sections, duplicate IDs,
 unsafe/fractional/nonpositive amounts, invalid calendar dates, orphan references,
 category type mismatches, Income into credit cards, invalid Transfer endpoints,
@@ -61,6 +61,13 @@ and invalid bill/installment/payment shapes. Tracking history preserves archived
 obligations, deliberate overpayments and paid dates separate from due months.
 Both complete graphs and settings validate before any write. Themes are limited
 to Sage, Ocean and Dark. Unsupported file schema versions are rejected.
+
+V1.1 has one workspace. `profileType` is compatibility metadata only: new setup
+saves `personal`, while existing `personal` and `business` values are preserved
+exactly in v3 exports and restores. It is hidden in onboarding, Finance settings,
+restore preview, and restore confirmation. No normalization or schema migration
+is introduced; both values have identical financial behavior. Multiple
+workspaces/profiles are planned for a future version.
 
 ## Compatibility with versions 1 and 2
 
@@ -73,7 +80,7 @@ Partial graph restores remain rejected. Preview explains reconstructed preferenc
   Preview and final confirmation warn that all current tracking data is removed.
 - Version 2 restores all five financial/tracking tables and its supported currency
   metadata. If settings were not stored, currency becomes the file currency,
-  profile becomes Personal, fiscal start becomes January, and setup is completed.
+  internal `profileType` becomes `personal`, fiscal start becomes January, and setup is completed.
   Country uses the destination's already-selected Country / Region, since currency
   does not identify residence. A programmatic restore without a known destination
   region uses CA as a documented fallback. Preview shows the effective region and

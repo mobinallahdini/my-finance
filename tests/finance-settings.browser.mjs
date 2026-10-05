@@ -1,4 +1,4 @@
-// Onboarding, settings, exact v2 migration and currency safety. Node 24 + Chrome + Vite.
+// Single-workspace onboarding, hidden profile compatibility, exact v2 migration and currency safety. Node 24 + Chrome + Vite.
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
@@ -93,6 +93,7 @@ try {
   await wait(`!!document.querySelector('.finance-onboarding')`)
   await check(`window.__startup.loading && !window.__startup.prematureShell && !document.querySelector('.app-shell')`, 'Fresh startup shows loading, then onboarding with no main shell flash')
   assert.equal(await settings(),null,'Empty install does not assume a CAD workspace')
+  await check(`document.querySelectorAll('.finance-onboarding select').length===3&&!document.querySelector('.finance-onboarding input[type="radio"]')&&!/Personal|Business|profile type|workspace type/i.test(document.querySelector('.finance-onboarding').textContent)`, 'Fresh onboarding asks only for country, currency and fiscal year start')
   await check(`document.documentElement.dataset.theme==='sage'`, 'Fresh install preserves the default Sage theme')
   await check(`document.querySelector('select[id$="-country"]').value==='GB' && document.querySelector('select[id$="-currency"]').value===''`, 'Region suggestion is editable and currency has no implicit selection')
   await click('Start using My Finance')
@@ -114,26 +115,33 @@ try {
   await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9})
   await check(`document.activeElement.id.endsWith('-country') && document.activeElement.matches(':focus-visible') && parseFloat(getComputedStyle(document.activeElement).outlineWidth)>0`, 'Keyboard enters the logical form order with visible focus')
   await select('country','CA'); await select('currency','USD'); await select('fiscal',4)
-  await evaluate(`document.querySelector('input[value="business"]').click();window.__setupAllowed=true`)
+  await evaluate(`window.__setupAllowed=true`)
   await click('Start using My Finance')
   await wait(`!!document.querySelector('.dashboard-summary')`)
-  assert.deepEqual(await settings(),{id:'application',countryCode:'CA',currencyCode:'USD',profileType:'business',fiscalYearStartMonth:4,onboardingCompleted:true})
+  assert.deepEqual(await settings(),{id:'application',countryCode:'CA',currencyCode:'USD',profileType:'personal',fiscalYearStartMonth:4,onboardingCompleted:true})
   await reload('.dashboard-summary')
   await check(`!document.querySelector('.finance-onboarding') && document.querySelector('.dashboard-summary').getAttribute('aria-label').includes('USD')`, 'Completed setup survives reload and Home uses the selected currency')
   await evaluate(`import('/src/persistence/dataBackup.ts').then(m=>m.replaceApplicationSnapshot(${JSON.stringify(data)})).then(()=>window.dispatchEvent(new Event('my-finance-data-changed')))`)
   const baseline=await snapshot()
   await route('more','.more-section')
-  await check(`!!document.querySelector('a[href="#more/finance-settings"]') && !document.querySelector('.more-section select')`, 'More offers a separate compact Finance settings destination')
+  await check(`!!document.querySelector('a[href="#more/finance-settings"]') && !document.querySelector('.more-section select') && !/workspace type|profile type|Personal|Business/i.test(document.querySelector('.more-section').textContent)`, 'More offers a separate compact Finance settings destination')
   await evaluate(`document.querySelector('a[href="#more/finance-settings"]').click()`)
   await wait(`!!document.querySelector('.finance-settings')`)
-  await check(`document.querySelector('select[id$="-country"]').value==='CA' && document.querySelector('select[id$="-currency"]').value==='USD' && document.querySelector('input[value="business"]').checked && document.querySelector('select[id$="-fiscal"]').value==='4'`, 'Finance settings displays all persisted preferences')
-  await select('country','DE'); await select('fiscal',7)
-  await evaluate(`document.querySelector('input[value="personal"]').click()`)
-  const beforeConfirmations=confirmations.length
-  await click('Save settings')
-  assert.equal(confirmations.length,beforeConfirmations)
-  assert.equal((await settings()).countryCode,'DE');assert.equal((await settings()).fiscalYearStartMonth,7);assert.equal((await settings()).profileType,'personal')
-  assert.deepEqual(await snapshot(),baseline,'Metadata edits preserve every financial/tracking record')
+  await check(`document.querySelector('select[id$="-country"]').value==='CA' && document.querySelector('select[id$="-currency"]').value==='USD' && !document.querySelector('.finance-settings input[type="radio"]') && document.querySelector('select[id$="-fiscal"]').value==='4'`, 'Finance settings displays the three editable preferences without a profile choice')
+  for (const profileType of ['personal','business']) {
+    await evaluate(`import('/src/persistence/applicationSettings.ts').then(async m=>m.saveApplicationSettings({...await m.bootstrapApplicationSettings(),countryCode:'CA',profileType:'${profileType}',fiscalYearStartMonth:4}))`)
+    const stored=await settings()
+    await reload('.finance-settings')
+    assert.deepEqual(await settings(),stored,'Startup preserves existing profile metadata without normalization')
+    await check(`document.querySelectorAll('.finance-settings select').length===3&&!document.querySelector('.finance-settings input[type="radio"]')&&!/Personal|Business|profile type|workspace type/i.test(document.querySelector('.finance-settings').textContent)`, `${profileType} settings startup exposes only the three meaningful preferences`)
+    await select('country','DE');await select('fiscal',7)
+    const beforeConfirmations=confirmations.length
+    await click('Save settings')
+    assert.equal(confirmations.length,beforeConfirmations)
+    assert.deepEqual(await settings(),{...stored,countryCode:'DE',fiscalYearStartMonth:7})
+    assert.deepEqual(await snapshot(),baseline,'Metadata edits preserve every financial/tracking record')
+    results.push(`${profileType} metadata survives country/fiscal edits with no financial changes`)
+  }
   await select('currency','EUR'); accept=false
   await click('Save settings')
   assert.equal((await settings()).currencyCode,'USD')
@@ -142,7 +150,7 @@ try {
   results.push('Native currency confirmation explains no conversion; cancel preserves currency and all records')
   accept=true; await click('Save settings')
   await wait(`document.querySelector('.finance-settings [role="status"]').textContent.includes('saved')`)
-  assert.equal((await settings()).currencyCode,'EUR');assert.deepEqual(await snapshot(),baseline)
+  assert.equal((await settings()).currencyCode,'EUR');assert.equal((await settings()).profileType,'business');assert.deepEqual(await snapshot(),baseline)
   results.push('Confirmed currency change preserves every amount, reference and note')
   for(const theme of ['sage','ocean','dark']) for(const width of [320,390,1280]) for(const font of [16,32]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:false})
@@ -204,7 +212,7 @@ try {
   await wait(`!!document.querySelector('dialog[open]')`)
   await check(`document.querySelector('dialog').textContent.includes('US Dollar') && document.querySelector('dialog').textContent.includes('workspace currency will become USD')`, 'Restore preview displays the backup currency and consequence')
   accept=false; await click('Replace current data')
-  assert.equal((await settings()).currencyCode,'EUR');assert.deepEqual(await snapshot(),baseline)
+  assert.equal((await settings()).currencyCode,'EUR');assert.equal((await settings()).profileType,'business');assert.deepEqual(await snapshot(),baseline)
   accept=true; await click('Replace current data')
   await wait(`!document.querySelector('dialog[open]') && !document.querySelector('[aria-busy="true"]')`)
   assert.equal((await settings()).currencyCode,'USD');assert.deepEqual(await snapshot(),baseline)
@@ -224,6 +232,13 @@ try {
   await check(`!document.querySelector('.app-shell') && document.querySelector('.finance-bootstrap').textContent.includes('Check browser storage')`, 'Unavailable IndexedDB shows a recoverable startup error without a main shell flash')
   await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:blocked.identifier})
   await reload('.data-backup-section');assert.deepEqual(await snapshot(),baseline)
+  // An interrupted older setup can also contain hidden business metadata.
+  await evaluate(`import('/src/persistence/applicationSettings.ts').then(async m=>m.saveApplicationSettings({...await m.bootstrapApplicationSettings(),profileType:'business',onboardingCompleted:false}))`)
+  await wait(`!!document.querySelector('.finance-onboarding')`)
+  await check(`document.querySelectorAll('.finance-onboarding select').length===3&&!/Personal|Business|profile type/i.test(document.querySelector('.finance-onboarding').textContent)`, 'Interrupted setup hides existing business metadata')
+  await click('Start using My Finance');await wait(`!!document.querySelector('.data-backup-section')`)
+  assert.equal((await settings()).profileType,'business');assert.equal((await settings()).onboardingCompleted,true);assert.deepEqual(await snapshot(),baseline)
+  results.push('Completing interrupted onboarding preserves business metadata and every financial record')
   // Seed the actual released Dexie v2 schema without importing the app first.
   await send('Page.navigate',{url:appURL+'/src/domain/README.md'})
   await wait(`!document.querySelector('#root')`)

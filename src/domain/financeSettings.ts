@@ -29,7 +29,7 @@ export function validateApplicationSettings(value: unknown): ApplicationSettings
   if (record.id !== applicationSettingsId) throw new Error('Invalid application settings ID.')
   if (typeof record.countryCode !== 'string' || !countryCodes.includes(record.countryCode)) throw new Error('Choose a valid Country / Region.')
   validateCurrencyCode(record.currencyCode)
-  if (record.profileType !== 'personal' && record.profileType !== 'business') throw new Error('Choose Personal or Business.')
+  if (record.profileType !== 'personal' && record.profileType !== 'business') throw new Error('Finance settings contain invalid internal metadata.')
   if (!Number.isInteger(record.fiscalYearStartMonth) || Number(record.fiscalYearStartMonth) < 1 || Number(record.fiscalYearStartMonth) > 12) throw new Error('Fiscal year start month must be 1–12.')
   if (typeof record.onboardingCompleted !== 'boolean') throw new Error('Onboarding completion must be a boolean.')
   return { id: applicationSettingsId, countryCode: record.countryCode, currencyCode: record.currencyCode,
