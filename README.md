@@ -3,6 +3,10 @@
 My Finance's local export and restore formats, validation rules, and safety
 guarantees are documented in [Data & Backup](docs/data-backup.md).
 
+The domain and persistence foundation for monthly obligation tracking is
+documented in [Bills & Installments](src/domain/obligations/README.md).
+It currently has no UI and is excluded from backup schemaVersion 1.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -1,4 +1,6 @@
 import type { Account, Category, Transaction, YearMonth } from '../domain/models'
+import { requireCalendarDate, requireCalendarMonth } from '../domain/calendar.ts'
+export { validateObligation, validateObligationPayment, validateObligationPaymentReference } from '../domain/obligationValidation.ts'
 
 export function requireId(id: string): void {
   if (typeof id !== 'string' || id.trim().length === 0) {
@@ -37,24 +39,11 @@ export function validateCategory(category: Category): void {
 }
 
 export function validateMonth(month: YearMonth): void {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month.startsWith('0000')) {
-    throw new RangeError('Month must use YYYY-MM format with a year from 0001 to 9999.')
-  }
+  requireCalendarMonth(month)
 }
 
 function validateDate(date: string): void {
-  if (!/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(date)) {
-    throw new RangeError('Date must be a valid calendar date in YYYY-MM-DD format.')
-  }
-  validateMonth(date.slice(0, 7))
-  const year = Number(date.slice(0, 4))
-  const month = Number(date.slice(5, 7))
-  const day = Number(date.slice(8, 10))
-  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  if (day < 1 || day > days[month - 1]) {
-    throw new RangeError('Date must be a valid calendar date in YYYY-MM-DD format.')
-  }
+  requireCalendarDate(date)
 }
 
 export function validateTransaction(transaction: Transaction): void {

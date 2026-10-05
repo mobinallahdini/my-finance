@@ -4,6 +4,10 @@ This module contains data types and pure calculations only. It has no React,
 storage, network, or third-party dependencies. Inputs are not mutated; category
 totals are returned in a new map.
 
+The independent monthly planning/tracking domain is documented in
+[Bills & Installments](obligations/README.md). Its payments never create
+Transactions or contribute to the financial calculations below.
+
 ## Money and balances
 
 All monetary fields and results use integer cents in a single shared currency:

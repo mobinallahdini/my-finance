@@ -1,11 +1,11 @@
-# Persistence v1
+# Persistence
 
 Use `accountsRepository`, `categoriesRepository`, and `transactionsRepository`
 from `./repositories`. The database and validators are internal implementation
 details; React consumers should not import Dexie or access tables directly.
 Records use the existing domain types without separate storage models.
 
-The browser-local IndexedDB database is `my-finance`, with explicit Dexie version 1:
+The browser-local IndexedDB database is `my-finance`. Its original Dexie version 1 is retained:
 
 ```ts
 accounts: 'id'
@@ -18,9 +18,24 @@ are non-unique. Date supports monthly date ranges, type supports transaction and
 category filtering, the three account reference indexes support account history
 and deletion checks, and categoryId supports category integrity checks. Missing
 union fields have no index entry. No names, notes, balances, or amounts are indexed.
-For migrations, retain version 1 and append `version(2).stores(...)` with an
-`upgrade(...)` callback when existing records need transformation. Do not rewrite
-version 1 to migrate installed databases. Construction does not seed records;
+Version 2 adds monthly obligation tracking stores without changing these
+financial tables or indexes:
+
+```ts
+obligations: 'id, type, startMonth'
+obligationPayments: 'id, obligationId, dueMonth, [obligationId+dueMonth]'
+```
+
+Use the additional `obligationsRepository` and `obligationPaymentsRepository`
+exports from `./repositories`. Their models, queries, pure calculations,
+validation, archive/delete rules, and backup limitation are documented in
+[Bills & Installments](../domain/obligations/README.md). History-sensitive writes
+lock both new tables; no tracking write touches financial tables. Existing
+version-1 data survives the additive version-2 upgrade.
+
+For future migrations, retain versions 1 and 2 and append a new schema version,
+with an `upgrade(...)` callback when existing records need transformation. Do not
+rewrite existing version declarations. Construction does not seed records;
 Dexie opens the database lazily on first operation.
 
 Each repository provides `add(record)`, `get(id)`, `getAll()`, `update(record)`,
@@ -66,7 +81,7 @@ transactions, overlapping the transaction-write scope. Concurrent writes,
 including other database connections/tabs, cannot bypass the income destination
 rule by changing account type between its validation and write.
 
-No schema migration or automatic history rewriting is involved. Existing invalid
+The income eligibility rule itself adds no history rewriting. Existing invalid
 income records introduced before this rule must be corrected to a bank/cash
 destination or explicitly deleted; updating them to a credit card is rejected.
 
@@ -74,5 +89,7 @@ Assumptions: a single currency, browser IndexedDB availability, caller-generated
 IDs, and all application writes going through these repositories. Raw IndexedDB
 access bypasses these application-level integrity rules. No balance snapshots,
 credit-limit spending enforcement, seeds, UI integration, or synchronization are
-implemented. Browser eviction/user-cleared storage can remove local data; backup
-and export are future work.
+implemented by these repositories. Browser eviction/user-cleared storage can
+remove local data. Existing backup/export covers financial records only;
+obligation tracking needs a future backup schema version before production-safe
+release.

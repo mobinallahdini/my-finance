@@ -1,4 +1,5 @@
 import type { Account, Category, Transaction, YearMonth } from '../domain/models'
+export { obligationsRepository, obligationPaymentsRepository } from './obligationRepositories'
 import { database } from './database'
 import {
   requireId,

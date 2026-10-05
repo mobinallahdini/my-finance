@@ -2,7 +2,8 @@
 export type MoneyCents = number
 
 /** Calendar date in YYYY-MM-DD format, without a time or timezone. */
-export type TransactionDate = string
+export type CalendarDate = string
+export type TransactionDate = CalendarDate
 
 /** Calendar month in YYYY-MM format. */
 export type YearMonth = string
@@ -65,3 +66,40 @@ export type Transaction =
   | ExpenseTransaction
   | IncomeTransaction
   | TransferTransaction
+
+/** Monthly planning/tracking records; these never imply a financial Transaction. */
+interface ObligationBase {
+  readonly id: string
+  readonly name: string
+  readonly dueDay: number
+  readonly startMonth: YearMonth
+  readonly note?: string
+  readonly isActive: boolean
+}
+
+/** V1 deliberately requires a fixed positive expected amount. */
+export interface Bill extends ObligationBase {
+  readonly type: 'bill'
+  readonly expectedAmountCents: MoneyCents
+  readonly originalAmountCents?: never
+  readonly scheduledPaymentCents?: never
+}
+
+export interface Installment extends ObligationBase {
+  readonly type: 'installment'
+  readonly originalAmountCents: MoneyCents
+  readonly scheduledPaymentCents: MoneyCents
+  readonly expectedAmountCents?: never
+}
+
+export type Obligation = Bill | Installment
+
+/** Several payments can cover one due month, including payments made later. */
+export interface ObligationPayment {
+  readonly id: string
+  readonly obligationId: string
+  readonly dueMonth: YearMonth
+  readonly paidDate: CalendarDate
+  readonly amountCents: MoneyCents
+  readonly note?: string
+}
