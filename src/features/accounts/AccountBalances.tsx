@@ -1,9 +1,10 @@
+import { useMoney } from '../financeSettings/useMoney'
 import type { Account, Transaction } from '../../domain/models'
 import { calculateAccountBalance, calculateAvailableCredit } from '../../domain/calculations'
-import { formatCad } from './money'
 
 /** Shared presentation keeps the list and details on the same financial semantics. */
 export function AccountBalances({ account, transactions }: { account: Account; transactions: readonly Transaction[] }) {
+  const { formatAmount } = useMoney()
   let balance: number
   let availableCredit: number | undefined
   try {
@@ -22,15 +23,15 @@ export function AccountBalances({ account, transactions }: { account: Account; t
         <div className={`account-primary-balance${isOverdraft ? ' financial-danger' : ''}`}>
           <dt>{primaryLabel}</dt>
           <dd className={isCard ? (balance < 0 ? 'financial-positive' : 'financial-debt') : undefined}>
-            {formatCad(isCard && balance < 0 ? -balance : balance)}
+            {formatAmount(isCard && balance < 0 ? -balance : balance)}
           </dd>
         </div>
         {isCard && account.creditLimit !== undefined && <>
-          <div className="account-supporting-balance"><dt>Credit limit</dt><dd>{formatCad(account.creditLimit)}</dd></div>
+          <div className="account-supporting-balance"><dt>Credit limit</dt><dd>{formatAmount(account.creditLimit)}</dd></div>
           {availableCredit !== undefined && (
             <div className={`account-supporting-balance${availableCredit < 0 ? ' financial-danger' : ''}`}>
               <dt>{availableCredit < 0 ? 'Over limit by' : 'Available credit'}</dt>
-              <dd>{formatCad(availableCredit < 0 ? -availableCredit : availableCredit)}</dd>
+              <dd>{formatAmount(availableCredit < 0 ? -availableCredit : availableCredit)}</dd>
             </div>
           )}
         </>}

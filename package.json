@@ -12,6 +12,7 @@
     "test:obligations:ui": "node tests/obligations-ui.browser.mjs",
     "test:backup:browser": "node tests/data-backup.browser.mjs",
     "test:pwa:browser": "node tests/pwa.browser.mjs",
+    "test:settings:browser": "node tests/finance-settings.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -60,9 +60,9 @@ async function browserChecks() {
   const { calculateAccountBalance, calculateMonthlyTotalExpenses, calculateMonthlyTotalIncome } = await import('/src/domain/calculations.ts')
   const { createBackup } = await import('/src/features/dataBackup/backupFormat.ts')
   await database.open()
-  check(database.verno === 2, 'Dexie upgrades the seeded database from version 1 to version 2')
+  check(database.verno === 3, 'Dexie upgrades the seeded database from version 1 to version 3')
   equal(await readFinancialSnapshot(), before, 'Upgrade preserves every account/category/transaction field')
-  equal(database.tables.map((table) => table.name).sort(), ['accounts', 'categories', 'transactions', 'obligations', 'obligationPayments'].sort(), 'Upgrade adds exactly the two independent tracking tables')
+  equal(database.tables.map((table) => table.name).sort(), ['accounts', 'categories', 'transactions', 'obligations', 'obligationPayments', 'applicationSettings'].sort(), 'Upgrade adds the independent tracking and settings tables')
   equal(await obligations.getAll(), [], 'Upgrade seeds no obligations')
   equal(await payments.getAll(), [], 'Upgrade seeds no payments')
   check(localStorage.getItem('my-finance-theme') === 'ocean', 'Upgrade preserves theme preference')
@@ -182,8 +182,8 @@ async function browserChecks() {
   equal(await payments.get('inst-pay'), instPayment, 'Payment survives closing and reopening IndexedDB')
   equal(await readFinancialSnapshot(), before, 'Financial data survives reopening the upgraded database')
   await database.delete(); await database.open()
-  check(database.verno === 2 && database.tables.length === 5, 'Fresh installation creates the complete version 2 schema')
-  equal(await Promise.all(database.tables.map(table => table.count())), [0, 0, 0, 0, 0], 'Fresh installation creates no sample financial or obligation records')
+  check(database.verno === 3 && database.tables.length === 6, 'Fresh installation creates the complete version 3 schema')
+  equal(await Promise.all(database.tables.map(table => table.count())), [0, 0, 0, 0, 0, 0], 'Fresh installation creates no sample financial or obligation records')
   database.close()
   return results
 }

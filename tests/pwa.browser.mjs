@@ -53,7 +53,7 @@ async function field(label, value) {
   await evaluate(`(() => { const l=[...document.querySelectorAll('dialog[open] label')].find(l=>l.textContent.trim()===${JSON.stringify(label)});if(!l)throw new Error('Missing field '+${JSON.stringify(label)});const e=document.getElementById(l.htmlFor),p=e instanceof HTMLSelectElement?HTMLSelectElement.prototype:e instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(p,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event(e instanceof HTMLSelectElement?'change':'input',{bubbles:true})) })()`)
   await delay(30)
 }
-const screens = { home:'.dashboard-summary', transactions:'.transaction-count', accounts:'.accounts-section', more:'.more-section', 'more/categories':'.categories-section', 'more/bills-installments':'.obligations-section', 'more/data-backup':'.data-backup-section' }
+const screens = { home:'.dashboard-summary', transactions:'.transaction-count', accounts:'.accounts-section', more:'.more-section', 'more/categories':'.categories-section', 'more/bills-installments':'.obligations-section', 'more/finance-settings':'.finance-settings', 'more/data-backup':'.data-backup-section' }
 async function route(hash) {
   await evaluate(`location.hash=${JSON.stringify(hash)}`)
   await wait(`!!document.querySelector(${JSON.stringify(screens[hash] ?? '.obligations-section')}) && !document.querySelector('.transaction-loading,.dashboard-status,.account-loading,.category-loading,.obligations-section [role="status"]') && !document.querySelector('[aria-busy="true"]')`)
@@ -104,6 +104,9 @@ try {
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false})
   await send('Page.addScriptToEvaluateOnNewDocument',{source:`const OriginalDate=Date;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:['2026-10-05T16:00:00Z']))}static now(){return new OriginalDate('2026-10-05T16:00:00Z').getTime()}};document.addEventListener('readystatechange',()=>{if(document.readyState==='interactive')window.__startupAppearance={theme:document.documentElement.dataset.theme,background:getComputedStyle(document.documentElement).backgroundColor,colorScheme:getComputedStyle(document.documentElement).colorScheme}})`})
   await send('Page.navigate',{url:appURL+'#more/data-backup'})
+  await wait(`!!document.querySelector('.finance-onboarding')`)
+  await evaluate(`(() => { for (const [suffix,value] of [['country','CA'],['currency','CAD']]) { const select=document.querySelector('select[id$="-'+suffix+'"]');select.value=value;select.dispatchEvent(new Event('change',{bubbles:true})) } })()`)
+  await click('Start using My Finance')
   await wait(`!!document.querySelector('.data-backup-section') && !document.querySelector('[aria-busy="true"]')`)
   await wait(`(async()=>{const r=await navigator.serviceWorker.getRegistration();return r?.active?.state==='activated'})()`)
   results.push('Production worker installs and activates under a subdirectory')
@@ -178,7 +181,7 @@ try {
     for(const [width,height,font] of [[320,760,16],[390,844,16],[1280,900,16],[320,844,32],[390,844,32],[1280,900,32]]){
       await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false})
       await evaluate(`document.documentElement.style.fontSize='${font}px'`)
-      for(const hash of ['home','transactions','accounts','more/bills-installments','more/data-backup']){
+      for(const hash of ['home','transactions','accounts','more/bills-installments','more/finance-settings','more/data-backup']){
         await route(hash);await check(`document.documentElement.scrollWidth<=document.documentElement.clientWidth`, `${theme} ${width}px ${font===32?'200%':'100%'} ${hash} fits`)
       }
       await evaluate(`window.scrollTo(0,document.documentElement.scrollHeight)`)

@@ -1,5 +1,5 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useRef, useState } from 'react'
-import { formatCad } from '../accounts/money'
 import { TransactionFilters } from './TransactionFilters'
 import { TransactionForm } from './TransactionForm'
 import { TransactionList } from './TransactionList'
@@ -15,6 +15,7 @@ interface FocusTarget {
 }
 
 export function TransactionsSection({ startNewTransaction = false }: { startNewTransaction?: boolean }) {
+  const { formatAmount, currencyCode } = useMoney()
   const { transactions, accounts, categories, isLoading, isWriting, loadError, reload, saveTransaction, deleteTransaction } = useTransactions()
   const filters = useTransactionFilterSession()
   const [editor, setEditor] = useState<{ transaction?: EntryTransaction } | null>(() => startNewTransaction ? {} : null)
@@ -53,17 +54,17 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
 
   async function handleSave(transaction: EntryTransaction) {
     await saveTransaction(transaction, editor?.transaction !== undefined)
-    setStatus(`${transactionTypeLabels[transaction.type]} ${formatCad(transaction.amount)} on ${transaction.date} saved.`)
+    setStatus(`${transactionTypeLabels[transaction.type]} ${formatAmount(transaction.amount)} on ${transaction.date} saved.`)
     closeEditor()
   }
 
   async function handleDelete(transaction: EntryTransaction) {
     if (busy || deleting.current) return
-    if (!window.confirm(`Delete the ${formatCad(transaction.amount)} ${transaction.type} on ${transaction.date}? This permanently removes this transaction.`)) return
+    if (!window.confirm(`Delete the ${formatAmount(transaction.amount)} ${transaction.type} on ${transaction.date}? This permanently removes this transaction.`)) return
     deleting.current = true
     try {
       await deleteTransaction(transaction.id)
-      setStatus(`${transactionTypeLabels[transaction.type]} ${formatCad(transaction.amount)} on ${transaction.date} deleted.`)
+      setStatus(`${transactionTypeLabels[transaction.type]} ${formatAmount(transaction.amount)} on ${transaction.date} deleted.`)
       closeEditor()
     } finally {
       deleting.current = false
@@ -110,7 +111,7 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
           </>
         )}
       </div>
-      <p className="transaction-currency-note">All amounts in CAD.</p>
+      <p className="transaction-currency-note">All amounts in {currencyCode}.</p>
       {editor && <TransactionForm key={editor.transaction?.id ?? 'new'} transaction={editor.transaction}
         accounts={accounts} categories={categories} disabled={busy} isLoading={isLoading} loadError={loadError}
         onSave={handleSave} onCancel={closeEditor} onDelete={handleDelete} onRetry={reload} />}

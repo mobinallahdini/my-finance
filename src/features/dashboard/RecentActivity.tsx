@@ -1,5 +1,5 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId } from 'react'
-import { formatCad } from '../accounts/money'
 import { transactionTypeLabels } from '../transactions/transactionHelpers'
 import type { RecentActivityItem } from './useMonthlyDashboard'
 
@@ -9,6 +9,7 @@ export function RecentActivity({ items, monthLabel, error, onRetry }: {
   error: string | null
   onRetry: () => void
 }) {
+  const { formatAmount } = useMoney()
   const headingId = useId()
 
   return (
@@ -34,7 +35,7 @@ export function RecentActivity({ items, monthLabel, error, onRetry }: {
                 </span>
               </div>
               <span className={`dashboard-activity-amount financial-${item.type === 'transfer' ? 'neutral' : item.type}`}>
-                {item.type === 'expense' ? '-' : item.type === 'income' ? '+' : ''}{formatCad(item.amount)}
+                {item.type === 'expense' ? '-' : item.type === 'income' ? '+' : ''}{formatAmount(item.amount)}
               </span>
             </li>
           ))}

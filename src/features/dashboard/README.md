@@ -25,7 +25,7 @@ category names use Unknown category. Month/version guards apply to activity as
 well as the summary, so activity from a previous month never remains visible
 during a new month's read.
 
-`RecentActivity` reuses the existing CAD formatter and transaction type labels.
+`RecentActivity` reuses the central workspace-currency formatter and transaction type labels.
 Expenses display a minus sign, income a plus sign, and transfers an unsigned
 amount with From / To direction (also expressed in screen-reader text). These
 are presentation signs only: stored amounts remain positive cents. Transfers
@@ -39,7 +39,7 @@ ascending category ID for ties. Missing references display "Unknown category"
 and a visible status warning; their spending still contributes to the totals.
 Percentages are amount / total expenses * 100 and are rounded for display to at
 most one decimal place. They are never inputs to monetary calculations, and
-rounded shares may not add to exactly 100%. All money uses the existing exact CAD
+rounded shares may not add to exactly 100%. All money uses the central exact workspace-currency
 formatter. Transfers are excluded by the domain functions from both totals, net
 cash flow, and category spending.
 
@@ -57,7 +57,7 @@ flow is the primary value; income and expenses are supporting values. Positive
 net cash flow has a plus sign; negative net cash flow has a minus sign and a text
 explanation. Home has no enclosing feature-card border or shadow.
 
-Category spending is a semantic list of compact rows with exact CAD amounts,
+Category spending is a semantic list of compact rows with exact workspace-currency amounts,
 text percentages, and decorative CSS bars hidden from assistive technology.
 Bars clamp display width to 0–100% and never participate in calculations. The
 first five sorted categories are shown initially. If more exist, Show all / Show

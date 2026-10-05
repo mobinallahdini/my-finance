@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type SubmitEvent } from 'react'
 import type { Account } from '../../domain/models'
 import { accountTypeLabels, accountWriteError } from './accountLabels'
@@ -18,6 +19,7 @@ interface AccountFormProps {
 type FieldErrors = Partial<Record<'name' | 'openingBalance' | 'creditLimit', string>>
 
 export function AccountForm({ account, initialType, disabled, isLoading, loadError, onSave, onCancel, onDelete, onRetry }: AccountFormProps) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const errorRef = useRef<HTMLParagraphElement>(null)
@@ -228,7 +230,7 @@ export function AccountForm({ account, initialType, disabled, isLoading, loadErr
             </div>
             <div className="account-field">
               <label htmlFor={`${prefix}-balance`}>
-                {isCard ? 'Opening debt owed (CAD)' : 'Opening balance (CAD)'}
+                {isCard ? `Opening debt owed (${currencyCode})` : `Opening balance (${currencyCode})`}
               </label>
               <input ref={balanceRef} id={`${prefix}-balance`} type="text" inputMode="decimal"
                 value={openingBalance} required onChange={(event) => { setOpeningBalance(event.target.value); clearError('openingBalance') }}
@@ -243,7 +245,7 @@ export function AccountForm({ account, initialType, disabled, isLoading, loadErr
             </div>
             {isCard && (
               <div className="account-field">
-                <label htmlFor={`${prefix}-limit`}>Credit limit (CAD, optional)</label>
+                <label htmlFor={`${prefix}-limit`}>Credit limit ({currencyCode}, optional)</label>
                 <input ref={limitRef} id={`${prefix}-limit`} type="text" inputMode="decimal" value={creditLimit}
                   onChange={(event) => { setCreditLimit(event.target.value); clearError('creditLimit') }} aria-invalid={Boolean(errors.creditLimit)}
                   aria-describedby={`${prefix}-limit-help${errors.creditLimit ? ` ${prefix}-limit-error` : ''}`} />

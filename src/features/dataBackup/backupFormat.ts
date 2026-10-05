@@ -1,4 +1,5 @@
 import type { Theme } from '../appearance/themePreference'
+import { validateCurrencyCode } from '../../domain/financeSettings.ts'
 import { knownFields, objectRecord, validateApplicationSnapshot, validateFinancialSnapshot, type ApplicationSnapshot, type FinancialSnapshot } from '../../persistence/snapshotValidation.ts'
 import { localCalendarDate } from '../transactions/transactionHelpers.ts'
 
@@ -9,7 +10,7 @@ export interface BackupFile {
   format: 'my-finance-backup'
   schemaVersion: 2
   exportedAt: string
-  currency: 'CAD'
+  currency: string
   kind: 'full' | 'custom'
   sections: BackupSection[]
   data: Partial<ApplicationSnapshot>
@@ -19,8 +20,9 @@ interface FullBackupV2 extends BackupFile {
   data: ApplicationSnapshot
   preferences: { theme: Theme }
 }
-interface FullBackupV1 extends Omit<BackupFile, 'schemaVersion' | 'data' | 'sections'> {
+interface FullBackupV1 extends Omit<BackupFile, 'schemaVersion' | 'data' | 'sections' | 'currency'> {
   schemaVersion: 1
+  currency: 'CAD'
   sections: (typeof legacySections)[number][]
   data: FinancialSnapshot
   preferences: { theme: Theme }
@@ -37,12 +39,13 @@ function validateTheme(value: unknown): asserts value is Theme {
   if (value !== 'sage' && value !== 'ocean' && value !== 'dark') throw new Error('Backup theme must be Sage, Ocean, or Dark.')
 }
 export function createBackup(snapshot: ApplicationSnapshot, theme: Theme, selected: readonly BackupSection[] = backupSections,
-  kind: 'full' | 'custom' = 'full', now = new Date()): BackupFile {
+  kind: 'full' | 'custom' = 'full', now = new Date(), currencyCode = 'CAD'): BackupFile {
   const sections = includedSections(selected)
   if (!sections.length) throw new Error('Select at least one section to export.')
   if (kind === 'full' && sections.length !== backupSections.length) throw new Error('Full Backup must include every section.')
   validateApplicationSnapshot(snapshot)
   validateTheme(theme)
+  validateCurrencyCode(currencyCode)
   const data: Partial<ApplicationSnapshot> = {}
   if (sections.includes('accounts')) data.accounts = snapshot.accounts
   if (sections.includes('categories')) data.categories = snapshot.categories
@@ -50,7 +53,7 @@ export function createBackup(snapshot: ApplicationSnapshot, theme: Theme, select
   if (sections.includes('obligations')) data.obligations = snapshot.obligations
   if (sections.includes('obligationPayments')) data.obligationPayments = snapshot.obligationPayments
   return structuredClone({
-    format: 'my-finance-backup', schemaVersion: 2, exportedAt: now.toISOString(), currency: 'CAD', kind, sections, data,
+    format: 'my-finance-backup', schemaVersion: 2, exportedAt: now.toISOString(), currency: currencyCode, kind, sections, data,
     ...(sections.includes('preferences') ? { preferences: { theme } } : {}),
   })
 }
@@ -60,7 +63,8 @@ export function validateFullBackup(value: unknown): FullBackup {
   knownFields(backup, ['format', 'schemaVersion', 'exportedAt', 'currency', 'kind', 'sections', 'data', 'preferences'], 'Backup')
   if (backup.format !== 'my-finance-backup') throw new Error('This is not a My Finance backup file.')
   if (backup.schemaVersion !== 1 && backup.schemaVersion !== 2) throw new Error('Unsupported backup schema version. My Finance restores versions 1 and 2 only.')
-  if (backup.currency !== 'CAD') throw new Error('Only CAD backups are supported.')
+  validateCurrencyCode(backup.currency)
+  if (backup.schemaVersion === 1 && backup.currency !== 'CAD') throw new Error('Version 1 backups must use CAD.')
   if (typeof backup.exportedAt !== 'string' || !Number.isFinite(Date.parse(backup.exportedAt))
     || new Date(backup.exportedAt).toISOString() !== backup.exportedAt) throw new Error('Backup creation time must be a valid ISO timestamp.')
   if (backup.kind !== 'full' && backup.kind !== 'custom') throw new Error('Unsupported backup kind.')
@@ -72,10 +76,10 @@ export function validateFullBackup(value: unknown): FullBackup {
   const preferences = objectRecord(backup.preferences, 'Preferences')
   knownFields(preferences, ['theme'], 'Preferences')
   validateTheme(preferences.theme)
-  const metadata = { format: 'my-finance-backup' as const, exportedAt: backup.exportedAt, currency: 'CAD' as const,
+  const metadata = { format: 'my-finance-backup' as const, exportedAt: backup.exportedAt, currency: backup.currency,
     kind: backup.kind as 'full' | 'custom', preferences: { theme: preferences.theme } }
   return backup.schemaVersion === 1
-    ? { ...metadata, schemaVersion: 1, sections: [...legacySections], data: validateFinancialSnapshot(backup.data) }
+    ? { ...metadata, currency: 'CAD', schemaVersion: 1, sections: [...legacySections], data: validateFinancialSnapshot(backup.data) }
     : { ...metadata, schemaVersion: 2, sections: [...backupSections], data: validateApplicationSnapshot(backup.data) }
 }
 

@@ -1,8 +1,8 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId } from 'react'
 import type { YearMonth } from '../../domain/models'
 import { calculateObligationMonthSummary } from '../../domain/obligationCalculations'
 import type { ObligationMonthState } from '../../domain/obligationCalculations'
-import { formatCad } from '../accounts/money'
 import { useObligations } from '../obligations/useObligations'
 import { dateLabel, monthLabel, statusLabel } from '../obligations/obligationPresentation'
 import { useLocalToday } from '../shared/useLocalToday'
@@ -20,6 +20,7 @@ function priority(state: ObligationMonthState) {
 }
 
 export function UpcomingPayments({ month }: { month: YearMonth }) {
+  const { formatAmount } = useMoney()
   const headingId = useId()
   const { obligations, payments, loading, error, reload } = useObligations()
   const today = useLocalToday()
@@ -51,17 +52,17 @@ export function UpcomingPayments({ month }: { month: YearMonth }) {
         <button className="button-quiet" onClick={() => { void reload() }}>Refresh / Retry</button>
       </div> : !visible.length ? <p className="dashboard-payments-caption">No payments due this month.</p>
         : <>
-          <p className="dashboard-payments-caption">{formatCad(summary!.remainingTotalDueCents)} remaining this month</p>
+          <p className="dashboard-payments-caption">{formatAmount(summary!.remainingTotalDueCents)} remaining this month</p>
           <ul className="dashboard-payments-list" aria-label={`Payments for ${monthLabel(month)}`}>
             {visible.map((state) => <li key={state.obligationId}>
               <a className="dashboard-payment-row" href={href(state.obligationId)} data-obligation-id={state.obligationId}>
                 <div className="dashboard-payment-heading"><strong>{names.get(state.obligationId)}</strong>
-                  <span className="dashboard-payment-amount">{formatCad(state.status === 'partially_paid' ? state.remainingDueCents : state.expectedAmountCents)}{state.status === 'partially_paid' && <small> left this month</small>}</span>
+                  <span className="dashboard-payment-amount">{formatAmount(state.status === 'partially_paid' ? state.remainingDueCents : state.expectedAmountCents)}{state.status === 'partially_paid' && <small> left this month</small>}</span>
                 </div>
                 <div className="dashboard-payment-detail">
                   {state.dueDate && state.status !== 'completed' && <span>Due {dateLabel(state.dueDate)}</span>}
                   <span className="dashboard-payment-status" data-status={state.isOverdue ? 'overdue' : state.status}>{statusLabel(state, today)}</span>
-                  {state.installmentBalance && state.status !== 'completed' && <span>{formatCad(state.installmentBalance.remainingAmountCents)} remaining principal</span>}
+                  {state.installmentBalance && state.status !== 'completed' && <span>{formatAmount(state.installmentBalance.remainingAmountCents)} remaining principal</span>}
                 </div>
               </a>
             </li>)}

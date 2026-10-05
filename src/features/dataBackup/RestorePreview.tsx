@@ -8,6 +8,7 @@ export function RestorePreview({ backup, current, filename }: { backup: FullBack
     <dl className="backup-restore-summary">
       <div><dt>Backup created</dt><dd><time dateTime={backup.exportedAt}>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(backup.exportedAt))}</time></dd></div>
       <div><dt>Accounts</dt><dd>{backup.data.accounts.length}</dd></div>
+      <div><dt>Workspace currency</dt><dd>{backup.currency}</dd></div>
       <div><dt>Categories</dt><dd>{backup.data.categories.length}</dd></div>
       <div><dt>Transactions</dt><dd>{backup.data.transactions.length}</dd></div>
       <div><dt>Bills &amp; Installments</dt><dd>{backup.schemaVersion === 1 ? 'Not included in this backup version' : backup.data.obligations.length}</dd></div>
@@ -21,5 +22,6 @@ export function RestorePreview({ backup, current, filename }: { backup: FullBack
     </section>
     {backup.schemaVersion === 1 && <p className="backup-restore-warning">This version 1 backup contains no Bills &amp; Installments. Restoring it will remove all current bills, installments, and recorded payments.</p>}
     <p className="backup-restore-warning">Restoring will replace all current local financial data, bills, installments, and recorded payments. Export a Full Backup first if you want to keep them.</p>
+    <p className="backup-help">The workspace currency will become {backup.currency} with the restored amounts. Country, Personal / Business, and fiscal year preferences are kept from this device; they are not included in this backup format.</p>
   </>
 }

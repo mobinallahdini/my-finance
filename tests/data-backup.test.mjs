@@ -57,7 +57,7 @@ test('Filenames use local calendar fields, independently of ISO export timestamp
 
 const invalidBackups = [
   ['wrong format', b => { b.format = 'other' }], ['unsupported version', b => { b.schemaVersion = 3 }],
-  ['wrong currency', b => { b.currency = 'USD' }], ['invalid ISO timestamp', b => { b.exportedAt = 'yesterday' }],
+  ['unsupported currency', b => { b.currency = 'JPY' }], ['invalid ISO timestamp', b => { b.exportedAt = 'yesterday' }],
   ['rollover timestamp', b => { b.exportedAt = '2026-02-30T00:00:00.000Z' }], ['invalid theme', b => { b.preferences.theme = 'neon' }],
   ['missing preferences', b => { delete b.preferences }], ['missing accounts', b => { delete b.data.accounts }],
   ['wrong section metadata', b => { b.sections = ['accounts', 'accounts', 'transactions', 'preferences'] }],

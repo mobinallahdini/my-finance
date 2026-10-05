@@ -37,7 +37,7 @@ export function useDataBackup() {
   async function restore(backup: FullBackup) {
     const validated = validateFullBackup(structuredClone(backup))
     return write(async () => {
-      await replaceApplicationSnapshot(restoreSnapshot(validated))
+      await replaceApplicationSnapshot(restoreSnapshot(validated), validated.currency)
       // Appearance persistence cannot roll back or misreport a successful data commit.
       return setTheme(validated.preferences.theme)
     })

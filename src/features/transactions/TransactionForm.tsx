@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type SubmitEvent } from 'react'
 import type { Account, Category } from '../../domain/models'
 import { accountTypeLabels } from '../accounts/accountLabels'
@@ -22,6 +23,7 @@ type Field = 'amount' | 'date' | 'category' | 'account' | 'fromAccount' | 'toAcc
 type FieldErrors = Partial<Record<Field, string>>
 
 export function TransactionForm({ transaction, accounts, categories, disabled, isLoading, loadError, onSave, onCancel, onDelete, onRetry }: TransactionFormProps) {
+  const { currencyCode } = useMoney()
   const [initial] = useState(() => ({
     type: transaction?.type ?? 'expense' as EntryTransaction['type'],
     amount: transaction ? dollarsForInput(transaction.amount) : '',
@@ -273,12 +275,12 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
           </div>}
           <fieldset className="transaction-editor-fields" disabled={disabled}>
             <div className="transaction-field">
-              <label htmlFor={`${prefix}-amount`}>Amount (CAD)</label>
+              <label htmlFor={`${prefix}-amount`}>Amount ({currencyCode})</label>
               <input ref={amountRef} autoFocus id={`${prefix}-amount`} type="text" inputMode="decimal" value={amount} required
                 onChange={(event) => { setAmount(event.target.value); clearError('amount') }}
                 aria-invalid={Boolean(errors.amount)}
                 aria-describedby={`${prefix}-amount-help${errors.amount ? ` ${prefix}-amount-error` : ''}`} />
-              <p id={`${prefix}-amount-help`}>Enter dollars greater than zero, such as 42.75, with at most two decimal places.</p>
+              <p id={`${prefix}-amount-help`}>Enter an amount greater than zero, such as 42.75, with at most two decimal places.</p>
               {errors.amount && <p className="transaction-error" id={`${prefix}-amount-error`}>{errors.amount}</p>}
             </div>
             {isTransfer ? (

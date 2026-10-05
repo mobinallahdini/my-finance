@@ -21,7 +21,7 @@ the repository.
 
 ## Financial presentation
 
-All amounts use the existing exact CAD formatter. Bank and Cash show their
+All amounts use the existing exact workspace-currency formatter. Bank and Cash show their
 calculated current balance. A negative Bank balance is labeled Overdraft; negative
 Cash is labeled Negative balance. Both retain the negative sign and danger
 styling. Ordinary positive balances remain visually calm.

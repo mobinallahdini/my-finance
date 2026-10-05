@@ -13,7 +13,7 @@ function amountText(row: CsvPreviewRow) {
   try {
     const type = row.fields.type
     if (type !== 'expense' && type !== 'income' && type !== 'transfer') return row.fields.amount_cad || 'Amount missing'
-    return signedTransactionAmount({ type, amount: parseDollars(row.fields.amount_cad) })
+    return signedTransactionAmount({ type, amount: parseDollars(row.fields.amount_cad) }, 'CAD')
   } catch { return row.fields.amount_cad || 'Amount missing' }
 }
 export function CsvImportPreview({ source, filename, snapshot, busy, error, available, onClose, onImport }: {
@@ -67,6 +67,7 @@ export function CsvImportPreview({ source, filename, snapshot, busy, error, avai
     action={<button className="button-primary" type="button" disabled={busy || !available || !selected.length}
       onClick={() => onImport(selected.map((row) => row.transaction!), counts)}>Import {selected.length} {selected.length === 1 ? 'transaction' : 'transactions'}</button>}>
     <p className="backup-filename">{filename}</p>
+    <p className="backup-help">This CSV format uses CAD amounts.</p>
     <p className="backup-help">Only selected Ready rows will be added. Duplicates, invalid rows, conflicts, and unmapped rows are skipped.</p>
     <p className="backup-csv-counts" role="status">{source.length} rows found. {csvRowStatuses.map((status) => `${status}: ${counts[status]}`).join(' · ')}</p>
     <div className="backup-preview-controls">

@@ -1,5 +1,6 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { readApplicationSnapshot, readFinancialSnapshot } from '../../persistence/dataBackup'
+import { readBackupSource } from '../../persistence/dataBackup'
 import { useTheme } from '../appearance/themePreference'
 import { BackupDialog } from './BackupDialog'
 import { createBackup, exportFilename, parseFullBackup, type BackupSection, type FullBackup } from './backupFormat'
@@ -34,6 +35,9 @@ function errorMessage(error: unknown) { return error instanceof Error ? error.me
 export function DataBackupSection() {
   const { snapshot, isLoading, isWriting, loadError, reload, restore, importTransactions } = useDataBackup()
   const theme = useTheme()
+  const { currencyCode } = useMoney()
+  const csvAvailable = currencyCode === 'CAD'
+  const csvExplanation = 'CSV currently uses CAD. CSV import and export are disabled for other workspace currencies. Currency-aware CSV support will be added in the next step.'
   const [preview, setPreview] = useState<Preview | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
@@ -61,9 +65,12 @@ export function DataBackupSection() {
       const json = kind === 'backup' || kind === 'custom-backup'
       let content: string
       if (json) {
-        content = JSON.stringify(createBackup(await readApplicationSnapshot(), theme, sections, kind === 'backup' ? 'full' : 'custom'), null, 2)
+        const current = await readBackupSource()
+        content = JSON.stringify(createBackup(current.snapshot, theme, sections, kind === 'backup' ? 'full' : 'custom', new Date(), current.currencyCode), null, 2)
       } else {
-        const current = await readFinancialSnapshot()
+        const source = await readBackupSource()
+        if (source.currencyCode !== 'CAD') throw new Error(csvExplanation)
+        const current = source.snapshot
         content = kind === 'transactions' ? transactionsCsv(current) : kind === 'accounts' ? accountsCsv(current.accounts) : categoriesCsv(current.categories)
       }
       const filename = exportFilename(kind)
@@ -76,7 +83,7 @@ export function DataBackupSection() {
   async function readFile(event: ChangeEvent<HTMLInputElement>, kind: 'restore' | 'csv') {
     const input = event.currentTarget, file = input.files?.[0]
     input.value = ''
-    if (!file || busy || loadError) return
+    if (!file || busy || loadError || (kind === 'csv' && !csvAvailable)) return
     opener.current = input; setPreparing(true); setError(''); setStatus('')
     try {
       const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer())
@@ -88,7 +95,7 @@ export function DataBackupSection() {
   async function replaceData() {
     if (preview?.kind !== 'restore' || busy || loadError) return
     const legacyWarning = preview.backup.schemaVersion === 1 ? ' This version 1 backup contains no Bills & Installments; all current obligations and recorded payments will be removed.' : ''
-    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} This cannot be undone.`)) return
+    if (!window.confirm(`Replace current data? This will replace all local accounts, categories, transactions, bills, installments, and recorded payments with this backup.${legacyWarning} Workspace currency will become ${preview.backup.currency}. Country, profile type, and fiscal month will be kept. This cannot be undone.`)) return
     setError(''); setStatus('')
     try {
       const persisted = await restore(preview.backup)
@@ -98,7 +105,7 @@ export function DataBackupSection() {
     } catch (error) { setError(`Restore failed. Previous financial data, bills, installments, and payments are intact. ${errorMessage(error)}`) }
   }
   async function importRows(transactions: readonly Transaction[], counts: Record<CsvRowStatus, number>) {
-    if (busy || loadError) return
+    if (busy || loadError || !csvAvailable) return
     setError(''); setStatus('')
     try {
       const imported = await importTransactions(transactions)
@@ -118,9 +125,11 @@ export function DataBackupSection() {
     <section className="backup-section" aria-labelledby="backup-export-heading">
       <h3 id="backup-export-heading">Export</h3>
       <p className="backup-help">Full Backup is recommended for recovery. CSV files are for spreadsheets, inspection, and analysis.</p>
+      {!csvAvailable && <p id="backup-currency-help" className="backup-help">{csvExplanation}</p>}
       <ul className="backup-export-list">
         {exports.map((option) => <li key={option.kind}>
-          <button type="button" className="backup-export-row" disabled={busy || Boolean(loadError)}
+          <button type="button" className="backup-export-row" disabled={busy || Boolean(loadError) || (option.format === 'CSV' && !csvAvailable)}
+            aria-describedby={option.format === 'CSV' && !csvAvailable ? 'backup-currency-help' : undefined}
             onClick={(event) => {
               opener.current = event.currentTarget
               if (option.kind === 'custom-backup') { setError(''); setStatus(''); setPreview({ kind: 'custom' }) }
@@ -131,7 +140,7 @@ export function DataBackupSection() {
           </button>
         </li>)}
       </ul>
-      <p className="backup-help backup-privacy">Backup files contain your financial data. Store them securely.</p>
+      <p className="backup-help backup-privacy">Backup files contain your financial data. Store them securely. JSON backups include workspace currency; country, profile type, and fiscal month are not yet backed up.</p>
     </section>
     <section className="backup-section" aria-labelledby="backup-import-heading">
       <h3 id="backup-import-heading">Import / Restore</h3>
@@ -143,9 +152,9 @@ export function DataBackupSection() {
       </div>
       <div className="backup-file-choice">
         <label htmlFor="backup-csv-file">Import Transactions <span>CSV</span></label>
-        <p id="backup-csv-help" className="backup-help">Use a My Finance Transactions export. Preview, map references, and choose Ready rows. Bank statement, Accounts, and Categories CSV imports are not supported.</p>
-        <input id="backup-csv-file" type="file" accept=".csv,text/csv" disabled={busy || Boolean(loadError)}
-          aria-describedby="backup-csv-help" onChange={(event) => { void readFile(event, 'csv') }} />
+        <p id="backup-csv-help" className="backup-help">Use a CAD My Finance Transactions export. Preview, map references, and choose Ready rows. Bank statement, Accounts, and Categories CSV imports are not supported.</p>
+        <input id="backup-csv-file" type="file" accept=".csv,text/csv" disabled={busy || Boolean(loadError) || !csvAvailable}
+          aria-describedby={`backup-csv-help${!csvAvailable ? ' backup-currency-help' : ''}`} onChange={(event) => { void readFile(event, 'csv') }} />
       </div>
     </section>
     <section className="backup-section" aria-labelledby="backup-local-heading">
@@ -159,6 +168,6 @@ export function DataBackupSection() {
       <RestorePreview backup={preview.backup} current={snapshot} filename={preview.filename} />
     </BackupDialog>}
     {preview?.kind === 'csv' && <CsvImportPreview source={preview.source} filename={preview.filename} snapshot={snapshot}
-      busy={busy} error={error || loadError || ''} available={!loadError} onClose={closePreview} onImport={(transactions, counts) => { void importRows(transactions, counts) }} />}
+      busy={busy} error={error || loadError || (!csvAvailable ? csvExplanation : '')} available={!loadError && csvAvailable} onClose={closePreview} onImport={(transactions, counts) => { void importRows(transactions, counts) }} />}
   </section>
 }

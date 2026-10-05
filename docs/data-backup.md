@@ -2,7 +2,8 @@
 
 More → Data & Backup exports and imports files entirely in the browser. Files are
 not uploaded. Financial data stays in the existing IndexedDB `my-finance` database,
-at database version 2 (unchanged by this backup upgrade). Theme preference stays under `my-finance-theme` in
+at database version 3, with a separate application settings store. JSON file schema
+remains version 2. Theme preference stays under `my-finance-theme` in
 localStorage. Files contain private financial information and are not encrypted;
 store them securely. Clearing site/browser data may erase the local database.
 
@@ -31,8 +32,13 @@ Every backup uses this family:
 ```
 
 `exportedAt` is an ISO UTC timestamp with milliseconds. Filenames use the local
-calendar date: `my-finance-backup-YYYY-MM-DD.json`. Export reads all five financial/tracking tables
-in one read transaction, so related records come from a consistent snapshot.
+calendar date: `my-finance-backup-YYYY-MM-DD.json`. Export reads all five financial/tracking
+tables and the workspace currency in one read transaction, so labels and amounts
+come from a consistent snapshot even during settings changes in another tab.
+The example uses CAD; v2 accepts any supported two-decimal workspace currency.
+Version 1 remains CAD-only. Country, profile type, fiscal month and onboarding
+metadata are not added to this format yet. Non-CAD v2 files require v1.1 to restore;
+the released v1.0 application accepts CAD only.
 
 Records preserve their existing domain shape:
 
@@ -151,16 +157,18 @@ They cannot be imported in this version; use Full Backup to restore entities.
 ## Full Restore: Replace only
 
 Selecting a JSON file only reads, parses, and validates it. The preview shows
-creation time, counts, theme, current dataset counts, and Replace mode. The
+creation time, counts, theme, workspace currency, current dataset counts, and Replace mode. The
 `Replace current data` action requires a separate explicit destructive
 confirmation. Cancellation writes nothing. There is no Merge mode.
 
 The entire validated graph is copied and revalidated before replacement. One
 Dexie read/write transaction covers Accounts, Categories, Transactions,
-Obligations, and Obligation Payments.
+Obligations, Obligation Payments, and Application Settings.
 All clears and bulk writes happen in that transaction. A rejection/failed write
 aborts it: either the full application snapshot commits, or the previous financial and tracking
-data remains intact. Direct table access in this dedicated operation intentionally
+data and currency remain intact. Restore applies the file currency while keeping
+the local country, profile type, and fiscal month. Preview and confirmation explain
+this explicitly. Direct table access in this dedicated operation intentionally
 avoids per-entity delete protection only after validating the complete graph.
 Normal account/category edit/delete integrity protection remains in place.
 
@@ -169,6 +177,16 @@ persisted. localStorage is not part of the IndexedDB transaction. If storing
 the preference fails, data restoration remains successful, the theme
 applies for the current session, and the result explicitly reports that the
 appearance preference could not be saved. It does not report total restore failure.
+
+## Temporary v1.1 CSV restriction
+
+The existing CSV headers (`amount_cad`, `opening_balance_cad`, `credit_limit_cad`)
+and decimal representation remain unchanged. All three CSV exports and Transactions
+CSV import are disabled when the workspace currency is not CAD, with a visible
+explanation that currency-aware CSV support follows in the next step. JSON remains
+available. Export rechecks persisted currency alongside its snapshot; import checks
+currency under the same transaction as its financial writes. An already-open
+preview cannot bypass a currency change in another tab.
 
 ## Transactions CSV import
 

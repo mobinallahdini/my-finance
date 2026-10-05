@@ -1,6 +1,6 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId, useState } from 'react'
 import type { YearMonth } from '../../domain/models'
-import { formatCad } from '../accounts/money'
 import { useMonthlyDashboard } from './useMonthlyDashboard'
 import { RecentActivity } from './RecentActivity'
 import { UpcomingPayments } from './UpcomingPayments'
@@ -18,6 +18,7 @@ function adjacentMonth(month: YearMonth, direction: -1 | 1): YearMonth | undefin
 }
 
 export function DashboardSection() {
+  const { formatAmount, currencyCode } = useMoney()
   const prefix = useId()
   const { month, selectMonth, reload, isLoading, summary, loadError, recentActivity, activityError } = useMonthlyDashboard()
   const [isMonthPickerOpen, setMonthPickerOpen] = useState(false)
@@ -70,19 +71,19 @@ export function DashboardSection() {
         </div>}
         {summary && (
           <>
-            <div className="dashboard-summary" role="group" aria-label={`Monthly totals for ${readableMonth}, in CAD`}>
+            <div className="dashboard-summary" role="group" aria-label={`Monthly totals for ${readableMonth}, in ${currencyCode}`}>
               <dl className="dashboard-net">
                 <dt>Net cash flow</dt>
                 <dd className="dashboard-net-value">
-                  <span className="dashboard-net-amount">{summary.netCashFlow > 0 ? '+' : ''}{formatCad(summary.netCashFlow)}</span>
+                  <span className="dashboard-net-amount">{summary.netCashFlow > 0 ? '+' : ''}{formatAmount(summary.netCashFlow)}</span>
                   <span className="dashboard-net-note">{summary.netCashFlow < 0
-                    ? `Expenses exceed income by ${formatCad(-summary.netCashFlow)}`
-                    : summary.netCashFlow > 0 ? `Ahead by ${formatCad(summary.netCashFlow)} this month` : 'Income and expenses are balanced'}</span>
+                    ? `Expenses exceed income by ${formatAmount(-summary.netCashFlow)}`
+                    : summary.netCashFlow > 0 ? `Ahead by ${formatAmount(summary.netCashFlow)} this month` : 'Income and expenses are balanced'}</span>
                 </dd>
               </dl>
               <dl className="dashboard-supporting">
-                <div><dt>Income</dt><dd>+{formatCad(summary.income)}</dd></div>
-                <div><dt>Expenses</dt><dd>{formatCad(summary.expenses)}</dd></div>
+                <div><dt>Income</dt><dd>+{formatAmount(summary.income)}</dd></div>
+                <div><dt>Expenses</dt><dd>{formatAmount(summary.expenses)}</dd></div>
               </dl>
             </div>
             <div className="dashboard-details">
@@ -99,7 +100,7 @@ export function DashboardSection() {
                         <li key={category.categoryId} className="dashboard-category-row">
                           <div className="dashboard-category-details">
                             <span className="dashboard-category-name">{category.name}</span>
-                            <span className="dashboard-category-amount">{formatCad(category.amount)}</span>
+                            <span className="dashboard-category-amount">{formatAmount(category.amount)}</span>
                           </div>
                           <div className="dashboard-category-share">
                             <span className="dashboard-category-track" aria-hidden="true">

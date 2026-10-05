@@ -1,7 +1,7 @@
 # Expense, income, and transfer transactions
 
 `TransactionsSection` makes history the main experience. Compact, selectable rows
-show a category or Transfer, an exact signed CAD amount, and account information.
+show a category or Transfer, an exact signed workspace-currency amount, and account information.
 Expenses display a minus sign, income a plus sign, and transfers a neutral amount
 with From-to direction. Stored amounts remain positive cents. Notes are available
 inside the editor. Existing sorting remains descending date then ascending ID.
@@ -24,7 +24,7 @@ History still starts in the current local month. Date mode selects exactly one
 of Month, Custom range, or All dates; values in inactive date modes do not filter.
 Ranges allow either or both bounds and include the boundary dates, using the
 original YYYY-MM-DD strings without UTC conversion. Reversed or invalid calendar
-ranges are rejected. Optional CAD bounds use the existing exact dollar parser
+ranges are rejected. Optional workspace-currency bounds use the existing exact dollar parser
 and compare safe integer cents against positive transaction magnitudes. Zero is
 valid; negatives, malformed values, excessive precision, unsafe amounts, and
 reversed amount bounds are rejected.
@@ -80,7 +80,7 @@ fallback if the row was deleted or moved outside the filters. Loading and writes
 disable editor actions, and field errors retain their associated descriptions.
 
 `TransactionForm`, `TransactionList`, and `useTransactions` extend the original
-expense implementation. All types reuse the exact dollar parser and CAD
+expense implementation. All types reuse the exact dollar parser and workspace-currency
 formatter. Amounts must be positive safe integer cents. Dates default using local
 calendar fields and persist as YYYY-MM-DD. Blank notes are omitted and other
 notes are trimmed. Updates replace records at their original IDs.

@@ -1,3 +1,4 @@
+import { useMoney } from '../financeSettings/useMoney'
 import { useId, useState } from 'react'
 import type { Obligation, ObligationPayment } from '../../domain/models'
 import { dollarsForInput, parseDollars } from '../accounts/money'
@@ -6,6 +7,7 @@ import { paymentDefault } from './obligationPresentation'
 
 interface Props { obligation: Obligation; payments: readonly ObligationPayment[]; month: string; today: string; onClose: () => void; onSave: (payment: ObligationPayment) => Promise<void> }
 export function ObligationPaymentForm({ obligation, payments, month, today, onClose, onSave }: Props) {
+  const { currencyCode } = useMoney()
   const prefix = useId()
   const [defaults] = useState(() => paymentDefault(obligation, payments, month, today))
   const [initial] = useState(() => ({ amount: defaults.amountCents ? dollarsForInput(defaults.amountCents) : '', dueMonth: defaults.dueMonth, paidDate: today, note: '' }))
@@ -18,7 +20,7 @@ export function ObligationPaymentForm({ obligation, payments, month, today, onCl
       ...(fields.note.trim() ? { note: fields.note.trim() } : {}) })
   }}>
     <p className="obligation-payment-name">{obligation.name}</p>
-    <div className="obligation-field"><label htmlFor={`${prefix}-amount`}>Amount (CAD)</label>
+    <div className="obligation-field"><label htmlFor={`${prefix}-amount`}>Amount ({currencyCode})</label>
       <input id={`${prefix}-amount`} required inputMode="decimal" value={fields.amount} onChange={(e) => change('amount', e.target.value)} />
       {!defaults.amountCents && <p>No balance is currently due. Enter an amount only if you intend to record an additional payment.</p>}</div>
     <div className="obligation-field"><label htmlFor={`${prefix}-month`}>Due month</label>
