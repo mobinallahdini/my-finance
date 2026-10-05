@@ -11,12 +11,13 @@ function toggleSelection<T extends string>(selected: readonly T[], value: T): T[
   return selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]
 }
 
-export function TransactionFilterPanel({ filters, accounts, categories, onApply, onCancel }: {
+export function TransactionFilterPanel({ filters, accounts, categories, onApply, onCancel, showAccountFilter = true }: {
   filters: TransactionFilterState
   accounts: readonly Account[]
   categories: readonly Category[]
   onApply: (filters: TransactionFilterState) => void
   onCancel: () => void
+  showAccountFilter?: boolean
 }) {
   const prefix = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -133,7 +134,7 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
               </label>)}
             </div>
           </fieldset>
-          <details className="transaction-filter-disclosure">
+          {showAccountFilter && <details className="transaction-filter-disclosure">
             <summary>Accounts <span>{selectedCount(draft.accountIds)}</span></summary>
             <fieldset className="transaction-filter-group">
               <legend className="transaction-sr-only">Filter by account</legend>
@@ -143,7 +144,7 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
                 <span>{account.name}<span className="transaction-filter-entity-type">{accountTypeLabels[account.type]}</span></span>
               </label>) : <p className="transaction-filter-help">No accounts available.</p>}
             </fieldset>
-          </details>
+          </details>}
           <details className="transaction-filter-disclosure">
             <summary>Categories <span>{selectedCount(draft.categoryIds)}</span></summary>
             <fieldset className="transaction-filter-group">

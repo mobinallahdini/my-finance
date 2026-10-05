@@ -9,12 +9,12 @@ import { MoreSection } from './features/more/MoreSection'
 import { useAppNavigation } from './features/navigation/useAppNavigation'
 
 function App() {
-  const { screen, destination } = useAppNavigation()
+  const { screen, destination, accountId } = useAppNavigation()
   const [newTransactionRequest, setNewTransactionRequest] = useState(0)
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const title = screen === 'more/categories' ? 'Categories'
+    const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
     window.scrollTo(0, 0)
@@ -22,7 +22,7 @@ function App() {
     if (!mainRef.current?.contains(document.activeElement)) {
       mainRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
     }
-  }, [screen, destination])
+  }, [screen, destination, accountId])
 
   return (
     <div className="app-shell">
@@ -49,7 +49,7 @@ function App() {
       <main ref={mainRef} id="main-content" className="app-main">
         {screen === 'home' && <DashboardSection />}
         {destination === 'transactions' && <TransactionsSection key={`${screen}-${newTransactionRequest}`} startNewTransaction={screen === 'transactions/new'} />}
-        {screen === 'accounts' && <AccountsSection />}
+        {destination === 'accounts' && <AccountsSection accountId={accountId} />}
         {screen === 'more' && <MoreSection />}
         {screen === 'more/categories' && <>
           <a className="more-back-link" href="#more"><span aria-hidden="true">&larr;</span> Back to More</a>

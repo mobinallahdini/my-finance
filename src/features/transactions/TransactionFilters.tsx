@@ -4,11 +4,12 @@ import { TransactionFilterPanel } from './TransactionFilterPanel'
 import { emptyTransactionFilters, filterChips, removeFilterGroup, type TransactionFilterState } from './transactionFiltering'
 import './transactionFilters.css'
 
-export function TransactionFilters({ filters, accounts, categories, onChange }: {
+export function TransactionFilters({ filters, accounts, categories, onChange, showAccountFilter = true }: {
   filters: TransactionFilterState
   accounts: readonly Account[]
   categories: readonly Category[]
   onChange: (filters: TransactionFilterState) => void
+  showAccountFilter?: boolean
 }) {
   const prefix = useId()
   const [panelOpen, setPanelOpen] = useState(false)
@@ -54,7 +55,7 @@ export function TransactionFilters({ filters, accounts, categories, onChange }: 
             onClick={() => { onChange(emptyTransactionFilters()); filterButtonRef.current?.focus() }}>Clear all</button>
         </> : <span className="transaction-filter-context">All dates · All types</span>}
       </div>
-      {panelOpen && <TransactionFilterPanel filters={filters} accounts={accounts} categories={categories}
+      {panelOpen && <TransactionFilterPanel filters={filters} accounts={accounts} categories={categories} showAccountFilter={showAccountFilter}
         onCancel={closePanel} onApply={(next) => { onChange(next); closePanel() }} />}
     </div>
   )
