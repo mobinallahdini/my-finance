@@ -109,7 +109,6 @@
 .dashboard-category-track > span { display: block; height: 100%; border-radius: inherit; background: var(--color-progress-fill); }
 .dashboard-category-percentage { min-width: 3.25rem; text-align: right; color: var(--color-text-secondary); font-size: var(--font-size-navigation); font-variant-numeric: tabular-nums; }
 .dashboard-section .dashboard-show-categories { display: block; margin: var(--space-2) auto 0; font-size: var(--font-size-meta); }
-.dashboard-footnote { margin-top: var(--space-6); font-size: var(--font-size-navigation); }
 
 .dashboard-status, .dashboard-error, .dashboard-warning, .dashboard-empty { margin-top: var(--space-4); }
 .dashboard-recovery button { margin-top: var(--space-3); }

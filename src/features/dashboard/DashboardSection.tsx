@@ -120,7 +120,6 @@ export function DashboardSection() {
               </section>
               <RecentActivity items={recentActivity} monthLabel={readableMonth} error={activityError} onRetry={reload} />
             </div>
-            <p className="dashboard-footnote">All amounts in CAD. Transfers are excluded.</p>
           </>
         )}
       </div>
