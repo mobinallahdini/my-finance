@@ -1,4 +1,4 @@
-# My Finance - v1.1 development
+# My Finance - v1.1.0 release candidate
 
 A local-first personal finance app with Expense, Income, and Transfer tracking;
 accounts and credit-card balances; advanced transaction filtering; a monthly
@@ -38,6 +38,12 @@ documents JSON v3, v1/v2 restore compatibility, workspace settings and CSV curre
 [Bills & Installments foundation](src/domain/obligations/README.md) and
 [tracking UI](src/features/obligations/README.md) document existing semantics.
 
+
+## v1.1.0 release candidate
+
+Feature work is frozen. [Release notes and validation](docs/release-v1.1.0.md)
+document the feature inventory, upgrade checks, and remaining manual review.
+This candidate has not been merged or tagged.
 
 ## v1.1 finance settings
 

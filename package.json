@@ -1,7 +1,7 @@
 {
   "name": "personal-finance-pwa",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +16,7 @@
     "test:workspace-backup:browser": "node tests/workspace-backup.browser.mjs",
     "test:expense-details:browser": "node tests/expense-details.browser.mjs",
     "test:spending-donut:browser": "node tests/spending-donut.browser.mjs",
+    "test:release:browser": "node tests/release-candidate.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
