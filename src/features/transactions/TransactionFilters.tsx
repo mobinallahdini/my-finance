@@ -1,46 +1,61 @@
-import { useId, useState } from 'react'
-import { adjacentMonth, readableMonth } from './transactionPresentation'
-import { TransactionTypeControl, type TransactionTypeFilter } from './TransactionTypeControl'
+import { useEffect, useId, useRef, useState } from 'react'
+import type { Account, Category } from '../../domain/models'
+import { TransactionFilterPanel } from './TransactionFilterPanel'
+import { emptyTransactionFilters, filterChips, removeFilterGroup, type TransactionFilterState } from './transactionFiltering'
+import './transactionFilters.css'
 
-export function TransactionFilters({ month, allDates, type, onMonthChange, onAllDatesChange, onTypeChange }: {
-  month: string
-  allDates: boolean
-  type: TransactionTypeFilter
-  onMonthChange: (month: string) => void
-  onAllDatesChange: (allDates: boolean) => void
-  onTypeChange: (type: TransactionTypeFilter) => void
+export function TransactionFilters({ filters, accounts, categories, onChange }: {
+  filters: TransactionFilterState
+  accounts: readonly Account[]
+  categories: readonly Category[]
+  onChange: (filters: TransactionFilterState) => void
 }) {
   const prefix = useId()
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const previous = adjacentMonth(month, -1)
-  const next = adjacentMonth(month, 1)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const filterButtonRef = useRef<HTMLButtonElement>(null)
+  const pendingFocus = useRef(false)
+  const chips = filterChips(filters, accounts, categories)
+
+  useEffect(() => {
+    if (panelOpen || !pendingFocus.current) return
+    pendingFocus.current = false
+    filterButtonRef.current?.focus()
+  }, [panelOpen])
+
+  function closePanel() {
+    pendingFocus.current = true
+    setPanelOpen(false)
+  }
+
   return (
-    <div className="transaction-filters" role="group" aria-label="History filters">
-      <div className="transaction-date-filter">
-        <div className="transaction-month-navigation" role="group" aria-label="History month">
-          <button className="button-quiet transaction-month-arrow" type="button" aria-label="Previous month"
-            disabled={allDates || !previous} onClick={() => { if (previous) onMonthChange(previous) }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><path d="m15 5-7 7 7 7" /></svg>
-          </button>
-          <button className="button-quiet transaction-month-label" type="button" aria-controls={`${prefix}-picker`}
-            aria-expanded={pickerOpen} aria-label={`Choose history month, ${allDates ? 'all dates' : readableMonth(month)}`}
-            onClick={() => setPickerOpen((open) => !open)}>{allDates ? 'All dates' : readableMonth(month)}</button>
-          <button className="button-quiet transaction-month-arrow" type="button" aria-label="Next month"
-            disabled={allDates || !next} onClick={() => { if (next) onMonthChange(next) }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
-          </button>
-        </div>
-        <button className="button-quiet transaction-all-dates" type="button" aria-pressed={allDates}
-          onClick={() => onAllDatesChange(!allDates)}>{allDates ? 'By month' : 'All dates'}</button>
+    <div className="transaction-filters" role="group" aria-label="Transaction filters">
+      <div className="transaction-filter-toolbar">
+        <label className="transaction-sr-only" htmlFor={`${prefix}-search`}>Search transactions</label>
+        <input id={`${prefix}-search`} type="search" value={filters.query} placeholder="Search transactions"
+          onChange={(event) => onChange({ ...filters, query: event.currentTarget.value })} />
+        <button ref={filterButtonRef} className="transaction-filter-open" type="button" aria-haspopup="dialog"
+          onClick={() => setPanelOpen(true)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+            strokeLinecap="round" aria-hidden="true" focusable="false"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+          Filters
+        </button>
       </div>
-      <div id={`${prefix}-picker`} className="transaction-month-picker" hidden={!pickerOpen}>
-        <label htmlFor={`${prefix}-month`}>History month</label>
-        <input id={`${prefix}-month`} type="month" value={month} min="0001-01" max="9999-12" required
-          onChange={(event) => {
-            if (event.currentTarget.value && event.currentTarget.validity.valid) onMonthChange(event.currentTarget.value)
-          }} />
+      <div className="transaction-filter-summary">
+        {chips.length ? <>
+          <ul className="transaction-filter-chips" aria-label="Active filters">
+            {chips.map(({ group, label }) => <li key={group}>
+              <button className="transaction-filter-chip" type="button" aria-label={`Remove ${label} filter`}
+                onClick={() => { onChange(removeFilterGroup(filters, group)); filterButtonRef.current?.focus() }}>
+                <span>{label}</span><span aria-hidden="true">×</span>
+              </button>
+            </li>)}
+          </ul>
+          <button className="button-quiet transaction-filter-clear" type="button"
+            onClick={() => { onChange(emptyTransactionFilters()); filterButtonRef.current?.focus() }}>Clear all</button>
+        </> : <span className="transaction-filter-context">All dates · All types</span>}
       </div>
-      <TransactionTypeControl label="Filter by transaction type" value={type} options={['all', 'expense', 'income', 'transfer']} onChange={onTypeChange} />
+      {panelOpen && <TransactionFilterPanel filters={filters} accounts={accounts} categories={categories}
+        onCancel={closePanel} onApply={(next) => { onChange(next); closePanel() }} />}
     </div>
   )
 }

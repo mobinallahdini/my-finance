@@ -3,8 +3,9 @@ import { formatCad } from '../accounts/money'
 import { TransactionFilters } from './TransactionFilters'
 import { TransactionForm } from './TransactionForm'
 import { TransactionList } from './TransactionList'
-import type { TransactionTypeFilter } from './TransactionTypeControl'
-import { localCalendarDate, transactionTypeLabels, type EntryTransaction } from './transactionHelpers'
+import { transactionTypeLabels, type EntryTransaction } from './transactionHelpers'
+import { emptyTransactionFilters, filterTransactions } from './transactionFiltering'
+import { setTransactionFilters, useTransactionFilterSession } from './useTransactionFilterSession'
 import { useTransactions } from './useTransactions'
 import './transactions.css'
 
@@ -15,9 +16,7 @@ interface FocusTarget {
 
 export function TransactionsSection({ startNewTransaction = false }: { startNewTransaction?: boolean }) {
   const { transactions, accounts, categories, isLoading, isWriting, loadError, reload, saveTransaction, deleteTransaction } = useTransactions()
-  const [month, setMonth] = useState(() => localCalendarDate().slice(0, 7))
-  const [allDates, setAllDates] = useState(false)
-  const [historyType, setHistoryType] = useState<TransactionTypeFilter>('all')
+  const filters = useTransactionFilterSession()
   const [editor, setEditor] = useState<{ transaction?: EntryTransaction } | null>(() => startNewTransaction ? {} : null)
   const [status, setStatus] = useState('')
   const addRef = useRef<HTMLButtonElement>(null)
@@ -26,10 +25,7 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
   const pendingFocus = useRef(false)
   const deleting = useRef(false)
   const busy = isLoading || isWriting
-  const filteredTransactions = transactions.filter((transaction) => (
-    (allDates || transaction.date.startsWith(`${month}-`))
-    && (historyType === 'all' || transaction.type === historyType)
-  ))
+  const filteredTransactions = filterTransactions(transactions, accounts, categories, filters)
 
   // Writes trigger a read. Restore focus after that read recreates/enables rows.
   useEffect(() => {
@@ -84,11 +80,11 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
           Add Transaction
         </button>
       </div>
-      <TransactionFilters month={month} allDates={allDates} type={historyType}
-        onMonthChange={(next) => { setMonth(next); setAllDates(false) }} onAllDatesChange={setAllDates} onTypeChange={setHistoryType} />
+      <TransactionFilters filters={filters} accounts={accounts} categories={categories} onChange={setTransactionFilters} />
       <p className="transaction-status" role="status">{status}</p>
       <div aria-busy={busy}>
         {isLoading && <p className="transaction-loading" role="status">Loading transactions...</p>}
+        {!isLoading && !loadError && <p className="transaction-count" role="status">{filteredTransactions.length} of {transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}</p>}
         {loadError ? <div className="transaction-recovery">
           <p className="transaction-error" role="alert">{loadError}</p>
           <button type="button" onClick={reload} disabled={busy}>Refresh / Retry</button>
@@ -100,8 +96,15 @@ export function TransactionsSection({ startNewTransaction = false }: { startNewT
           </div>
         ) : transactions.length > 0 && (
           <>
-            <p className="transaction-count" role="status">{filteredTransactions.length} {filteredTransactions.length === 1 ? 'transaction' : 'transactions'}</p>
-            {filteredTransactions.length === 0 ? <p className="transaction-filter-empty">No transactions match these filters.</p>
+            {filteredTransactions.length === 0 ? <div className="transaction-filter-empty">
+              <p>No transactions match these filters.</p>
+              <div className="transaction-filter-empty-actions">
+                <button type="button" onClick={() => {
+                  setTransactionFilters(emptyTransactionFilters())
+                  sectionRef.current?.querySelector<HTMLButtonElement>('.transaction-filter-open')?.focus()
+                }}>Clear filters</button>
+              </div>
+            </div>
               : <TransactionList transactions={filteredTransactions} accounts={accounts} categories={categories} disabled={busy}
                 onOpen={(transaction, element) => openEditor(element, transaction)} />}
           </>

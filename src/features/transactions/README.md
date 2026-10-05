@@ -11,12 +11,53 @@ Yesterday, or a readable full-date heading. `transactionPresentation` formats
 calendar fields locally without converting YYYY-MM-DD through UTC or inventing
 creation timestamps.
 
-`TransactionFilters` provides a current-local-month default, previous/next month,
-an accessible native month input, All dates, and independent All/Expense/Income/
-Transfer radio filters. These affect history only and survive editor saves,
-deletes, and refreshes. Filters are local component state; leaving Transactions or
-reloading resets them. Filtered empty results and an empty ledger have separate
-compact messages; an empty ledger offers Add Transaction.
+`TransactionFilters` keeps immediate text search and a Filters action on the main
+screen. Advanced controls live in `TransactionFilterPanel`, a native modal using
+the same full-screen mobile and centered desktop editor surfaces. Native account
+and category disclosures keep long choice lists quiet. A draft is validated as a
+whole on Apply; Cancel and Escape discard it and restore focus to Filters. Field
+errors are associated with their inputs, and the first invalid field receives
+focus. Tab containment excludes controls inside closed disclosures.
+
+`transactionFiltering.ts` contains pure matching, validation, and chip helpers.
+History still starts in the current local month. Date mode selects exactly one
+of Month, Custom range, or All dates; values in inactive date modes do not filter.
+Ranges allow either or both bounds and include the boundary dates, using the
+original YYYY-MM-DD strings without UTC conversion. Reversed or invalid calendar
+ranges are rejected. Optional CAD bounds use the existing exact dollar parser
+and compare safe integer cents against positive transaction magnitudes. Zero is
+valid; negatives, malformed values, excessive precision, unsafe amounts, and
+reversed amount bounds are rejected.
+
+Text search trims the query for matching and ignores case. It searches current
+category/account names, both transfer endpoint names, notes, and type labels.
+Missing names use the same safe fallback text as history. Type checkboxes allow
+any combination; all three selected means unrestricted, none means zero results.
+Account selections include bank, cash, and credit card: transfers match either
+endpoint. Category selections match expense/income category IDs and exclude
+transfers. Groups combine with AND; selections within a group combine with OR.
+Filtering does not mutate records or change their existing deterministic order.
+
+One removable summary chip per active group avoids large account/category chip
+lists. Single selections show the current name (and category type where useful);
+multiple selections show a count. Clear all removes every restriction, including
+the date restriction, and shows the full ledger. The count shows matching/total
+loaded transactions. A filtered zero-result message offers Clear filters; an
+empty ledger retains its separate Add Transaction state and a zero count.
+
+`useTransactionFilterSession.ts` holds UI-only in-memory state with
+`useSyncExternalStore`. Filters survive opening, editing, saving, deleting,
+refreshing, Transactions/new remounts, and returning from another destination.
+A browser reload resets them to the current month. Filters are not stored in
+IndexedDB, localStorage, sessionStorage, or the URL. `useTransactions` continues
+loading the full persisted ledger and reference lists through existing repositories;
+matching runs in memory, appropriate for the current personal-finance dataset.
+
+Controls and chips use shared semantic tokens in Sage, Ocean, and Dark. Search
+and the panel header reflow at narrow widths and enlarged text sizes; chips and
+long entity names wrap. The fixed editor header remains reachable while its body
+scrolls. Transactions reserves an extra bottom gap for navigation at enlarged
+text sizes. Financial editing and the other destination layouts are unchanged.
 
 The Add Transaction action or a selected row opens `TransactionForm` on demand.
 The editor is a native modal dialog: full-screen below 48rem and centered at wider
