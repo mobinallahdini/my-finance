@@ -6,6 +6,7 @@ import { accountTypeLabels } from '../accounts/accountLabels'
 import { dollarsForInput, parseDollars } from '../accounts/money'
 import { isEligibleAccount, localCalendarDate, transactionTypeLabels, transactionWriteError, type EntryTransaction } from './transactionHelpers'
 import { TransactionTypeControl } from './TransactionTypeControl'
+import { InlineCategoryCreate } from './InlineCategoryCreate'
 
 interface TransactionFormProps {
   transaction?: EntryTransaction
@@ -41,7 +42,16 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
   const isTransfer = transactionType === 'transfer'
   const typeLabel = transactionTypeLabels[transactionType]
   const eligibleAccounts = accounts.filter((account) => isEligibleAccount(account, transactionType))
-  const matchingCategories = categories.filter((category) => category.type === transactionType)
+  const categoryType = transactionType === 'income' ? 'income' : 'expense'
+  const [createdCategory, setCreatedCategory] = useState<{ category: Category; source: readonly Category[] } | null>(null)
+  // Bridge only the pending refresh, so a later deletion/rename uses the authoritative list.
+  const pendingCategories = createdCategory?.source === categories && !categories.some((category) => category.id === createdCategory.category.id)
+    ? [createdCategory.category] : []
+  const matchingCategories = [...categories, ...pendingCategories]
+    .filter((category) => category.type === categoryType)
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [categoryBusy, setCategoryBusy] = useState(false)
+  const newCategoryRef = useRef<HTMLButtonElement>(null)
   const prefix = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const amountRef = useRef<HTMLInputElement>(null)
@@ -97,19 +107,20 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
 
   useEffect(() => {
     if (disabled) return
-    amountRef.current?.focus()
-  }, [disabled])
+    if (createdCategory) categoryRef.current?.focus()
+    else amountRef.current?.focus()
+  }, [disabled, createdCategory])
 
   useLayoutEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
-      if ((!dirty && !submitting.current) || navigationAllowed.current) return
+      if ((!dirty && !submitting.current && !categoryBusy) || navigationAllowed.current) return
       event.preventDefault()
       event.returnValue = ''
     }
     function guardNavigation(event: Event) {
       // Ignore opening/restored hashes. Popstate precedes the hash notification.
       if (navigationAllowed.current || window.location.href === editorURL.current) return
-      if (disabled || submitting.current || (dirty && !window.confirm('Discard unsaved transaction changes? Your changes will be lost.'))) {
+      if (disabled || categoryBusy || submitting.current || (dirty && !window.confirm('Discard unsaved transaction changes? Your changes will be lost.'))) {
         // Restore the URL before the app's hash subscriber reads it.
         window.history.replaceState(window.history.state, '', editorURL.current)
         event.stopImmediatePropagation()
@@ -123,18 +134,31 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
       window.removeEventListener('hashchange', guardNavigation, true)
       window.removeEventListener('popstate', guardNavigation, true)
     }
-  }, [dirty, disabled])
+  }, [dirty, disabled, categoryBusy])
 
   function confirmDiscard() {
     return !dirty || window.confirm('Discard unsaved transaction changes? Your changes will be lost.')
   }
 
   function requestClose() {
-    if (disabled || submitting.current || !confirmDiscard()) return
+    if (disabled || categoryBusy || submitting.current) return
+    if (creatingCategory) { closeCategoryCreate(); return }
+    if (!confirmDiscard()) return
     onCancel()
   }
 
+  function closeCategoryCreate() {
+    setCreatingCategory(false)
+    requestAnimationFrame(() => newCategoryRef.current?.focus())
+  }
+
   function containKeyboardFocus(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key === 'Escape' && creatingCategory) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (!categoryBusy) closeCategoryCreate()
+      return
+    }
     if (event.key !== 'Tab') return
     const targets = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
       'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]',
@@ -165,7 +189,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
   }
 
   function switchType(next: EntryTransaction['type']) {
-    if (transaction || next === transactionType) return
+    if (transaction || creatingCategory || next === transactionType) return
     setTransactionType(next)
     setCategoryId('')
     setAccountId('')
@@ -198,7 +222,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (disabled || !canSave || submitting.current) return
+    if (disabled || creatingCategory || !canSave || submitting.current) return
     setSaveError(null)
     const nextErrors: FieldErrors = {}
     let amountCents = 0
@@ -232,7 +256,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
       }
     } else {
       if (!matchingCategories.some((category) => category.id === categoryId)) {
-        nextErrors.category = `Choose an existing ${transactionType} category.`
+        nextErrors.category = `Choose an existing ${categoryType} category.`
       }
       if (!eligibleAccounts.some((account) => account.id === accountId)) {
         nextErrors.account = transactionType === 'income'
@@ -273,7 +297,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
         : transactionType === 'expense'
           ? { ...base, type: 'expense', categoryId, accountId,
             ...(taxAmountCents === undefined ? {} : { taxAmountCents }), ...(receiptNumber === undefined ? {} : { receiptNumber }) }
-          : { ...base, type: 'income', categoryId, accountId }
+          : { ...base, type: transactionType, categoryId, accountId }
       await onSave(record)
     } catch (error) {
       setSaveError(transactionWriteError(error))
@@ -284,12 +308,17 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
 
   return (
     <dialog ref={dialogRef} className="transaction-editor" aria-labelledby={`${prefix}-heading`}
-      onKeyDown={containKeyboardFocus} onCancel={(event) => { event.preventDefault(); requestClose() }}>
+      onKeyDown={containKeyboardFocus} onCancel={(event) => {
+        event.preventDefault()
+        if (categoryBusy) return
+        if (creatingCategory) closeCategoryCreate()
+        else requestClose()
+      }}>
       <form className="transaction-form" onSubmit={handleSubmit} noValidate aria-busy={disabled}>
         <header className="transaction-editor-header">
-          <button className="button-quiet" type="button" disabled={disabled} onClick={requestClose}>Cancel</button>
+          <button className="button-quiet" type="button" disabled={disabled || categoryBusy} onClick={requestClose}>Cancel</button>
           <h2 id={`${prefix}-heading`} tabIndex={-1}>{transaction ? 'Edit transaction' : 'New transaction'}</h2>
-          <button className="transaction-primary" type="submit" disabled={disabled || !canSave}>Save</button>
+          <button className="transaction-primary" type="submit" disabled={disabled || creatingCategory || !canSave}>Save</button>
         </header>
         <div className="transaction-editor-body" onFocusCapture={(event) => {
           const field = event.target
@@ -298,8 +327,8 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
           }
         }}>
           {transaction ? <p className="transaction-fixed-type">{typeLabel} <span>· Type is fixed when editing</span></p> : (
-            <TransactionTypeControl value={transactionType} options={['expense', 'income', 'transfer']}
-              label="New transaction type" disabled={disabled} onChange={switchType} />
+            <TransactionTypeControl value={transactionType} options={['expense', 'income', 'transfer', 'refund']}
+              label="New transaction type" disabled={disabled || creatingCategory} onChange={switchType} />
           )}
           {isLoading && <p className="transaction-loading" role="status">Loading accounts and categories...</p>}
           {loadError && <div className="transaction-recovery">
@@ -308,11 +337,11 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
           </div>}
           {!isLoading && !loadError && !canSave && <div className="transaction-prerequisites" role="status">
             {isTransfer ? <p>Transfers need two distinct accounts. <a href="#accounts" onClick={leaveForSetup}>Set up accounts</a>.</p> : <>
-              {eligibleAccounts.length === 0 && <p>{transactionType === 'income' ? 'Income needs a bank or cash account. Credit cards cannot receive income.' : 'Expenses need an account.'} <a href="#accounts" onClick={leaveForSetup}>Set up accounts</a>.</p>}
-              {matchingCategories.length === 0 && <p>{typeLabel} needs a matching category. <a href="#more/categories" onClick={leaveForSetup}>Set up categories</a>.</p>}
+              {eligibleAccounts.length === 0 && <p>{transactionType === 'income' ? 'Income needs a bank or cash account. Credit cards cannot receive income.' : `${typeLabel} needs an account.`} <a href="#accounts" onClick={leaveForSetup}>Set up accounts</a>.</p>}
+              {matchingCategories.length === 0 && <p>Create an {categoryType} category below to continue.</p>}
             </>}
           </div>}
-          <fieldset className="transaction-editor-fields" disabled={disabled}>
+          <fieldset className="transaction-editor-fields" disabled={disabled || categoryBusy}>
             <div className="transaction-field">
               <label htmlFor={`${prefix}-amount`}>Amount ({currencyCode})</label>
               <input ref={amountRef} autoFocus id={`${prefix}-amount`} type="text" inputMode="decimal" value={amount} required
@@ -369,29 +398,42 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
             ) : (
               <>
                 <div className="transaction-field">
-                  <label htmlFor={`${prefix}-category`}>{typeLabel} category</label>
+                  <label htmlFor={`${prefix}-category`}>{categoryType === 'income' ? 'Income' : 'Expense'} category</label>
                   <select ref={categoryRef} id={`${prefix}-category`} value={categoryId} required
                     onChange={(event) => { setCategoryId(event.target.value); clearError('category') }}
                     aria-invalid={Boolean(errors.category)} aria-describedby={errors.category ? `${prefix}-category-error` : undefined}>
-                    <option value="">Choose an {transactionType} category</option>
+                    <option value="">Choose an {categoryType} category</option>
                     {matchingCategories.map((category) => (
                       <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
                   {errors.category && <p className="transaction-error" id={`${prefix}-category-error`}>{errors.category}</p>}
+                  <button ref={newCategoryRef} className="button-quiet transaction-create-category" type="button"
+                    disabled={creatingCategory} aria-expanded={creatingCategory}
+                    aria-controls={`${prefix}-new-category`} onClick={() => setCreatingCategory(true)}>+ New category</button>
+                  <div id={`${prefix}-new-category`}>
+                    {creatingCategory && <InlineCategoryCreate type={categoryType} onBusyChange={setCategoryBusy}
+                      onCancel={closeCategoryCreate} onCreated={(category) => {
+                        setCreatedCategory({ category, source: categories })
+                        setCategoryId(category.id)
+                        clearError('category')
+                        closeCategoryCreate()
+                      }} />}
+                  </div>
                 </div>
                 <div className="transaction-field">
-                  <label htmlFor={`${prefix}-account`}>{transactionType === 'income' ? 'Destination account' : 'Account / payment source'}</label>
+                  <label htmlFor={`${prefix}-account`}>{transactionType === 'income' || transactionType === 'refund' ? 'Destination account' : 'Account / payment source'}</label>
                   <select ref={accountRef} id={`${prefix}-account`} value={accountId} required
                     onChange={(event) => { setAccountId(event.target.value); clearError('account') }}
                     aria-invalid={Boolean(errors.account)}
-                    aria-describedby={`${transactionType === 'income' ? `${prefix}-account-help` : ''}${errors.account ? ` ${prefix}-account-error` : ''}`.trim() || undefined}>
+                    aria-describedby={`${transactionType === 'income' || transactionType === 'refund' ? `${prefix}-account-help` : ''}${errors.account ? ` ${prefix}-account-error` : ''}`.trim() || undefined}>
                     <option value="">Choose an account</option>
                     {eligibleAccounts.map((account) => (
                       <option key={account.id} value={account.id}>{account.name} ({accountTypeLabels[account.type]})</option>
                     ))}
                   </select>
                   {transactionType === 'income' && <p id={`${prefix}-account-help`}>Income goes into a bank or cash account. A credit card payment is a transfer.</p>}
+                  {transactionType === 'refund' && <p id={`${prefix}-account-help`}>A refund returns expense money to this account. For a credit card, it reduces debt.</p>}
                   {errors.account && <p className="transaction-error" id={`${prefix}-account-error`}>{errors.account}</p>}
                 </div>
               </>
@@ -442,7 +484,7 @@ export function TransactionForm({ transaction, accounts, categories, disabled, i
           {Object.values(errors).some(Boolean) && <p className="transaction-error" role="alert">Please correct the marked fields.</p>}
           {saveError && <p className="transaction-error" role="alert">{saveError}</p>}
           {transaction && <div className="transaction-editor-delete">
-            <button className="button-quiet button-destructive" type="button" disabled={disabled} onClick={() => { void handleDelete() }}>Delete transaction</button>
+            <button className="button-quiet button-destructive" type="button" disabled={disabled || creatingCategory} onClick={() => { void handleDelete() }}>Delete transaction</button>
           </div>}
         </div>
       </form>

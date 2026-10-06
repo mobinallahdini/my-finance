@@ -1,7 +1,7 @@
 import type { MoneyCents } from '../../domain/models'
 import { useMoney } from '../financeSettings/useMoney'
 import type { CategorySpending } from './useMonthlyDashboard'
-import { spendingDonutSegments, spendingDonutSlices, spendingPercentage } from './spendingDonut'
+import { spendingDonutSegments, spendingDonutSlices, spendingDonutTotal, spendingPercentage } from './spendingDonut'
 
 export function SpendingDonutChart({ categories, total, monthLabel }: {
   categories: readonly CategorySpending[]
@@ -9,12 +9,18 @@ export function SpendingDonutChart({ categories, total, monthLabel }: {
   monthLabel: string
 }) {
   const { formatAmount, currencyCode } = useMoney()
-  if (total === 0 || categories.length === 0) return null
-  const slices = spendingDonutSlices(categories, total)
+  const chartTotal = spendingDonutTotal(categories)
+  const excessRefunds = chartTotal - total
+  if (chartTotal === 0) return <p className="dashboard-empty">No positive category spending this month.
+    {excessRefunds > 0 && ` Refunds exceed category spending by ${formatAmount(excessRefunds)}. Net Expenses are ${formatAmount(total)}.`}</p>
+  const slices = spendingDonutSlices(categories, chartTotal)
   const segments = spendingDonutSegments(slices)
-  const formattedTotal = formatAmount(total)
+  const formattedTotal = formatAmount(chartTotal)
 
   return (
+    <>
+    {excessRefunds > 0 && <p className="dashboard-category-caption">Refunds exceed spending in some categories by {formatAmount(excessRefunds)}.
+      {' '}The chart shows positive category totals ({formattedTotal}); net Expenses are {formatAmount(total)}.</p>}
     <div className="spending-donut-layout" role="group" aria-label={`Expense distribution for ${monthLabel}, in ${currencyCode}`}>
       <div className="spending-donut-figure">
         <svg className="spending-donut-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
@@ -27,7 +33,7 @@ export function SpendingDonutChart({ categories, total, monthLabel }: {
           ))}
         </svg>
         <dl className={`spending-donut-total${formattedTotal.length > 16 ? ' spending-donut-total-long' : ''}`}>
-          <dt>Expenses</dt>
+          <dt>{excessRefunds > 0 ? 'Chart total' : 'Expenses'}</dt>
           <dd>{formattedTotal}</dd>
         </dl>
       </div>
@@ -47,5 +53,6 @@ export function SpendingDonutChart({ categories, total, monthLabel }: {
         ))}
       </ul>
     </div>
+    </>
   )
 }

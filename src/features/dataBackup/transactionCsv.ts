@@ -131,17 +131,17 @@ export function previewTransactionCsv(source: readonly CsvSourceRow[], snapshot:
       const base = { id: fields.id, type: fields.type, date: fields.date, amount, ...(fields.note ? { note: fields.note } : {}),
         ...(fields.tax_amount.trim() ? { taxAmountCents: parseDollars(fields.tax_amount) } : {}),
         ...(fields.receipt_number.trim() ? { receiptNumber: fields.receipt_number } : {}) }
-      if (fields.type !== 'expense' && fields.type !== 'income' && fields.type !== 'transfer') throw new Error('Invalid transaction type.')
+      if (fields.type !== 'expense' && fields.type !== 'income' && fields.type !== 'transfer' && fields.type !== 'refund') throw new Error('Invalid transaction type.')
       if (fields.type === 'transfer') {
         if (fields.account_id || fields.account_name || fields.category_id || fields.category_name) throw new Error('Transfers cannot have account or category fields.')
         transactionRecord({ ...base, fromAccountId: 'preview-from', toAccountId: 'preview-to' })
         mapping.fromAccountId = resolve(fields.from_account_id, fields.from_account_name, accounts, accountNames, mappings[row.rowNumber]?.fromAccountId)
         mapping.toAccountId = resolve(fields.to_account_id, fields.to_account_name, accounts, accountNames, mappings[row.rowNumber]?.toAccountId)
       } else {
-        if (fields.from_account_id || fields.from_account_name || fields.to_account_id || fields.to_account_name) throw new Error('Expense and Income cannot have transfer fields.')
+        if (fields.from_account_id || fields.from_account_name || fields.to_account_id || fields.to_account_name) throw new Error('Expense, Income, and Refund cannot have transfer fields.')
         transactionRecord({ ...base, accountId: 'preview-account', categoryId: 'preview-category' })
         mapping.accountId = resolve(fields.account_id, fields.account_name, accounts, accountNames, mappings[row.rowNumber]?.accountId)
-        mapping.categoryId = resolve(fields.category_id, fields.category_name, categories, categoryNames[fields.type], mappings[row.rowNumber]?.categoryId)
+        mapping.categoryId = resolve(fields.category_id, fields.category_name, categories, categoryNames[fields.type === 'refund' ? 'expense' : fields.type], mappings[row.rowNumber]?.categoryId)
       }
       if (Object.values(mapping).some((id) => id === undefined)) return { ...row, mapping, status: 'Needs mapping', message: 'Choose existing accounts and categories. Missing or ambiguous names are never guessed.' }
       const transaction = transactionRecord({ ...base, ...mapping })

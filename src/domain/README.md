@@ -18,13 +18,14 @@ credit limits, and arithmetic results outside JavaScript's safe integer range.
 Only transactions relevant to a calculation are checked.
 
 Bank/cash balances represent money available: expenses and outgoing transfers
-decrease them; income and incoming transfers increase them. Negative balances
+decrease them; income, refunds, and incoming transfers increase them. Negative balances
 represent a deficit.
 
 Credit-card balances represent debt owed: expenses and outgoing transfers
-increase debt; income and incoming transfers decrease debt. A negative balance
-represents an overpayment/account credit. Income on a card is treated as a credit
-against debt; it is not spending. Opening balances use the same sign conventions.
+increase debt; refunds and incoming transfers decrease debt. A negative balance
+represents an overpayment/account credit. Persistence prohibits new Income on
+cards; pure balance calculation retains its legacy interpretation as a debt
+credit. Opening balances use the same sign conventions.
 
 Available credit is the optional credit limit minus calculated debt. A missing
 limit returns undefined, a zero limit is valid, and results are not clamped:
@@ -53,9 +54,11 @@ card debt by 8000, and adds 8000 spending in either case.
 - Opening balances are the starting snapshot before all supplied transactions.
   Account calculations include all supplied matching transactions, with no
   date cutoff. Supply only the desired posted ledger when requesting a balance.
-- Spending includes expenses only, regardless of account type. Income and
-  transfers never contribute. Empty months return zero and an empty map;
-  category totals are keyed by ID and include only categories with expenses.
+- Spending is expenses minus refunds in the recorded month. Income and transfers
+  never contribute. Empty months return zero and an empty map; categories with
+  expenses or refunds are included. Negative net totals are preserved. Refund
+  uses an Expense category and has no tax/receipt metadata. See the
+  [refund policy](../../docs/transaction-improvements.md).
 - `calculateMonthlyTotalIncome` sums only income in the requested YYYY-MM,
   validates the month and positive safe integer amounts, and rejects unsafe
   accumulated totals. Expenses and transfers never contribute; empty months

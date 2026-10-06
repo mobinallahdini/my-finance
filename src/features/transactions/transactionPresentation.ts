@@ -1,6 +1,6 @@
 import type { YearMonth } from '../../domain/models'
-import { formatMoney } from '../accounts/money'
-import { localCalendarDate, type EntryTransaction } from './transactionHelpers'
+import { formatMoney } from '../accounts/money.ts'
+import { localCalendarDate, type EntryTransaction } from './transactionHelpers.ts'
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const dateFormatter = new Intl.DateTimeFormat('en-CA', { dateStyle: 'long' })
@@ -31,6 +31,6 @@ export function readableTransactionDate(date: string, today = new Date()): strin
 
 /** Display signs never alter the persisted positive-cent amounts. */
 export function signedTransactionAmount(transaction: Pick<EntryTransaction, 'type' | 'amount'>, currencyCode: string): string {
-  const sign = transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : ''
+  const sign = transaction.type === 'expense' ? '-' : transaction.type === 'income' || transaction.type === 'refund' ? '+' : ''
   return `${sign}${formatMoney(transaction.amount, currencyCode)}`
 }

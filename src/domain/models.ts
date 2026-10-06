@@ -58,6 +58,13 @@ export interface IncomeTransaction extends CategorizedTransaction {
   readonly receiptNumber?: never
 }
 
+/** Returned expense money, recorded on the refund date in an Expense category. */
+export interface RefundTransaction extends CategorizedTransaction {
+  readonly type: 'refund'
+  readonly taxAmountCents?: never
+  readonly receiptNumber?: never
+}
+
 export interface TransferTransaction extends TransactionBase {
   readonly type: 'transfer'
   readonly taxAmountCents?: never
@@ -71,6 +78,7 @@ export interface TransferTransaction extends TransactionBase {
 export type Transaction =
   | ExpenseTransaction
   | IncomeTransaction
+  | RefundTransaction
   | TransferTransaction
 
 /** Monthly planning/tracking records; these never imply a financial Transaction. */

@@ -55,6 +55,14 @@ export function validateTransaction(transaction: Transaction): void {
   }
   validateDate(transaction.date)
   validateExpenseDetails(transaction)
+  if (transaction.type === 'refund') {
+    if (transaction.note !== undefined && typeof transaction.note !== 'string') {
+      throw new RangeError('Refund note must be text.')
+    }
+    if (Object.hasOwn(transaction, 'fromAccountId') || Object.hasOwn(transaction, 'toAccountId')) {
+      throw new RangeError('Refunds cannot have transfer account fields.')
+    }
+  }
   if (transaction.type === 'transfer') {
     requireId(transaction.fromAccountId)
     requireId(transaction.toAccountId)
@@ -64,11 +72,11 @@ export function validateTransaction(transaction: Transaction): void {
     if (transaction.accountId !== undefined || transaction.categoryId !== undefined) {
       throw new RangeError('Transfers cannot have an accountId or categoryId.')
     }
-  } else if (transaction.type === 'expense' || transaction.type === 'income') {
+  } else if (transaction.type === 'expense' || transaction.type === 'income' || transaction.type === 'refund') {
     requireId(transaction.accountId)
     requireId(transaction.categoryId)
     if (transaction.fromAccountId !== undefined || transaction.toAccountId !== undefined) {
-      throw new RangeError('Expenses and income cannot have transfer account fields.')
+      throw new RangeError('Expenses, income, and refunds cannot have transfer account fields.')
     }
   } else {
     throw new RangeError('Invalid transaction type.')
@@ -96,6 +104,6 @@ export function validateTransactionReferences(
     }
     const category = categories.get(transaction.categoryId)
     if (!category) throw new Error(`Category does not exist: ${transaction.categoryId}`)
-    if (category.type !== transaction.type) throw new Error('Transaction and category types must match.')
+    if (category.type !== (transaction.type === 'refund' ? 'expense' : transaction.type)) throw new Error('Transaction and category types must match.')
   }
 }

@@ -53,7 +53,7 @@ stable; an ID change is not an update. Writes snapshot the input before awaiting
 Errors reject the returned promise and should be handled by future callers.
 
 Categories also expose `getByType(type)`. Transactions expose `getByType(type)`,
-`getByAccount(accountId)` (expenses, income, and both transfer directions), and
+`getByAccount(accountId)` (expenses, income, refunds, and both transfer directions), and
 `getForMonth(month)`. Month must be YYYY-MM with year 0001–9999. The date index
 selects the inclusive range YYYY-MM-01 through YYYY-MM-31 in ascending date order;
 invalid days cannot be persisted, so this also covers shorter months and December
@@ -65,7 +65,11 @@ non-negative optional credit-card limits, valid calendar dates, valid type tags,
 and the transaction union's reference-field restrictions. Opening balances may
 be negative, preserving domain semantics. Zero credit limits remain valid.
 Transaction writes require existing account(s), different transfer endpoints,
-and an existing matching expense/income category. Reference checks and writes
+and an existing matching expense/income category (Refund uses Expense). Refund
+permits bank/cash/card destinations and no tax/receipt or transfer fields; Income
+still excludes cards. Existing indexes and reference protections cover Refund
+without migration. See [v1.2 transactions](../../docs/transaction-improvements.md).
+Reference checks and writes
 share IndexedDB read-write transactions to prevent races with deletion or type
 changes, including across tabs. Referenced accounts/categories cannot be deleted
 or have their type changed. Names, opening balances, and credit limits remain

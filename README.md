@@ -1,6 +1,6 @@
-# My Finance - v1.1.0 release candidate
+# My Finance
 
-A local-first personal finance app with Expense, Income, and Transfer tracking;
+A local-first personal finance app with Expense, Income, Transfer, and Refund tracking;
 accounts and credit-card balances; advanced transaction filtering; a monthly
 dashboard; Bills & Installments with payment history; Sage, Ocean, and Dark themes;
 first-run setup for a single workspace; country, currency, and fiscal preferences;
@@ -39,16 +39,22 @@ documents JSON v3, v1/v2 restore compatibility, workspace settings and CSV curre
 [tracking UI](src/features/obligations/README.md) document existing semantics.
 
 
-## v1.1.0 release candidate
+## v1.2.0 release candidate
 
-Feature work is frozen. [Release notes and validation](docs/release-v1.1.0.md)
-document the feature inventory, upgrade checks, and remaining manual review.
-This candidate has not been merged or tagged.
+Development is on `feature/v1.2-transaction-improvements`; the current released
+version is v1.1.0. Feature work is frozen. [Release notes and validation](docs/release-v1.2.0.md)
+cover the candidate and actual v1.1 upgrade checks. [Inline categories and Refunds](docs/transaction-improvements.md)
+documents draft preservation, refund balances, signed net Expenses, chart presentation,
+and Backup v3 / CSV compatibility. No database migration or new dependency is needed.
+
+## v1.1.0 release
+
+[Release notes and validation](docs/release-v1.1.0.md) document the released
+feature inventory and upgrade checks.
 
 ## v1.1 finance settings
 
-Development is on `feature/v1.1-onboarding-currency`; the released v1.0.0 remains
-on `main`. [Onboarding and finance settings](docs/finance-settings.md) documents
+[Onboarding and finance settings](docs/finance-settings.md) documents
 schema v3, exact legacy preservation, currency restrictions, confirmation,
 startup, and workspace-currency behavior. No financial values are converted.
 

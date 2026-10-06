@@ -9,9 +9,22 @@ export interface SpendingSlice {
   readonly isOther: boolean
 }
 
+/** Presentation only: negative category nets have no slice; financial totals remain signed. */
+export function spendingDonutTotal(categories: readonly Pick<CategorySpending, 'amount'>[]): MoneyCents {
+  let total = 0
+  for (const category of categories) {
+    if (!Number.isSafeInteger(category.amount)) throw new RangeError('Category spending must be safe integer cents.')
+    total += Math.max(0, category.amount)
+    if (!Number.isSafeInteger(total)) throw new RangeError('Chart total must be safe integer cents.')
+  }
+  return total
+}
+
 /** Presentation grouping only: inputs are the dashboard's already-derived category totals. */
 export function spendingDonutSlices(categories: readonly CategorySpending[], total: MoneyCents): SpendingSlice[] {
-  const sorted = [...categories].sort((a, b) => b.amount - a.amount || (a.categoryId < b.categoryId ? -1 : a.categoryId > b.categoryId ? 1 : 0))
+  const sorted = categories.filter(category => category.amount > 0)
+    .map(category => ({ ...category, percentage: total === 0 ? 0 : category.amount / total * 100 }))
+    .sort((a, b) => b.amount - a.amount || (a.categoryId < b.categoryId ? -1 : a.categoryId > b.categoryId ? 1 : 0))
   let named = sorted.slice(0, 5)
   const unknown = sorted.find(category => category.isUnknown)
   // Keep unresolved historical spending identifiable rather than hiding every Unknown label in Other.
