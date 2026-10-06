@@ -39,10 +39,11 @@ documents JSON v3, v1/v2 restore compatibility, workspace settings and CSV curre
 [tracking UI](src/features/obligations/README.md) document existing semantics.
 
 
-## v1.2 transaction improvements
+## v1.2.0 release candidate
 
 Development is on `feature/v1.2-transaction-improvements`; the current released
-version is v1.1.0. [Inline categories and Refunds](docs/transaction-improvements.md)
+version is v1.1.0. Feature work is frozen. [Release notes and validation](docs/release-v1.2.0.md)
+cover the candidate and actual v1.1 upgrade checks. [Inline categories and Refunds](docs/transaction-improvements.md)
 documents draft preservation, refund balances, signed net Expenses, chart presentation,
 and Backup v3 / CSV compatibility. No database migration or new dependency is needed.
 
