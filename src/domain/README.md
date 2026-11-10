@@ -4,6 +4,12 @@ This module contains data types and pure calculations only. It has no React,
 storage, network, or third-party dependencies. Inputs are not mutated; category
 totals are returned in a new map.
 
+The [v1.3 reporting engine](../../docs/financial-reporting-engine.md) prepares
+immutable rows, shared financial summaries, filters, and deterministic groups
+from existing records. `financialSummary.ts` supplies the reducer also used by
+the monthly APIs; `transactionQuery.ts` supplies Reports and Transactions with
+one filter predicate. No report data is persisted.
+
 The independent monthly planning/tracking domain is documented in
 [Bills & Installments](obligations/README.md). Its payments never create
 Transactions or contribute to the financial calculations below.

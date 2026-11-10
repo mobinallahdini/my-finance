@@ -5,21 +5,8 @@ import type {
   Transaction,
   YearMonth,
 } from './models'
-
-function requireSafeCents(value: MoneyCents): MoneyCents {
-  if (!Number.isSafeInteger(value)) {
-    throw new RangeError('Money must be expressed as safe integer cents.')
-  }
-  return value
-}
-
-function requirePositiveAmount(amount: MoneyCents): MoneyCents {
-  requireSafeCents(amount)
-  if (amount <= 0) {
-    throw new RangeError('Transaction amounts must be positive.')
-  }
-  return amount
-}
+import { requirePositiveAmount, requireSafeCents } from './money.ts'
+import { calculateExpensesByCategory, calculateTotalIncome } from './financialSummary.ts'
 
 function requireValidMonth(month: YearMonth): void {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || month.startsWith('0000')) {
@@ -83,18 +70,8 @@ export function calculateMonthlyExpensesByCategory(
 ): ReadonlyMap<string, MoneyCents> {
   requireValidMonth(month)
 
-  const totals = new Map<string, MoneyCents>()
-  for (const transaction of transactions) {
-    if ((transaction.type !== 'expense' && transaction.type !== 'refund') || !transaction.date.startsWith(`${month}-`)) {
-      continue
-    }
-    const amount = requirePositiveAmount(transaction.amount)
-    totals.set(
-      transaction.categoryId,
-      requireSafeCents((totals.get(transaction.categoryId) ?? 0) + (transaction.type === 'refund' ? -amount : amount)),
-    )
-  }
-  return totals
+  return calculateExpensesByCategory(transactions.filter(transaction =>
+    (transaction.type === 'expense' || transaction.type === 'refund') && transaction.date.startsWith(`${month}-`)))
 }
 
 export function calculateMonthlyTotalExpenses(
@@ -114,12 +91,6 @@ export function calculateMonthlyTotalIncome(
   month: YearMonth,
 ): MoneyCents {
   requireValidMonth(month)
-  let total = 0
-  for (const transaction of transactions) {
-    if (transaction.type !== 'income' || !transaction.date.startsWith(`${month}-`)) {
-      continue
-    }
-    total = requireSafeCents(total + requirePositiveAmount(transaction.amount))
-  }
-  return total
+  return calculateTotalIncome(transactions.filter(transaction =>
+    transaction.type === 'income' && transaction.date.startsWith(`${month}-`)))
 }

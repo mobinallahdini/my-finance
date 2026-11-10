@@ -1,22 +1,12 @@
-import type { Account, Category, Transaction } from '../../domain/models'
+import type { Account, Category } from '../../domain/models'
+import { requireCalendarDate, requireCalendarMonth } from '../../domain/calendar.ts'
+import { filterTypes, type TransactionFilterState } from '../../domain/transactionQuery.ts'
+export { filterTypes, filterTransactions } from '../../domain/transactionQuery.ts'
+export type { DateMode, TransactionFilterState } from '../../domain/transactionQuery.ts'
 import { dollarsForInput, formatMoney, parseDollars } from '../accounts/money.ts'
 import { localCalendarDate, transactionTypeLabels } from './transactionHelpers.ts'
 import { readableMonth } from './transactionPresentation.ts'
 
-export const filterTypes = ['expense', 'income', 'transfer', 'refund'] as const
-export type DateMode = 'month' | 'range' | 'all'
-export interface TransactionFilterState {
-  query: string
-  dateMode: DateMode
-  month: string
-  fromDate: string
-  toDate: string
-  minimum: number | null
-  maximum: number | null
-  types: Transaction['type'][]
-  accountIds: string[]
-  categoryIds: string[]
-}
 export interface TransactionFilterDraft extends Omit<TransactionFilterState, 'minimum' | 'maximum'> {
   minimum: string
   maximum: string
@@ -44,14 +34,12 @@ export function filterDraft(filters: TransactionFilterState): TransactionFilterD
 }
 
 function validMonth(value: string): boolean {
-  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value) && !value.startsWith('0000')
+  try { requireCalendarMonth(value); return true }
+  catch { return false }
 }
 function validDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !validMonth(value.slice(0, 7))) return false
-  const [year, month, day] = value.split('-').map(Number)
-  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  return day >= 1 && day <= days[month - 1]
+  try { requireCalendarDate(value); return true }
+  catch { return false }
 }
 export function validateFilterDraft(draft: TransactionFilterDraft): { value: TransactionFilterState | null; errors: FilterErrors } {
   const errors: FilterErrors = {}
@@ -74,39 +62,6 @@ export function validateFilterDraft(draft: TransactionFilterDraft): { value: Tra
     errors.maximum = 'Maximum amount must be at least the minimum amount.'
   }
   return { value: Object.keys(errors).length ? null : { ...draft, ...amounts }, errors }
-}
-
-/** AND across groups, OR within selections. Preserve records and deterministic history order. */
-export function filterTransactions(
-  transactions: readonly Transaction[], accounts: readonly Account[], categories: readonly Category[], filters: TransactionFilterState,
-): Transaction[] {
-  const accountNames = new Map(accounts.map((account) => [account.id, account.name]))
-  const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
-  const accountName = (id: string) => accountNames.get(id) ?? `Unavailable account (${id})`
-  const accountIds = new Set(filters.accountIds)
-  const categoryIds = new Set(filters.categoryIds)
-  const types = new Set(filters.types)
-  const query = filters.query.trim().toLowerCase()
-  return transactions.filter((transaction) => {
-    if (!types.has(transaction.type)) return false
-    if (filters.dateMode === 'month' && !transaction.date.startsWith(`${filters.month}-`)) return false
-    if (filters.dateMode === 'range' && (
-      (filters.fromDate && transaction.date < filters.fromDate) || (filters.toDate && transaction.date > filters.toDate)
-    )) return false
-    if (filters.minimum !== null && transaction.amount < filters.minimum) return false
-    if (filters.maximum !== null && transaction.amount > filters.maximum) return false
-    if (accountIds.size && (transaction.type === 'transfer'
-      ? !accountIds.has(transaction.fromAccountId) && !accountIds.has(transaction.toAccountId)
-      : !accountIds.has(transaction.accountId))) return false
-    if (categoryIds.size && (transaction.type === 'transfer' || !categoryIds.has(transaction.categoryId))) return false
-    if (!query) return true
-    const text = transaction.type === 'transfer'
-      ? [accountName(transaction.fromAccountId), accountName(transaction.toAccountId)]
-      : [categoryNames.get(transaction.categoryId) ?? `Unavailable category (${transaction.categoryId})`, accountName(transaction.accountId)]
-    text.push(transactionTypeLabels[transaction.type], transaction.note ?? '')
-    if (transaction.type === 'expense') text.push(transaction.receiptNumber ?? '')
-    return text.some((value) => value.toLowerCase().includes(query))
-  })
 }
 
 export function filterChips(filters: TransactionFilterState, accounts: readonly Account[], categories: readonly Category[], currencyCode: string): { group: FilterGroup; label: string }[] {

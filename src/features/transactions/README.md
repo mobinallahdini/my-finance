@@ -25,7 +25,10 @@ whole on Apply; Cancel and Escape discard it and restore focus to Filters. Field
 errors are associated with their inputs, and the first invalid field receives
 focus. Tab containment excludes controls inside closed disclosures.
 
-`transactionFiltering.ts` contains pure matching, validation, and chip helpers.
+`transactionFiltering.ts` re-exports pure matching from the shared domain
+`transactionQuery.ts`; draft parsing, validation messages, and chips remain here.
+The [reporting contract](../../../docs/financial-reporting-engine.md) documents
+the shared predicate and optional account-type criteria without adding UI controls.
 History still starts in the current local month. Date mode selects exactly one
 of Month, Custom range, or All dates; values in inactive date modes do not filter.
 Ranges allow either or both bounds and include the boundary dates, using the
