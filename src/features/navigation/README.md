@@ -5,6 +5,12 @@ More. More links to the existing Categories management component at
 `#more/categories`; it has a Back to More link. Categories is neither copied nor
 reimplemented. More also describes the existing browser-local storage behavior.
 
+More → Financial Reports uses `#more/reports` and keeps More active in the same
+four-destination navigation. Its route heading stays mounted while the report
+content loads. Deep links, reload and browser history follow the existing hash
+architecture. See the [Reports UI](../../../docs/financial-reports.md) for its
+read-only snapshot, session filters, accessible controls and pagination.
+
 `useAppNavigation` reads native hash navigation using React's
 `useSyncExternalStore` and a `hashchange` subscription. Native anchor links create
 browser history entries, preserve the destination across reload, and support

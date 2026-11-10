@@ -11,6 +11,7 @@ import { DataBackupSection } from './features/dataBackup/DataBackupSection'
 import { ObligationsSection } from './features/obligations/ObligationsSection'
 import { FinanceSettingsProvider } from './features/financeSettings/FinanceSettingsProvider'
 import { FinanceSettingsForm } from './features/financeSettings/FinanceSettingsForm'
+import { ReportsRoute } from './features/reports/ReportsRoute'
 
 function Application() {
   const { screen, destination, accountId, obligationId, obligationMonth } = useAppNavigation()
@@ -22,6 +23,7 @@ function Application() {
     const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
       : screen === 'more/data-backup' ? 'Data & Backup'
       : screen === 'more/finance-settings' ? 'Finance settings'
+      : screen === 'more/reports' ? 'Financial Reports'
       : screen.startsWith('more/bills-installments') ? 'Bills & Installments'
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
@@ -65,6 +67,7 @@ function Application() {
         {destination === 'transactions' && <TransactionsSection key={`${screen}-${newTransactionRequest}`} startNewTransaction={screen === 'transactions/new'} />}
         {destination === 'accounts' && <AccountsSection accountId={accountId} />}
         {screen === 'more' && <MoreSection />}
+        {screen === 'more/reports' && <ReportsRoute />}
         {screen === 'more/finance-settings' && <FinanceSettingsForm />}
         {screen.startsWith('more/bills-installments') && <ObligationsSection obligationId={obligationId} initialMonth={obligationMonth} />}
         {screen === 'more/categories' && <>
