@@ -10,6 +10,10 @@ mixed-version write fence. Read [the actual released-client compatibility result
 before implementing it. A guarded canonical-store cutover is tested as an
 alternative; its production integration remains UNPROVEN.
 
+**5B-1 update:** [cross-browser guarded-store qualification](database-write-fence-qualification.md)
+preserves the historical baseline on the tested Chromium, Firefox and WebKit builds.
+Production integration and installed-PWA readiness remain release blockers.
+
 ## Current behavior, verified from source
 
 - `src/domain/models.ts`: `ObligationPayment` contains only `id`, `obligationId`,

@@ -10,13 +10,14 @@ import { createServer as httpServer } from 'node:http'
 import { createServer, build } from 'vite'
 import { historical, businessStores, canonicalRecords, deriveHistoricalBaseline, expectedHistoricalBaseline } from './helpers/installmentBaseline.mjs'
 import { launchCompatibilityBrowser } from './helpers/compatibilityBrowser.mjs'
+import { qualifyBrowserTermination } from './helpers/databaseInterruption.mjs'
 import * as financial from '../src/domain/calculations.ts'
 import * as obligations from '../src/domain/obligationCalculations.ts'
 import { auditLinks, businessData } from './fixtures/mixed-version/prototype.mjs'
 
 const artifacts=await mkdtemp(join(tmpdir(),'my-finance-mixed-version-review-')),source=join(artifacts,'v12-source'),archive=join(artifacts,'v12.tar'),releasedBuild=join(artifacts,'v12-dist')
 const run=promisify(execFile),prototype=await readFile(resolve('tests/fixtures/mixed-version/prototype.mjs'),'utf8')
-const observations=[],checks=[],snapshots={};let browser,development,production,directory=releasedBuild
+const observations=[],checks=[],snapshots={aborts:[]},limitations=[];let browser,development,production,directory=releasedBuild,environment
 function checked(value,name){assert.ok(value,name);checks.push(name);console.log('CHECK '+name)}
 function observed(classification,name,evidence){observations.push({classification,name,evidence});console.log(classification+' — '+name)}
 const digest=data=>createHash('sha256').update(JSON.stringify(canonicalRecords(data))).digest('hex')
@@ -53,7 +54,7 @@ async function scenario(){
   return {contextId,url,old,next}
 }
 function oldShape(payment){return Object.fromEntries(Object.entries(payment).filter(([key])=>['id','obligationId','dueMonth','paidDate','amountCents','note'].includes(key)))}
-async function unchangedCanonical(page,before,label){const after=await state(page);assert.deepEqual(businessData(after,'v4_'),businessData(before,'v4_'));assert.deepEqual(after.data.paymentOperations,before.data.paymentOperations);assert.deepEqual(auditLinks(after,'v4_'),[]);checked(true,label)}
+async function unchangedCanonical(page,before,label){const after=await state(page);try{assert.deepEqual(businessData(after,'v4_'),businessData(before,'v4_'));assert.deepEqual(after.data.paymentOperations,before.data.paymentOperations);assert.deepEqual(auditLinks(after,'v4_'),[])}catch(error){snapshots.canonicalViolation={label,before,after};throw error}checked(true,label)}
 async function field(page,selector,value){await page.run(`const input=document.querySelector(${JSON.stringify(selector)});if(!input)throw new Error('Missing test field');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}))`)}
 async function click(page,selector){await page.run(`document.querySelector(${JSON.stringify(selector)}).click()`)}
 async function navigate(page,url){await page.send('Page.navigate',{url});await browser.wait(page,`location.href===${JSON.stringify(url)}&&document.readyState==='complete'`)}
@@ -67,7 +68,7 @@ try{
   await symlink(resolve('node_modules'),join(source,'node_modules'),process.platform==='win32'?'junction':'dir')
   development=await createServer({root:source,cacheDir:join(source,'.compatibility-vite-cache'),configFile:join(source,'vite.config.ts'),server:{host:'127.0.0.1',port:0},plugins:[{name:'isolated-prototype',configureServer(server){server.middlewares.use('/__compat/prototype.mjs',(_request,response)=>{response.setHeader('Content-Type','application/javascript');response.end(prototype)})}}]})
   await development.listen();browser=await launchCompatibilityBrowser()
-  const environment=await browser.admin.send('Browser.getVersion')
+  environment=await browser.admin.send('Browser.getVersion')
 
   // A: exact 5A additive proposal, attacked by unchanged released repositories.
   {
@@ -166,6 +167,7 @@ try{
       ['historical payment edit',`old.obligationPaymentsRepository.update(${JSON.stringify({...historical.workspace.obligationPayments[0],note:'must not reach canonical'})})`],
       ['linked payment replacement',`old.obligationPaymentsRepository.update(${JSON.stringify({id:'v13-expense-payment',obligationId:'v13-installment',dueMonth:'2026-10',paidDate:'2026-10-03',amountCents:25000})})`],
       ['historical transaction edit',`old.transactionsRepository.update(${JSON.stringify({...historical.workspace.transactions[1],amount:11501})})`],
+      ['linked transaction replacement',`old.transactionsRepository.update(${JSON.stringify({...historical.workspace.transactions.find(row=>row.id==='card-purchase'),amount:25001})})`],
       ['linked transaction deletion',`old.transactionsRepository.delete('card-purchase')`],
       ['linked payment deletion',`old.obligationPaymentsRepository.delete('v13-expense-payment')`],
       ['new account',`old.accountsRepository.add({id:'old-account',name:'Synthetic blocked',type:'bank',openingBalance:1})`],
@@ -184,18 +186,26 @@ try{
     const reopened=await oldClient(s.contextId,s.url)
     await outcome(reopened,`old.transactionsRepository.delete('repay-debt')`)
     await unchangedCanonical(s.next,before,'A newly opened actual old client cannot delete the canonical Card Transfer')
+    const concurrent=await Promise.all([s.old,reopened].map((page,index)=>outcome(page,`old.replaceWorkspaceSnapshot(${JSON.stringify(historical.workspace)})`).then(result=>({tab:index,...result}))))
+    assert.ok(concurrent.every(result=>!result.ok))
+    await unchangedCanonical(s.next,before,'Concurrent old-tab restores cannot clear or replace canonical data')
+    await s.old.send('Network.enable');await s.old.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1})
+    const offline=[]
+    for(const [operation,expression]of attempts){offline.push({operation,...await outcome(s.old,expression)});await unchangedCanonical(s.next,before,'Offline released '+operation+' preserves canonical data')}
+    await s.old.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
     const duplicate=await outcome(s.next,`proto.claimDuplicate({storePrefix:'v4_'})`)
     checked(!duplicate.ok&&duplicate.name==='ConstraintError','Canonical unique link constraint still rejects duplicate claims after old-client attacks')
     await unchangedCanonical(s.next,before,'Failed duplicate claim rolls back its operation receipt as well as payment')
     const emptyRestore=await outcome(s.old,`old.replaceApplicationSnapshot({accounts:[],categories:[],transactions:[],obligations:[],obligationPayments:[]})`)
     await unchangedCanonical(s.next,before,'Even a successful old empty restore can clear only compatibility stores')
-    snapshots.guarded={outcomes,duplicate,emptyRestore,state:await state(s.next),events:await s.old.evaluate('__openEvents')}
-    observed('PROVEN SAFE','Guarded canonical store isolation against the tested v1.2 repository matrix',{scope:'Observed Chromium/Dexie/tag only; production integration remains unproven',outcomes})
+    baseline(await state(s.next),'v4_','Historical data hash, balances, debt, principal and payment totals survive every old-client attack')
+    snapshots.guarded={outcomes,concurrent,offline,duplicate,emptyRestore,state:await state(s.next),events:await s.old.evaluate('__openEvents')}
+    observed('PROVEN SAFE','Guarded canonical store isolation against the tested v1.2 repository matrix',{scope:`Observed ${browser.engine}/Dexie/tag only; production integration remains unproven`,outcomes})
     await browser.dispose(s.contextId)
   }
 
   // Abort/retry and actual tab interruption of the native cutover transaction.
-  for(const failAfter of [1,3,6]){
+  for(const failAfter of [1,2,3,4,5,6]){
     const s=await scenario(),before=await state(s.next),failed=await outcome(s.next,`proto.upgrade({mode:'guarded',failAfter:${failAfter},failure:'AbortError'})`)
     const aborted=await state(s.next)
     checked(!failed.ok&&aborted.version===30&&digest(aborted.data)===fixtureHash,`Abort after rename ${failAfter} restores native v3 and the complete fixture hash`)
@@ -203,7 +213,16 @@ try{
     await s.next.evaluate(`proto.upgrade({mode:'guarded'})`);baseline(await state(s.next),'v4_',`Retry after abort ${failAfter} preserves all historical derived values`)
     const once=await state(s.next);await s.next.evaluate(`proto.upgrade({mode:'guarded'})`);assert.deepEqual(await state(s.next),once)
     checked(true,`Repeated completed cutover ${failAfter} neither reseeds nor reposts financial records`)
+    snapshots.aborts.push({failAfter,failed,before,aborted,afterRetry:once})
     await browser.dispose(s.contextId)
+  }
+  {
+    const s=await scenario();await s.next.evaluate(`proto.upgrade({mode:'guarded'})`)
+    await s.next.evaluate(`new Promise((done,reject)=>{const request=indexedDB.open('my-finance');request.onsuccess=()=>{const db=request.result,tx=db.transaction('applicationControl','readwrite'),store=tx.objectStore('applicationControl'),get=store.get('workspace');get.onsuccess=()=>store.put({...get.result,stage:'incomplete'});tx.oncomplete=()=>{db.close();done(true)};tx.onabort=()=>{db.close();reject(tx.error)}};request.onerror=()=>reject(request.error)})`)
+    const before=await state(s.next),incomplete=await outcome(s.next,`proto.upgrade({mode:'guarded'})`)
+    assert.ok(!incomplete.ok&&incomplete.message==='PrototypeLayoutMismatch');assert.deepEqual(await state(s.next),before)
+    baseline(before,'v4_','An incomplete completion marker rejects admission without resetting canonical data')
+    snapshots.incompleteGate={incomplete,state:before};await browser.dispose(s.contextId)
   }
   {
     const s=await scenario()
@@ -248,6 +267,18 @@ try{
     snapshots.concurrentUpgraders=await state(peer);await browser.dispose(s.contextId)
   }
 
+  snapshots.browserTermination=await qualifyBrowserTermination(browser.engine,`http://127.0.0.1:${development.httpServer.address().port}/src/domain/README.md`)
+  if(snapshots.browserTermination.classification==='UNPROVEN')limitations.push(snapshots.browserTermination.reason)
+  else{
+    const result=snapshots.browserTermination
+    assert.deepEqual(result.afterUncommittedTermination,result.beforeTermination)
+    baseline(result.afterUncommittedTermination,'','Abrupt browser-process termination before commit leaves the complete legacy fixture')
+    baseline(result.afterCommittedTermination,'v4_','Abrupt browser-process termination after commit preserves all canonical financial data')
+    assert.deepEqual(result.afterCommittedTermination,result.committedBeforeTermination)
+    assert.deepEqual(result.afterRepeatedGate,result.afterCommittedTermination)
+    checked(true,'Browser-process restart neither repeats migration nor changes the committed epoch or financial records')
+  }
+
   // Production/PWA checks are appended below. Never infer a DB fence from asset activation.
   const previousNodeEnv=process.env.NODE_ENV;process.env.NODE_ENV='production'
   try{await build({root:source,configFile:join(source,'vite.config.ts'),build:{outDir:releasedBuild,emptyOutDir:true}})}finally{if(previousNodeEnv===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=previousNodeEnv}
@@ -290,11 +321,13 @@ try{
     await p.page.evaluate('navigator.serviceWorker.getRegistration().then(registration=>registration.update())')
     await browser.wait(p.page,`navigator.serviceWorker.getRegistration().then(registration=>registration?.waiting?.state==='installed')`)
     checked(await p.page.evaluate('__oldMemory===true'),'New deployed PWA assets wait while the old compiled app remains in memory')
-    // Deliberate debugger-only activation, never added to the application worker.
-    await p.page.send('ServiceWorker.enable');await p.page.send('ServiceWorker.skipWaiting',{scopeURL:appUrl})
-    await browser.wait(p.page,`navigator.serviceWorker.getRegistration().then(registration=>registration?.active?.state==='activated'&&!registration.waiting)`)
+    // Deliberate debugger-only activation on Chromium; other engines use normal waiting.
+    if(browser.supportsForcedWorkerActivation){
+      await p.page.send('ServiceWorker.enable');await p.page.send('ServiceWorker.skipWaiting',{scopeURL:appUrl})
+      await browser.wait(p.page,`navigator.serviceWorker.getRegistration().then(registration=>registration?.active?.state==='activated'&&!registration.waiting)`)
+    }else limitations.push('Debugger-forced activation with old JavaScript retained is Chromium-only; normal waiting/activation is tested separately.')
     assert.deepEqual(await p.page.evaluate(`[...document.querySelectorAll('script[src]')].map(script=>script.src)`),oldAssets)
-    checked(await p.page.evaluate('__oldMemory===true'),'Debugger-forced new worker activation does not replace old JavaScript or its loaded assets')
+    checked(await p.page.evaluate('__oldMemory===true'),'Old JavaScript and loaded assets remain in memory during the tested worker lifecycle')
     await p.page.send('Network.enable');await p.page.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1})
     await p.page.run(`location.hash='transactions'`);await waitUi(p.page,'[data-transaction-id="card-purchase"]')
     await click(p.page,'[data-transaction-id="card-purchase"]');await waitUi(p.page,'dialog[open]')
@@ -302,15 +335,23 @@ try{
     await browser.wait(p.page,`!document.querySelector('dialog[open]')`)
     const changed=await state(p.next)
     checked(changed.data.transactions.find(row=>row.id==='card-purchase').amount===25001&&auditLinks(changed).some(problem=>problem.kind==='mismatched-transaction'),
-      'Actual old production UI edits a linked Expense offline after new-worker activation, breaking link consistency')
+      'Actual old production UI edits a linked Expense offline during worker coexistence, breaking link consistency')
     checked(await p.page.evaluate('__oldMemory===true'),'The unsafe offline write came from the still-running released application')
-    await p.page.send('Page.reload');await waitUi(p.page,'.transactions-section')
-    await p.page.run(`location.hash='more/reports'`);await waitUi(p.page,'.report-overview')
-    checked(!await p.page.evaluate('!!window.__oldMemory'),'Offline browser reload uses the new cached application shell, without repairing the damaged link')
+    let reloaded=p.page
+    if(!browser.supportsForcedWorkerActivation){
+      await p.page.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
+      await browser.admin.send('Target.closeTarget',{targetId:p.page.targetId});await browser.admin.send('Target.closeTarget',{targetId:peer.targetId})
+      await browser.wait(p.next,`navigator.serviceWorker.getRegistration(${JSON.stringify(appUrl)}).then(registration=>registration?.active?.state==='activated'&&!registration.waiting)`)
+      reloaded=await browser.page(appUrl+'#transactions',p.contextId);await waitUi(reloaded,'.transactions-section')
+      await reloaded.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1})
+    }
+    await reloaded.send('Page.reload');await waitUi(reloaded,'.transactions-section')
+    await reloaded.run(`location.hash='more/reports'`);await waitUi(reloaded,'.report-overview')
+    checked(!await reloaded.evaluate('!!window.__oldMemory'),'Offline browser reload uses the new cached application shell, without repairing the damaged link')
     checked(auditLinks(await state(p.next)).some(problem=>problem.kind==='mismatched-transaction'),'New assets and reload do not reconcile or enforce the existing payment link')
-    await p.page.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
+    await reloaded.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
     snapshots.pwaAdditive={oldAssets,afterUnsafeOldUiWrite:changed,afterNewReload:await state(p.next)}
-    observed('PROVEN UNSAFE','Waiting/activated service worker is not a database fence',{offlineOldProductionUiWrite:true,activation:'Debugger-forced, not application behavior'})
+    observed('PROVEN UNSAFE','Waiting/activated service worker is not a database fence',{offlineOldProductionUiWrite:true,activation:browser.supportsForcedWorkerActivation?'Debugger-forced, not application behavior':'Normal activation after closing controlled old clients'})
     await browser.dispose(p.contextId)
   }
   {
@@ -319,6 +360,8 @@ try{
     await click(p.page,'[data-transaction-id="card-purchase"]');await waitUi(p.page,'dialog[open]');await field(p.page,'dialog input[id$="-amount"]','250.01')
     await p.next.evaluate(`proto.upgrade({mode:'guarded'})`);await p.next.evaluate(`proto.seedLinks({storePrefix:'v4_'})`)
     const before=await state(p.next)
+    const onlineBinding=await p.next.evaluate('proto.bindCanonicalDexie()')
+    assert.deepEqual(onlineBinding.data,businessData(before,'v4_'))
     const beforeSave=await p.page.evaluate(`({dialog:!!document.querySelector('dialog[open]'),amount:document.querySelector('dialog input[id$="-amount"]')?.value,bootstrap:!!document.querySelector('.finance-bootstrap [role="alert"]'),onboarding:!!document.querySelector('.finance-onboarding')})`)
     if(beforeSave.dialog){
       await click(p.page,'dialog button[type="submit"]');await browser.wait(p.page,`!!document.querySelector('dialog [role="alert"],.finance-bootstrap [role="alert"]')`)
@@ -331,16 +374,28 @@ try{
     await unchangedCanonical(p.next,before,'Offline old-client reopen preserves canonical records and both valid links')
     const binding=await p.next.evaluate('proto.bindCanonicalDexie()')
     assert.equal(binding.version,40);assert.deepEqual(binding.data,businessData(before,'v4_'))
-    checked(true,'An online new prototype client still reads the complete canonical ledger while the offline old app is blocked')
+    checked(true,'A loaded new prototype client still reads the complete canonical ledger while the offline old app is blocked')
     snapshots.pwaGuarded={beforeSave,oldRecovery:await p.page.evaluate(`document.querySelector('.finance-bootstrap').textContent`),canonical:await state(p.next)}
+    await p.page.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
+    directory=resolve('dist')
+    await p.page.evaluate('navigator.serviceWorker.getRegistration().then(registration=>registration.update())')
+    await browser.wait(p.page,`navigator.serviceWorker.getRegistration().then(registration=>registration?.waiting?.state==='installed')`)
+    await unchangedCanonical(p.next,before,'A waiting candidate service worker does not change the guarded canonical ledger')
+    await browser.admin.send('Target.closeTarget',{targetId:p.page.targetId})
+    await browser.wait(p.next,`navigator.serviceWorker.getRegistration(${JSON.stringify(appUrl)}).then(registration=>registration?.active?.state==='activated'&&!registration.waiting)`)
+    const candidate=await browser.page(appUrl+'#home',p.contextId);await waitUi(candidate,'.finance-bootstrap [role="alert"]')
+    await unchangedCanonical(p.next,before,'Reopening the candidate shell after normal worker activation cannot change canonical data')
+    snapshots.pwaGuarded.candidateRecovery=await candidate.evaluate(`document.querySelector('.finance-bootstrap').textContent`)
+    limitations.push('Candidate production shell still uses v3 repositories: its recovery error proves no production v4 integration. Installed OS PWA reopening is not tested.')
     await browser.dispose(p.contextId)
   }
 
-  const report={release:historical.release,environment,dexieVersion:installed.version,fixtureHash,checks:checks.length,checkNames:checks,observations,snapshots,
+  const report={release:historical.release,engine:browser.engine,environment,dexieVersion:installed.version,fixtureHash,checks:checks.length,checkNames:checks,observations,snapshots,limitations,
     workerEvents:browser.events.filter(event=>event.method.startsWith('ServiceWorker.')),
-    safetyGates:{additiveProposal:'PROVEN UNSAFE',namespaceOnly:'PROVEN UNSAFE',guardedRepositoryMatrix:'PROVEN SAFE (tested Chromium paths only)',productionRelease:'UNPROVEN'},artifacts}
+    safetyGates:{additiveProposal:'PROVEN UNSAFE',namespaceOnly:'PROVEN UNSAFE',guardedRepositoryMatrix:'PROVEN SAFE FOR TESTED PATHS',productionRelease:'UNPROVEN'},artifacts}
   await writeFile(join(artifacts,'report.json'),JSON.stringify(report,null,2))
+  if(process.env.FINANCE_COMPATIBILITY_REPORT)await writeFile(process.env.FINANCE_COMPATIBILITY_REPORT,JSON.stringify(report,null,2))
   console.log(`\n${checks.length} investigation assertions verified. Additive/namespace safety gates FAILED; production release remains UNPROVEN. Artifacts: ${artifacts}`)
   process.exitCode=2
-}catch(error){await writeFile(join(artifacts,'partial-report.json'),JSON.stringify({checks,observations,snapshots,error:String(error)},null,2));console.error('Compatibility artifacts:',artifacts);throw error}
+}catch(error){const partial={engine:process.env.FINANCE_COMPATIBILITY_ENGINE??'chromium',environment,checks,observations,snapshots,limitations,error:String(error),stack:error.stack,artifacts};await writeFile(join(artifacts,'partial-report.json'),JSON.stringify(partial,null,2));if(process.env.FINANCE_COMPATIBILITY_REPORT)await writeFile(process.env.FINANCE_COMPATIBILITY_REPORT,JSON.stringify(partial,null,2));console.error('Compatibility artifacts:',artifacts);throw error}
 finally{if(browser)await browser.close();if(development)await development.close();if(production){production.closeAllConnections();await new Promise(done=>production.close(done))}}

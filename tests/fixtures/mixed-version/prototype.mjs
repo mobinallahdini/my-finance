@@ -77,11 +77,19 @@ export async function upgrade({mode='additive',failAfter=0,failure='AbortError',
     }
     request.onsuccess=()=>{
       const db=request.result,names=Array.from(db.objectStoreNames),expected=mode==='additive'?'':prefix
-      if(!names.includes('applicationControl')||!stores.every(name=>names.includes(expected+name))){db.close();reject(new Error('PrototypeLayoutMismatch'));return}
-      const tx=db.transaction([...stores.map(name=>expected+name),'applicationControl',...(mode==='guarded'?stores:[])],'readonly')
+      if(!names.includes('applicationControl')||!names.includes('paymentOperations')||!stores.every(name=>names.includes(expected+name))){db.close();reject(new Error('PrototypeLayoutMismatch'));return}
+      const tx=db.transaction([...stores.map(name=>expected+name),'applicationControl','paymentOperations',...(mode==='guarded'?stores:[])],'readonly')
       const get=tx.objectStore('applicationControl').get('workspace');let matches=true
-      get.onsuccess=()=>{matches=matches&&get.result?.mode===mode}
-      if(mode==='guarded')for(const name of stores)if(JSON.stringify(tx.objectStore(name).keyPath)!==JSON.stringify([guardField,'id']))matches=false
+      get.onsuccess=()=>{matches=matches&&get.result?.mode===mode&&get.result?.stage==='committed'&&typeof get.result?.epoch==='string'&&get.result.epoch.length>0}
+      if(mode==='guarded'){
+        for(const name of stores){
+          if(JSON.stringify(tx.objectStore(name).keyPath)!==JSON.stringify([guardField,'id']))matches=false
+          if(tx.objectStore(prefix+name).keyPath!=='id')matches=false
+        }
+        const payments=tx.objectStore(prefix+'obligationPayments')
+        for(const name of ['transactionId','creationOperationId'])if(!payments.indexNames.contains(name)||!payments.index(name).unique||payments.index(name).keyPath!==name)matches=false
+        for(const name of ['applicationControl','paymentOperations'])if(tx.objectStore(name).keyPath!=='id')matches=false
+      }
       tx.oncomplete=()=>{const version=db.version;db.close();if(!matches){reject(new Error('PrototypeLayoutMismatch'));return}event('upgraded',{mode,version});resolve(true)}
       tx.onabort=()=>{db.close();reject(tx.error)}
     }

@@ -13,6 +13,7 @@
     "test:reports:exports": "node tests/report-exports.browser.mjs",
     "test:installments:safety": "node tests/installment-safety.browser.mjs",
     "test:installments:compatibility": "node tests/mixed-version-safety.browser.mjs",
+    "test:installments:qualification": "node tests/database-write-fence.browser.mjs",
     "test:obligations:browser": "node tests/obligations.browser.mjs",
     "test:obligations:ui": "node tests/obligations-ui.browser.mjs",
     "test:backup:browser": "node tests/data-backup.browser.mjs",

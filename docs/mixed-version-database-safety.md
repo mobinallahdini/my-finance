@@ -1,5 +1,10 @@
 # Mixed-version database safety — milestone 5B-0
 
+**5B-1 follow-up:** [cross-browser qualification](database-write-fence-qualification.md)
+now records the actual Chromium, Firefox and WebKit matrix, process interruption,
+hashes and recovery contract. Production rollout remains UNPROVEN. The results
+below describe the original 5B-0 Chromium investigation.
+
 This is an investigation and disposable prototype, not a production migration or
 linked-payment implementation. Production source, schema v3, backup formats and
 worker behavior are unchanged. The additive v4 proposal in the 5A contract is

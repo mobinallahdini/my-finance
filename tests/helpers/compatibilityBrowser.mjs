@@ -6,6 +6,8 @@ import { setTimeout as delay } from 'node:timers/promises'
 import assert from 'node:assert/strict'
 
 export async function launchCompatibilityBrowser() {
+  const engine=process.env.FINANCE_COMPATIBILITY_ENGINE??'chromium'
+  if(engine!=='chromium')return (await import('./compatibilityPlaywright.mjs')).launchPlaywrightCompatibilityBrowser(engine)
   const profile=await mkdtemp(join(tmpdir(),'my-finance-compatibility-profile-'))
   const executable=process.env.CHROME_BIN??(process.platform==='win32'?'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe':'google-chrome')
   const processHandle=spawn(executable,['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--disable-extensions','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'})
@@ -22,7 +24,7 @@ export async function launchCompatibilityBrowser() {
   }
   const admin=connect((await(await fetch(endpoint+'/json/version')).json()).webSocketDebuggerUrl)
   async function wait(client,expression){for(let index=0;index<300;index++){if(await client.evaluate(expression))return;await delay(50)}throw new Error('Timed out: '+expression)}
-  return {admin,events,wait,async context(){return (await admin.send('Target.createBrowserContext')).browserContextId},
+  return {admin,events,wait,engine,supportsForcedWorkerActivation:true,async context(){return (await admin.send('Target.createBrowserContext')).browserContextId},
     async page(url,contextId){const {targetId}=await admin.send('Target.createTarget',{url,browserContextId:contextId});let page;for(let index=0;index<100;index++){page=(await(await fetch(endpoint+'/json/list')).json()).find(page=>page.id===targetId);if(page?.webSocketDebuggerUrl)break;await delay(20)}const client=connect(page.webSocketDebuggerUrl);client.targetId=targetId;await client.send('Page.enable');await client.send('Runtime.enable');await wait(client,`location.href===${JSON.stringify(url)}&&document.readyState==='complete'`);return client},
     async dispose(contextId){await admin.send('Target.disposeBrowserContext',{browserContextId:contextId})},
     async close(){try{await admin.send('Browser.close')}catch{}for(const client of clients)client.socket.close();if(processHandle.exitCode===null)processHandle.kill();const target=resolve(profile);assert.equal(dirname(target),resolve(tmpdir()));assert.ok(basename(target).startsWith('my-finance-compatibility-profile-'));await rm(target,{recursive:true,force:true,maxRetries:10,retryDelay:100})}}
