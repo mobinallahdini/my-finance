@@ -16,6 +16,7 @@ function Application() {
   const { screen, destination, accountId, obligationId, obligationMonth } = useAppNavigation()
   const [newTransactionRequest, setNewTransactionRequest] = useState(0)
   const mainRef = useRef<HTMLElement>(null)
+  const previousScreen = useRef(screen)
 
   useEffect(() => {
     const title = accountId !== undefined ? 'Account details' : screen === 'more/categories' ? 'Categories'
@@ -25,11 +26,17 @@ function Application() {
       : destination.charAt(0).toUpperCase() + destination.slice(1)
     document.title = `${title} | My Finance`
     window.scrollTo(0, 0)
+  }, [screen, destination, accountId])
+
+  useEffect(() => {
+    // Initial rendering (including Strict Mode's replay) is not a navigation.
+    if (previousScreen.current === screen) return
+    previousScreen.current = screen
     // Give the new screen a named focus target; an opened editor owns its focus.
     if (!mainRef.current?.contains(document.activeElement)) {
       mainRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
     }
-  }, [screen, destination, accountId])
+  }, [screen])
 
   return (
     <div className="app-shell">

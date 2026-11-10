@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "test:navigation:browser": "node tests/navigation-focus.browser.mjs",
     "test:obligations:browser": "node tests/obligations.browser.mjs",
     "test:obligations:ui": "node tests/obligations-ui.browser.mjs",
     "test:backup:browser": "node tests/data-backup.browser.mjs",
