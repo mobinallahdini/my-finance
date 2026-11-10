@@ -1,13 +1,19 @@
 {
   "name": "personal-finance-pwa",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "test:navigation:browser": "node tests/navigation-focus.browser.mjs",
+    "test:reports:browser": "node tests/reports.browser.mjs",
+    "test:reports:exports": "node tests/report-exports.browser.mjs",
+    "test:installments:safety": "node tests/installment-safety.browser.mjs",
+    "test:installments:compatibility": "node tests/mixed-version-safety.browser.mjs",
+    "test:installments:qualification": "node tests/database-write-fence.browser.mjs",
     "test:obligations:browser": "node tests/obligations.browser.mjs",
     "test:obligations:ui": "node tests/obligations-ui.browser.mjs",
     "test:backup:browser": "node tests/data-backup.browser.mjs",
@@ -19,6 +25,7 @@
     "test:release:browser": "node tests/release-candidate.browser.mjs",
     "test:transactions:browser": "node tests/transaction-improvements.browser.mjs",
     "test:release:v12:browser": "node tests/release-v12.browser.mjs",
+    "test:release:v13:browser": "node tests/release-v13.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

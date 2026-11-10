@@ -1,0 +1,2611 @@
+{
+  "milestone": "5B-1",
+  "run": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW",
+  "engines": [
+    {
+      "engine": "chromium",
+      "classification": "PROVEN SAFE FOR TESTED PATHS",
+      "environment": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/157.0.8103.39",
+        "revision": "@9a31f0acec1854d44e49a73fbf8017598151a583",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+        "jsVersion": "15.7.112.23"
+      },
+      "checks": [
+        "Exact v1.2.0 commit and installed Dexie 4.4.6 match the released lockfile",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Additive v4 migration itself preserves every historical record and exact balance",
+        "A raw explicit native-v3 open rejects, but that rejection does not fence Dexie fallback",
+        "A matching native version with the wrong layout is rejected instead of being mistaken for completed migration",
+        "Explicit post-migration fixture links existing Expense and Card Transfer without new transactions",
+        "Additive unique transaction index rejects a simultaneous duplicate claim atomically",
+        "An already-open released client writes after native version 30 -> 40",
+        "An exclusive Web Lock held by new code does not stop the unchanged old repository writer",
+        "IndexedDB versionchange does not destroy old in-memory application code",
+        "Actual released Dexie catches VersionError and reopens the newer database",
+        "Old strict validation rejects a read-and-spread payment containing unknown link fields",
+        "Old financial edit bypasses payment/transaction amount consistency",
+        "Actual old full-record replacement silently removes optional links and their unique-index entry",
+        "Erasing the link frees its unique key for another payment while the original receipt survives",
+        "Released payment deletion leaves a live operation receipt orphaned",
+        "Released transaction deletion removes a financial record still claimed by a payment",
+        "Explicit old-client close and reopen also accepts the newer native schema",
+        "Already loaded old repository code remains writable offline after additive upgrade",
+        "Actual released full restore bypasses the new operation/link graph",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Versioned database copy preserves the original fixture before competing writes",
+        "Old v1.2 writes cannot reach the new DB but silently diverge from its copied financial history",
+        "Namespace migration retry detects source divergence instead of overwriting linked destination data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Atomic native store rename preserves original business records",
+        "Old Dexie schema repair recreates missing legacy stores and permits a competing ledger",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An uncooperative open native connection blocks cutover without partially upgrading it",
+        "Guarded atomic cutover preserves original IDs, metadata, principal, balances and settings",
+        "A prototype v4 Dexie client binds canonical stores after the native gate without schema repair",
+        "Canonical graph survives actual released historical payment edit",
+        "Canonical graph survives actual released linked payment replacement",
+        "Canonical graph survives actual released historical transaction edit",
+        "Canonical graph survives actual released linked transaction replacement",
+        "Canonical graph survives actual released linked transaction deletion",
+        "Canonical graph survives actual released linked payment deletion",
+        "Canonical graph survives actual released new account",
+        "Canonical graph survives actual released new category",
+        "Canonical graph survives actual released new obligation",
+        "Canonical graph survives actual released new financial transaction",
+        "Canonical graph survives actual released settings save",
+        "Canonical graph survives actual released confirmed settings save",
+        "Canonical graph survives actual released CSV batch import",
+        "Canonical graph survives actual released full workspace replacement restore",
+        "Old native write failures are recorded instead of being treated as successful deductions",
+        "Old explicit close/reopen does not remove the structural guard",
+        "A newly opened actual old client cannot delete the canonical Card Transfer",
+        "Concurrent old-tab restores cannot clear or replace canonical data",
+        "Offline released historical payment edit preserves canonical data",
+        "Offline released linked payment replacement preserves canonical data",
+        "Offline released historical transaction edit preserves canonical data",
+        "Offline released linked transaction replacement preserves canonical data",
+        "Offline released linked transaction deletion preserves canonical data",
+        "Offline released linked payment deletion preserves canonical data",
+        "Offline released new account preserves canonical data",
+        "Offline released new category preserves canonical data",
+        "Offline released new obligation preserves canonical data",
+        "Offline released new financial transaction preserves canonical data",
+        "Offline released settings save preserves canonical data",
+        "Offline released confirmed settings save preserves canonical data",
+        "Offline released CSV batch import preserves canonical data",
+        "Offline released full workspace replacement restore preserves canonical data",
+        "Canonical unique link constraint still rejects duplicate claims after old-client attacks",
+        "Failed duplicate claim rolls back its operation receipt as well as payment",
+        "Even a successful old empty restore can clear only compatibility stores",
+        "Historical data hash, balances, debt, principal and payment totals survive every old-client attack",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 1 restores native v3 and the complete fixture hash",
+        "Retry after abort 1 preserves all historical derived values",
+        "Repeated completed cutover 1 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 2 restores native v3 and the complete fixture hash",
+        "Retry after abort 2 preserves all historical derived values",
+        "Repeated completed cutover 2 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 3 restores native v3 and the complete fixture hash",
+        "Retry after abort 3 preserves all historical derived values",
+        "Repeated completed cutover 3 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 4 restores native v3 and the complete fixture hash",
+        "Retry after abort 4 preserves all historical derived values",
+        "Repeated completed cutover 4 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 5 restores native v3 and the complete fixture hash",
+        "Retry after abort 5 preserves all historical derived values",
+        "Repeated completed cutover 5 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 6 restores native v3 and the complete fixture hash",
+        "Retry after abort 6 preserves all historical derived values",
+        "Repeated completed cutover 6 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An incomplete completion marker rejects admission without resetting canonical data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Closing the upgrading browser tab rolls back the unfinished versionchange transaction",
+        "A fresh tab safely retries an interrupted migration without posting money",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Native cutover waits for an in-flight real v1.2 write transaction",
+        "Cutover includes the last committed old payment correction and preserves exact financial/principal values",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "A second new tab cannot commit a second cutover while the first upgrade is pending",
+        "Concurrent new clients converge on one committed canonical fixture",
+        "The second upgrader observes completion without replaying migration steps",
+        "Abrupt browser-process termination before commit leaves the complete legacy fixture",
+        "Abrupt browser-process termination after commit preserves all canonical financial data",
+        "Browser-process restart neither repeats migration nor changes the committed epoch or financial records",
+        "Actual production v1.2 remains open while an uncontrolled prototype upgrades its database",
+        "New deployed PWA assets wait while the old compiled app remains in memory",
+        "Old JavaScript and loaded assets remain in memory during the tested worker lifecycle",
+        "Actual old production UI edits a linked Expense offline during worker coexistence, breaking link consistency",
+        "The unsafe offline write came from the still-running released application",
+        "Offline browser reload uses the new cached application shell, without repairing the damaged link",
+        "New assets and reload do not reconcile or enforce the existing payment link",
+        "Old dirty transaction editor reports a blocked save and retains its draft",
+        "Actual compiled v1.2 editor cannot modify canonical linked data after guarded cutover",
+        "Offline cached v1.2 reload encounters the retirement guard instead of resetting onboarding",
+        "Offline old-client reopen preserves canonical records and both valid links",
+        "A loaded new prototype client still reads the complete canonical ledger while the offline old app is blocked",
+        "A waiting candidate service worker does not change the guarded canonical ledger",
+        "Reopening the candidate shell after normal worker activation cannot change canonical data"
+      ],
+      "release": {
+        "tag": "v1.2.0",
+        "commit": "67c5d5c2f0e47d0136d400215883bf34611021e8",
+        "dexieVersion": 3,
+        "nativeVersion": 30
+      },
+      "fixtureHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "dexieVersion": "4.4.6",
+      "rawReport": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\chromium.json",
+      "rawReportSha256": "a64196090b1f4b5ddfa629fc3076e450fd2fcae48852ca73bedf248dee77be70",
+      "rawLog": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\chromium.log",
+      "guarded": {
+        "outcomes": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'put' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'put' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "concurrent": [
+          {
+            "tab": 0,
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "tab": 1,
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "offline": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'put' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'put' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value.\n DataError: Failed to execute 'add' on 'IDBObjectStore': Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "emptyRestore": {
+          "ok": true
+        },
+        "duplicate": {
+          "ok": false,
+          "name": "ConstraintError",
+          "message": "Unable to add key to index 'transactionId': at least one key does not satisfy the uniqueness requirements."
+        },
+        "openEvents": [
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "versionchange",
+            "oldVersion": 30,
+            "newVersion": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "The requested version (30) is less than the existing version (40)."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "The requested version (30) is less than the existing version (40)."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          }
+        ],
+        "historicalHashAfterAttacks": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "canonicalGraphHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a",
+        "operationReceiptsHash": "df4f4102071caa3466c8c86953e69d393e43e6b260d2791c5ba0c2137c77dc5c",
+        "audit": [],
+        "projection": {
+          "recordCounts": {
+            "accounts": 6,
+            "categories": 3,
+            "transactions": 13,
+            "obligations": 7,
+            "obligationPayments": 13,
+            "applicationSettings": 1
+          },
+          "transactionCounts": {
+            "expense": 5,
+            "income": 2,
+            "transfer": 3,
+            "refund": 3
+          },
+          "openingBalancesCents": {
+            "bank": 100000,
+            "card-credit": -5000,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 20000,
+            "overdraft": -2500
+          },
+          "accountBalancesCents": {
+            "bank": 366000,
+            "card-credit": -9500,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 21900,
+            "overdraft": -2500
+          },
+          "availableCreditCents": {
+            "card-credit": 59500,
+            "card-debt": 50000,
+            "card-no-limit": null
+          },
+          "monthlyFinancial": {
+            "2026-09": {
+              "expensesCents": 100,
+              "incomeCents": 300000
+            },
+            "2026-10": {
+              "expensesCents": 28500,
+              "incomeCents": 1000
+            },
+            "2026-11": {
+              "expensesCents": 0,
+              "incomeCents": 0
+            }
+          },
+          "installments": {
+            "completed": {
+              "totalPaidCents": 50000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 0,
+              "isCompleted": true
+            },
+            "future": {
+              "totalPaidCents": 0,
+              "remainingAmountCents": 30000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "inactive": {
+              "totalPaidCents": 6000,
+              "remainingAmountCents": 14000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "overpaid": {
+              "totalPaidCents": 12000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 2000,
+              "isCompleted": true
+            },
+            "partial": {
+              "totalPaidCents": 30000,
+              "remainingAmountCents": 70000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            }
+          },
+          "obligationMonths": {
+            "2026-09": {
+              "expectedTotalDueCents": 56000,
+              "totalPaidCents": 63000,
+              "paidDuringMonthCents": 58000,
+              "remainingTotalDueCents": 0,
+              "overdueIds": []
+            },
+            "2026-10": {
+              "expectedTotalDueCents": 58000,
+              "totalPaidCents": 50000,
+              "paidDuringMonthCents": 48000,
+              "remainingTotalDueCents": 13000,
+              "overdueIds": [
+                "bill"
+              ]
+            },
+            "2026-11": {
+              "expectedTotalDueCents": 28000,
+              "totalPaidCents": 0,
+              "paidDuringMonthCents": 7000,
+              "remainingTotalDueCents": 28000,
+              "overdueIds": []
+            }
+          },
+          "octoberStates": {
+            "bill": {
+              "expectedAmountCents": 8000,
+              "paidAmountCents": 5000,
+              "remainingDueCents": 3000,
+              "status": "partially_paid",
+              "isOverdue": true
+            },
+            "bill-inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 2000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "completed": {
+              "expectedAmountCents": 25000,
+              "paidAmountCents": 25000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "future": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 0,
+              "remainingDueCents": 0,
+              "status": "upcoming",
+              "isOverdue": false
+            },
+            "inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 1000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "overpaid": {
+              "expectedAmountCents": 5000,
+              "paidAmountCents": 7000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "partial": {
+              "expectedAmountCents": 20000,
+              "paidAmountCents": 10000,
+              "remainingDueCents": 10000,
+              "status": "partially_paid",
+              "isOverdue": false
+            }
+          },
+          "nextDueDates": {
+            "bill": "2026-10-15",
+            "bill-inactive": null,
+            "completed": null,
+            "future": "2026-12-01",
+            "inactive": null,
+            "overpaid": null,
+            "partial": "2026-10-31"
+          }
+        }
+      },
+      "aborts": [
+        {
+          "afterStoreMove": 1,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 2,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 3,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 4,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 5,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 6,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "Version change transaction was aborted in upgradeneeded event handler."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        }
+      ],
+      "tabInterruption": {
+        "nativeVersionBeforeRetry": 30,
+        "hashBeforeRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "processInterruption": {
+        "beforeCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "beforeCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "epochBeforeTermination": [
+          {
+            "id": "workspace",
+            "epoch": "7ffa5586-e96a-4820-acb7-d79e2c0dafdb",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "epochAfterRestart": [
+          {
+            "id": "workspace",
+            "epoch": "7ffa5586-e96a-4820-acb7-d79e2c0dafdb",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "afterRepeatedGateHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "inFlightWriter": {
+        "expectedHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9",
+        "actualHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9"
+      },
+      "incompleteGate": {
+        "ok": false,
+        "name": "Error",
+        "message": "PrototypeLayoutMismatch"
+      },
+      "competingUpgradersHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "negativeEvidence": {
+        "additive": {
+          "nativeOlder": {
+            "ok": false,
+            "name": "VersionError",
+            "message": "The requested version (30) is less than the existing version (40)."
+          },
+          "spread": {
+            "ok": false,
+            "name": "RangeError",
+            "message": "Unsupported or cross-type obligation/payment fields."
+          },
+          "historicalEdit": {
+            "ok": true
+          },
+          "transactionEdit": {
+            "ok": true
+          },
+          "replace": {
+            "ok": true
+          },
+          "paymentDelete": {
+            "ok": true
+          },
+          "transactionDelete": {
+            "ok": true
+          },
+          "reopen": {
+            "ok": true,
+            "value": 40
+          },
+          "offline": {
+            "ok": true
+          },
+          "restore": {
+            "ok": true
+          },
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The requested version (30) is less than the existing version (40)."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The requested version (30) is less than the existing version (40)."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            }
+          ],
+          "violations": [
+            {
+              "kind": "missing-payment",
+              "paymentId": "duplicate-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-expense-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-transfer-payment"
+            }
+          ]
+        },
+        "namespace": {
+          "retry": {
+            "ok": false,
+            "name": "Error",
+            "message": "MigrationSourceChanged"
+          },
+          "sourceHash": "c9a212ac24732f54173e73908ea47e1c53332f954c8ae368384e4877b50e28e5",
+          "targetHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a"
+        },
+        "renameOnly": {
+          "create": {
+            "ok": true,
+            "value": "old-competing-bank"
+          },
+          "nativeVersion": 41,
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The requested version (30) is less than the existing version (40)."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 41
+            },
+            {
+              "kind": "opened",
+              "version": 41
+            }
+          ]
+        },
+        "pwaAdditive": {
+          "violations": [
+            {
+              "kind": "mismatched-transaction",
+              "paymentId": "v13-expense-payment"
+            }
+          ],
+          "oldAssets": [
+            "http://127.0.0.1:54968/my-finance/assets/index-CwPF-oEn.js"
+          ]
+        }
+      },
+      "pwaGuarded": {
+        "beforeSave": {
+          "dialog": true,
+          "amount": "250.01",
+          "bootstrap": false,
+          "onboarding": false
+        },
+        "oldRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "candidateRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "historicalHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "limitations": [
+        "Candidate production shell still uses v3 repositories: its recovery error proves no production v4 integration. Installed OS PWA reopening is not tested."
+      ],
+      "safetyGates": {
+        "additiveProposal": "PROVEN UNSAFE",
+        "namespaceOnly": "PROVEN UNSAFE",
+        "guardedRepositoryMatrix": "PROVEN SAFE FOR TESTED PATHS",
+        "productionRelease": "UNPROVEN"
+      }
+    },
+    {
+      "engine": "firefox",
+      "classification": "PROVEN SAFE FOR TESTED PATHS",
+      "environment": {
+        "product": "firefox/159.0",
+        "driver": "playwright",
+        "executable": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-qualification-tools\\browsers\\firefox-1572\\firefox\\firefox.exe"
+      },
+      "checks": [
+        "Exact v1.2.0 commit and installed Dexie 4.4.6 match the released lockfile",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Additive v4 migration itself preserves every historical record and exact balance",
+        "A raw explicit native-v3 open rejects, but that rejection does not fence Dexie fallback",
+        "A matching native version with the wrong layout is rejected instead of being mistaken for completed migration",
+        "Explicit post-migration fixture links existing Expense and Card Transfer without new transactions",
+        "Additive unique transaction index rejects a simultaneous duplicate claim atomically",
+        "An already-open released client writes after native version 30 -> 40",
+        "An exclusive Web Lock held by new code does not stop the unchanged old repository writer",
+        "IndexedDB versionchange does not destroy old in-memory application code",
+        "Actual released Dexie catches VersionError and reopens the newer database",
+        "Old strict validation rejects a read-and-spread payment containing unknown link fields",
+        "Old financial edit bypasses payment/transaction amount consistency",
+        "Actual old full-record replacement silently removes optional links and their unique-index entry",
+        "Erasing the link frees its unique key for another payment while the original receipt survives",
+        "Released payment deletion leaves a live operation receipt orphaned",
+        "Released transaction deletion removes a financial record still claimed by a payment",
+        "Explicit old-client close and reopen also accepts the newer native schema",
+        "Already loaded old repository code remains writable offline after additive upgrade",
+        "Actual released full restore bypasses the new operation/link graph",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Versioned database copy preserves the original fixture before competing writes",
+        "Old v1.2 writes cannot reach the new DB but silently diverge from its copied financial history",
+        "Namespace migration retry detects source divergence instead of overwriting linked destination data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Atomic native store rename preserves original business records",
+        "Old Dexie schema repair recreates missing legacy stores and permits a competing ledger",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An uncooperative open native connection blocks cutover without partially upgrading it",
+        "Guarded atomic cutover preserves original IDs, metadata, principal, balances and settings",
+        "A prototype v4 Dexie client binds canonical stores after the native gate without schema repair",
+        "Canonical graph survives actual released historical payment edit",
+        "Canonical graph survives actual released linked payment replacement",
+        "Canonical graph survives actual released historical transaction edit",
+        "Canonical graph survives actual released linked transaction replacement",
+        "Canonical graph survives actual released linked transaction deletion",
+        "Canonical graph survives actual released linked payment deletion",
+        "Canonical graph survives actual released new account",
+        "Canonical graph survives actual released new category",
+        "Canonical graph survives actual released new obligation",
+        "Canonical graph survives actual released new financial transaction",
+        "Canonical graph survives actual released settings save",
+        "Canonical graph survives actual released confirmed settings save",
+        "Canonical graph survives actual released CSV batch import",
+        "Canonical graph survives actual released full workspace replacement restore",
+        "Old native write failures are recorded instead of being treated as successful deductions",
+        "Old explicit close/reopen does not remove the structural guard",
+        "A newly opened actual old client cannot delete the canonical Card Transfer",
+        "Concurrent old-tab restores cannot clear or replace canonical data",
+        "Offline released historical payment edit preserves canonical data",
+        "Offline released linked payment replacement preserves canonical data",
+        "Offline released historical transaction edit preserves canonical data",
+        "Offline released linked transaction replacement preserves canonical data",
+        "Offline released linked transaction deletion preserves canonical data",
+        "Offline released linked payment deletion preserves canonical data",
+        "Offline released new account preserves canonical data",
+        "Offline released new category preserves canonical data",
+        "Offline released new obligation preserves canonical data",
+        "Offline released new financial transaction preserves canonical data",
+        "Offline released settings save preserves canonical data",
+        "Offline released confirmed settings save preserves canonical data",
+        "Offline released CSV batch import preserves canonical data",
+        "Offline released full workspace replacement restore preserves canonical data",
+        "Canonical unique link constraint still rejects duplicate claims after old-client attacks",
+        "Failed duplicate claim rolls back its operation receipt as well as payment",
+        "Even a successful old empty restore can clear only compatibility stores",
+        "Historical data hash, balances, debt, principal and payment totals survive every old-client attack",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 1 restores native v3 and the complete fixture hash",
+        "Retry after abort 1 preserves all historical derived values",
+        "Repeated completed cutover 1 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 2 restores native v3 and the complete fixture hash",
+        "Retry after abort 2 preserves all historical derived values",
+        "Repeated completed cutover 2 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 3 restores native v3 and the complete fixture hash",
+        "Retry after abort 3 preserves all historical derived values",
+        "Repeated completed cutover 3 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 4 restores native v3 and the complete fixture hash",
+        "Retry after abort 4 preserves all historical derived values",
+        "Repeated completed cutover 4 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 5 restores native v3 and the complete fixture hash",
+        "Retry after abort 5 preserves all historical derived values",
+        "Repeated completed cutover 5 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 6 restores native v3 and the complete fixture hash",
+        "Retry after abort 6 preserves all historical derived values",
+        "Repeated completed cutover 6 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An incomplete completion marker rejects admission without resetting canonical data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Closing the upgrading browser tab rolls back the unfinished versionchange transaction",
+        "A fresh tab safely retries an interrupted migration without posting money",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Native cutover waits for an in-flight real v1.2 write transaction",
+        "Cutover includes the last committed old payment correction and preserves exact financial/principal values",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "A second new tab cannot commit a second cutover while the first upgrade is pending",
+        "Concurrent new clients converge on one committed canonical fixture",
+        "The second upgrader observes completion without replaying migration steps",
+        "Abrupt browser-process termination before commit leaves the complete legacy fixture",
+        "Abrupt browser-process termination after commit preserves all canonical financial data",
+        "Browser-process restart neither repeats migration nor changes the committed epoch or financial records",
+        "Actual production v1.2 remains open while an uncontrolled prototype upgrades its database",
+        "New deployed PWA assets wait while the old compiled app remains in memory",
+        "Old JavaScript and loaded assets remain in memory during the tested worker lifecycle",
+        "Actual old production UI edits a linked Expense offline during worker coexistence, breaking link consistency",
+        "The unsafe offline write came from the still-running released application",
+        "Offline browser reload uses the new cached application shell, without repairing the damaged link",
+        "New assets and reload do not reconcile or enforce the existing payment link",
+        "Old dirty transaction editor reports a blocked save and retains its draft",
+        "Actual compiled v1.2 editor cannot modify canonical linked data after guarded cutover",
+        "Offline cached v1.2 reload encounters the retirement guard instead of resetting onboarding",
+        "Offline old-client reopen preserves canonical records and both valid links",
+        "A loaded new prototype client still reads the complete canonical ledger while the offline old app is blocked",
+        "A waiting candidate service worker does not change the guarded canonical ledger",
+        "Reopening the candidate shell after normal worker activation cannot change canonical data"
+      ],
+      "release": {
+        "tag": "v1.2.0",
+        "commit": "67c5d5c2f0e47d0136d400215883bf34611021e8",
+        "dexieVersion": 3,
+        "nativeVersion": 30
+      },
+      "fixtureHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "dexieVersion": "4.4.6",
+      "rawReport": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\firefox.json",
+      "rawReportSha256": "d06ddf26d4dc5612c518518f5b650f038f69462c24fb1c694b2cfc27ce9fd26f",
+      "rawLog": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\firefox.log",
+      "guarded": {
+        "outcomes": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          }
+        ],
+        "concurrent": [
+          {
+            "tab": 0,
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "tab": 1,
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          }
+        ],
+        "offline": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Data provided to an operation does not meet requirements.\n DataError: Data provided to an operation does not meet requirements."
+          }
+        ],
+        "emptyRestore": {
+          "ok": true
+        },
+        "duplicate": {
+          "ok": false,
+          "name": "ConstraintError",
+          "message": "A mutation operation in the transaction failed because a constraint was not satisfied."
+        },
+        "openEvents": [
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "versionchange",
+            "oldVersion": 30,
+            "newVersion": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "The operation failed because the stored database is a higher version than the version requested."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "The operation failed because the stored database is a higher version than the version requested."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          }
+        ],
+        "historicalHashAfterAttacks": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "canonicalGraphHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a",
+        "operationReceiptsHash": "df4f4102071caa3466c8c86953e69d393e43e6b260d2791c5ba0c2137c77dc5c",
+        "audit": [],
+        "projection": {
+          "recordCounts": {
+            "accounts": 6,
+            "categories": 3,
+            "transactions": 13,
+            "obligations": 7,
+            "obligationPayments": 13,
+            "applicationSettings": 1
+          },
+          "transactionCounts": {
+            "expense": 5,
+            "income": 2,
+            "transfer": 3,
+            "refund": 3
+          },
+          "openingBalancesCents": {
+            "bank": 100000,
+            "card-credit": -5000,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 20000,
+            "overdraft": -2500
+          },
+          "accountBalancesCents": {
+            "bank": 366000,
+            "card-credit": -9500,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 21900,
+            "overdraft": -2500
+          },
+          "availableCreditCents": {
+            "card-credit": 59500,
+            "card-debt": 50000,
+            "card-no-limit": null
+          },
+          "monthlyFinancial": {
+            "2026-09": {
+              "expensesCents": 100,
+              "incomeCents": 300000
+            },
+            "2026-10": {
+              "expensesCents": 28500,
+              "incomeCents": 1000
+            },
+            "2026-11": {
+              "expensesCents": 0,
+              "incomeCents": 0
+            }
+          },
+          "installments": {
+            "completed": {
+              "totalPaidCents": 50000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 0,
+              "isCompleted": true
+            },
+            "future": {
+              "totalPaidCents": 0,
+              "remainingAmountCents": 30000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "inactive": {
+              "totalPaidCents": 6000,
+              "remainingAmountCents": 14000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "overpaid": {
+              "totalPaidCents": 12000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 2000,
+              "isCompleted": true
+            },
+            "partial": {
+              "totalPaidCents": 30000,
+              "remainingAmountCents": 70000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            }
+          },
+          "obligationMonths": {
+            "2026-09": {
+              "expectedTotalDueCents": 56000,
+              "totalPaidCents": 63000,
+              "paidDuringMonthCents": 58000,
+              "remainingTotalDueCents": 0,
+              "overdueIds": []
+            },
+            "2026-10": {
+              "expectedTotalDueCents": 58000,
+              "totalPaidCents": 50000,
+              "paidDuringMonthCents": 48000,
+              "remainingTotalDueCents": 13000,
+              "overdueIds": [
+                "bill"
+              ]
+            },
+            "2026-11": {
+              "expectedTotalDueCents": 28000,
+              "totalPaidCents": 0,
+              "paidDuringMonthCents": 7000,
+              "remainingTotalDueCents": 28000,
+              "overdueIds": []
+            }
+          },
+          "octoberStates": {
+            "bill": {
+              "expectedAmountCents": 8000,
+              "paidAmountCents": 5000,
+              "remainingDueCents": 3000,
+              "status": "partially_paid",
+              "isOverdue": true
+            },
+            "bill-inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 2000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "completed": {
+              "expectedAmountCents": 25000,
+              "paidAmountCents": 25000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "future": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 0,
+              "remainingDueCents": 0,
+              "status": "upcoming",
+              "isOverdue": false
+            },
+            "inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 1000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "overpaid": {
+              "expectedAmountCents": 5000,
+              "paidAmountCents": 7000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "partial": {
+              "expectedAmountCents": 20000,
+              "paidAmountCents": 10000,
+              "remainingDueCents": 10000,
+              "status": "partially_paid",
+              "isOverdue": false
+            }
+          },
+          "nextDueDates": {
+            "bill": "2026-10-15",
+            "bill-inactive": null,
+            "completed": null,
+            "future": "2026-12-01",
+            "inactive": null,
+            "overpaid": null,
+            "partial": "2026-10-31"
+          }
+        }
+      },
+      "aborts": [
+        {
+          "afterStoreMove": 1,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 2,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 3,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 4,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 5,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 6,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "A request was aborted, for example through a call to IDBTransaction.abort."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        }
+      ],
+      "tabInterruption": {
+        "nativeVersionBeforeRetry": 30,
+        "hashBeforeRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "processInterruption": {
+        "beforeCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "beforeCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "epochBeforeTermination": [
+          {
+            "id": "workspace",
+            "epoch": "86179864-3f6b-43aa-a29f-13a9642ab440",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "epochAfterRestart": [
+          {
+            "id": "workspace",
+            "epoch": "86179864-3f6b-43aa-a29f-13a9642ab440",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "afterRepeatedGateHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "inFlightWriter": {
+        "expectedHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9",
+        "actualHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9"
+      },
+      "incompleteGate": {
+        "ok": false,
+        "name": "Error",
+        "message": "PrototypeLayoutMismatch"
+      },
+      "competingUpgradersHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "negativeEvidence": {
+        "additive": {
+          "nativeOlder": {
+            "ok": false,
+            "name": "VersionError",
+            "message": "The operation failed because the stored database is a higher version than the version requested."
+          },
+          "spread": {
+            "ok": false,
+            "name": "RangeError",
+            "message": "Unsupported or cross-type obligation/payment fields."
+          },
+          "historicalEdit": {
+            "ok": true
+          },
+          "transactionEdit": {
+            "ok": true
+          },
+          "replace": {
+            "ok": true
+          },
+          "paymentDelete": {
+            "ok": true
+          },
+          "transactionDelete": {
+            "ok": true
+          },
+          "reopen": {
+            "ok": true,
+            "value": 40
+          },
+          "offline": {
+            "ok": true
+          },
+          "restore": {
+            "ok": true
+          },
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The operation failed because the stored database is a higher version than the version requested."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The operation failed because the stored database is a higher version than the version requested."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            }
+          ],
+          "violations": [
+            {
+              "kind": "missing-payment",
+              "paymentId": "duplicate-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-expense-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-transfer-payment"
+            }
+          ]
+        },
+        "namespace": {
+          "retry": {
+            "ok": false,
+            "name": "Error",
+            "message": "MigrationSourceChanged"
+          },
+          "sourceHash": "c9a212ac24732f54173e73908ea47e1c53332f954c8ae368384e4877b50e28e5",
+          "targetHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a"
+        },
+        "renameOnly": {
+          "create": {
+            "ok": true,
+            "value": "old-competing-bank"
+          },
+          "nativeVersion": 41,
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "The operation failed because the stored database is a higher version than the version requested."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 41
+            },
+            {
+              "kind": "opened",
+              "version": 41
+            }
+          ]
+        },
+        "pwaAdditive": {
+          "violations": [
+            {
+              "kind": "mismatched-transaction",
+              "paymentId": "v13-expense-payment"
+            }
+          ],
+          "oldAssets": [
+            "http://127.0.0.1:49869/my-finance/assets/index-CwPF-oEn.js"
+          ]
+        }
+      },
+      "pwaGuarded": {
+        "beforeSave": {
+          "dialog": true,
+          "amount": "250.01",
+          "bootstrap": false,
+          "onboarding": false
+        },
+        "oldRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "candidateRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "historicalHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "limitations": [
+        "Debugger-forced activation with old JavaScript retained is Chromium-only; normal waiting/activation is tested separately.",
+        "Candidate production shell still uses v3 repositories: its recovery error proves no production v4 integration. Installed OS PWA reopening is not tested."
+      ],
+      "safetyGates": {
+        "additiveProposal": "PROVEN UNSAFE",
+        "namespaceOnly": "PROVEN UNSAFE",
+        "guardedRepositoryMatrix": "PROVEN SAFE FOR TESTED PATHS",
+        "productionRelease": "UNPROVEN"
+      }
+    },
+    {
+      "engine": "webkit",
+      "classification": "PROVEN SAFE FOR TESTED PATHS",
+      "environment": {
+        "product": "webkit/27.2",
+        "driver": "playwright",
+        "executable": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-qualification-tools\\browsers\\webkit-2388\\Playwright.exe"
+      },
+      "checks": [
+        "Exact v1.2.0 commit and installed Dexie 4.4.6 match the released lockfile",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Additive v4 migration itself preserves every historical record and exact balance",
+        "A raw explicit native-v3 open rejects, but that rejection does not fence Dexie fallback",
+        "A matching native version with the wrong layout is rejected instead of being mistaken for completed migration",
+        "Explicit post-migration fixture links existing Expense and Card Transfer without new transactions",
+        "Additive unique transaction index rejects a simultaneous duplicate claim atomically",
+        "An already-open released client writes after native version 30 -> 40",
+        "An exclusive Web Lock held by new code does not stop the unchanged old repository writer",
+        "IndexedDB versionchange does not destroy old in-memory application code",
+        "Actual released Dexie catches VersionError and reopens the newer database",
+        "Old strict validation rejects a read-and-spread payment containing unknown link fields",
+        "Old financial edit bypasses payment/transaction amount consistency",
+        "Actual old full-record replacement silently removes optional links and their unique-index entry",
+        "Erasing the link frees its unique key for another payment while the original receipt survives",
+        "Released payment deletion leaves a live operation receipt orphaned",
+        "Released transaction deletion removes a financial record still claimed by a payment",
+        "Explicit old-client close and reopen also accepts the newer native schema",
+        "Already loaded old repository code remains writable offline after additive upgrade",
+        "Actual released full restore bypasses the new operation/link graph",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Versioned database copy preserves the original fixture before competing writes",
+        "Old v1.2 writes cannot reach the new DB but silently diverge from its copied financial history",
+        "Namespace migration retry detects source divergence instead of overwriting linked destination data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Atomic native store rename preserves original business records",
+        "Old Dexie schema repair recreates missing legacy stores and permits a competing ledger",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An uncooperative open native connection blocks cutover without partially upgrading it",
+        "Guarded atomic cutover preserves original IDs, metadata, principal, balances and settings",
+        "A prototype v4 Dexie client binds canonical stores after the native gate without schema repair",
+        "Canonical graph survives actual released historical payment edit",
+        "Canonical graph survives actual released linked payment replacement",
+        "Canonical graph survives actual released historical transaction edit",
+        "Canonical graph survives actual released linked transaction replacement",
+        "Canonical graph survives actual released linked transaction deletion",
+        "Canonical graph survives actual released linked payment deletion",
+        "Canonical graph survives actual released new account",
+        "Canonical graph survives actual released new category",
+        "Canonical graph survives actual released new obligation",
+        "Canonical graph survives actual released new financial transaction",
+        "Canonical graph survives actual released settings save",
+        "Canonical graph survives actual released confirmed settings save",
+        "Canonical graph survives actual released CSV batch import",
+        "Canonical graph survives actual released full workspace replacement restore",
+        "Old native write failures are recorded instead of being treated as successful deductions",
+        "Old explicit close/reopen does not remove the structural guard",
+        "A newly opened actual old client cannot delete the canonical Card Transfer",
+        "Concurrent old-tab restores cannot clear or replace canonical data",
+        "Offline released historical payment edit preserves canonical data",
+        "Offline released linked payment replacement preserves canonical data",
+        "Offline released historical transaction edit preserves canonical data",
+        "Offline released linked transaction replacement preserves canonical data",
+        "Offline released linked transaction deletion preserves canonical data",
+        "Offline released linked payment deletion preserves canonical data",
+        "Offline released new account preserves canonical data",
+        "Offline released new category preserves canonical data",
+        "Offline released new obligation preserves canonical data",
+        "Offline released new financial transaction preserves canonical data",
+        "Offline released settings save preserves canonical data",
+        "Offline released confirmed settings save preserves canonical data",
+        "Offline released CSV batch import preserves canonical data",
+        "Offline released full workspace replacement restore preserves canonical data",
+        "Canonical unique link constraint still rejects duplicate claims after old-client attacks",
+        "Failed duplicate claim rolls back its operation receipt as well as payment",
+        "Even a successful old empty restore can clear only compatibility stores",
+        "Historical data hash, balances, debt, principal and payment totals survive every old-client attack",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 1 restores native v3 and the complete fixture hash",
+        "Retry after abort 1 preserves all historical derived values",
+        "Repeated completed cutover 1 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 2 restores native v3 and the complete fixture hash",
+        "Retry after abort 2 preserves all historical derived values",
+        "Repeated completed cutover 2 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 3 restores native v3 and the complete fixture hash",
+        "Retry after abort 3 preserves all historical derived values",
+        "Repeated completed cutover 3 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 4 restores native v3 and the complete fixture hash",
+        "Retry after abort 4 preserves all historical derived values",
+        "Repeated completed cutover 4 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 5 restores native v3 and the complete fixture hash",
+        "Retry after abort 5 preserves all historical derived values",
+        "Repeated completed cutover 5 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Abort after rename 6 restores native v3 and the complete fixture hash",
+        "Retry after abort 6 preserves all historical derived values",
+        "Repeated completed cutover 6 neither reseeds nor reposts financial records",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "An incomplete completion marker rejects admission without resetting canonical data",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Closing the upgrading browser tab rolls back the unfinished versionchange transaction",
+        "A fresh tab safely retries an interrupted migration without posting money",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "Native cutover waits for an in-flight real v1.2 write transaction",
+        "Cutover includes the last committed old payment correction and preserves exact financial/principal values",
+        "Actual v1.2 repositories created the exact schema-v3 fixture",
+        "A second new tab cannot commit a second cutover while the first upgrade is pending",
+        "Concurrent new clients converge on one committed canonical fixture",
+        "The second upgrader observes completion without replaying migration steps",
+        "Abrupt browser-process termination before commit leaves the complete legacy fixture",
+        "Abrupt browser-process termination after commit preserves all canonical financial data",
+        "Browser-process restart neither repeats migration nor changes the committed epoch or financial records",
+        "Actual production v1.2 remains open while an uncontrolled prototype upgrades its database",
+        "New deployed PWA assets wait while the old compiled app remains in memory",
+        "Old JavaScript and loaded assets remain in memory during the tested worker lifecycle",
+        "Actual old production UI edits a linked Expense offline during worker coexistence, breaking link consistency",
+        "The unsafe offline write came from the still-running released application",
+        "Offline browser reload uses the new cached application shell, without repairing the damaged link",
+        "New assets and reload do not reconcile or enforce the existing payment link",
+        "Old dirty transaction editor reports a blocked save and retains its draft",
+        "Actual compiled v1.2 editor cannot modify canonical linked data after guarded cutover",
+        "Offline cached v1.2 reload encounters the retirement guard instead of resetting onboarding",
+        "Offline old-client reopen preserves canonical records and both valid links",
+        "A loaded new prototype client still reads the complete canonical ledger while the offline old app is blocked",
+        "A waiting candidate service worker does not change the guarded canonical ledger",
+        "Reopening the candidate shell after normal worker activation cannot change canonical data"
+      ],
+      "release": {
+        "tag": "v1.2.0",
+        "commit": "67c5d5c2f0e47d0136d400215883bf34611021e8",
+        "dexieVersion": 3,
+        "nativeVersion": 30
+      },
+      "fixtureHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "dexieVersion": "4.4.6",
+      "rawReport": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\webkit.json",
+      "rawReportSha256": "bf38fe935ed9b75bca06992ebfa72d1f55dbf9929f2667a353140931c7ba3a52",
+      "rawLog": "C:\\Users\\Admin\\AppData\\Local\\Temp\\my-finance-write-fence-5b1-M36AwW\\webkit.log",
+      "guarded": {
+        "outcomes": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "concurrent": [
+          {
+            "tab": 0,
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "tab": 1,
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "offline": [
+          {
+            "operation": "historical payment edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: bill-sep"
+          },
+          {
+            "operation": "linked payment replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Obligation payment does not exist: v13-expense-payment"
+          },
+          {
+            "operation": "historical transaction edit",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: bank-expense"
+          },
+          {
+            "operation": "linked transaction replacement",
+            "ok": false,
+            "name": "Error",
+            "message": "Transaction does not exist: card-purchase"
+          },
+          {
+            "operation": "linked transaction deletion",
+            "ok": true
+          },
+          {
+            "operation": "linked payment deletion",
+            "ok": true
+          },
+          {
+            "operation": "new account",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new category",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new obligation",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "new financial transaction",
+            "ok": false,
+            "name": "Error",
+            "message": "Account does not exist: bank"
+          },
+          {
+            "operation": "settings save",
+            "ok": false,
+            "name": "CurrencyChangeConfirmationRequired",
+            "message": "Changing currency changes how existing amounts are labeled and formatted. Existing values will not be converted."
+          },
+          {
+            "operation": "confirmed settings save",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          },
+          {
+            "operation": "CSV batch import",
+            "ok": false,
+            "name": "Error",
+            "message": "Finance settings must be an object."
+          },
+          {
+            "operation": "full workspace replacement restore",
+            "ok": false,
+            "name": "DataError",
+            "message": "Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value.\n DataError: Failed to store record in an IDBObjectStore: Evaluating the object store's key path did not yield a value."
+          }
+        ],
+        "emptyRestore": {
+          "ok": true
+        },
+        "duplicate": {
+          "ok": false,
+          "name": "ConstraintError",
+          "message": "Unable to store record in object store because it does not satisfy the uniqueness requirements of an index"
+        },
+        "openEvents": [
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 30
+          },
+          {
+            "kind": "versionchange",
+            "oldVersion": 30,
+            "newVersion": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "An attempt was made to open a database using a lower version than the existing version."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": 30
+          },
+          {
+            "kind": "error",
+            "name": "VersionError",
+            "message": "An attempt was made to open a database using a lower version than the existing version."
+          },
+          {
+            "kind": "request",
+            "database": "my-finance",
+            "version": null
+          },
+          {
+            "kind": "opened",
+            "version": 40
+          }
+        ],
+        "historicalHashAfterAttacks": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "canonicalGraphHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a",
+        "operationReceiptsHash": "df4f4102071caa3466c8c86953e69d393e43e6b260d2791c5ba0c2137c77dc5c",
+        "audit": [],
+        "projection": {
+          "recordCounts": {
+            "accounts": 6,
+            "categories": 3,
+            "transactions": 13,
+            "obligations": 7,
+            "obligationPayments": 13,
+            "applicationSettings": 1
+          },
+          "transactionCounts": {
+            "expense": 5,
+            "income": 2,
+            "transfer": 3,
+            "refund": 3
+          },
+          "openingBalancesCents": {
+            "bank": 100000,
+            "card-credit": -5000,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 20000,
+            "overdraft": -2500
+          },
+          "accountBalancesCents": {
+            "bank": 366000,
+            "card-credit": -9500,
+            "card-debt": 50000,
+            "card-no-limit": 1234,
+            "cash": 21900,
+            "overdraft": -2500
+          },
+          "availableCreditCents": {
+            "card-credit": 59500,
+            "card-debt": 50000,
+            "card-no-limit": null
+          },
+          "monthlyFinancial": {
+            "2026-09": {
+              "expensesCents": 100,
+              "incomeCents": 300000
+            },
+            "2026-10": {
+              "expensesCents": 28500,
+              "incomeCents": 1000
+            },
+            "2026-11": {
+              "expensesCents": 0,
+              "incomeCents": 0
+            }
+          },
+          "installments": {
+            "completed": {
+              "totalPaidCents": 50000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 0,
+              "isCompleted": true
+            },
+            "future": {
+              "totalPaidCents": 0,
+              "remainingAmountCents": 30000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "inactive": {
+              "totalPaidCents": 6000,
+              "remainingAmountCents": 14000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            },
+            "overpaid": {
+              "totalPaidCents": 12000,
+              "remainingAmountCents": 0,
+              "overpaymentCents": 2000,
+              "isCompleted": true
+            },
+            "partial": {
+              "totalPaidCents": 30000,
+              "remainingAmountCents": 70000,
+              "overpaymentCents": 0,
+              "isCompleted": false
+            }
+          },
+          "obligationMonths": {
+            "2026-09": {
+              "expectedTotalDueCents": 56000,
+              "totalPaidCents": 63000,
+              "paidDuringMonthCents": 58000,
+              "remainingTotalDueCents": 0,
+              "overdueIds": []
+            },
+            "2026-10": {
+              "expectedTotalDueCents": 58000,
+              "totalPaidCents": 50000,
+              "paidDuringMonthCents": 48000,
+              "remainingTotalDueCents": 13000,
+              "overdueIds": [
+                "bill"
+              ]
+            },
+            "2026-11": {
+              "expectedTotalDueCents": 28000,
+              "totalPaidCents": 0,
+              "paidDuringMonthCents": 7000,
+              "remainingTotalDueCents": 28000,
+              "overdueIds": []
+            }
+          },
+          "octoberStates": {
+            "bill": {
+              "expectedAmountCents": 8000,
+              "paidAmountCents": 5000,
+              "remainingDueCents": 3000,
+              "status": "partially_paid",
+              "isOverdue": true
+            },
+            "bill-inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 2000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "completed": {
+              "expectedAmountCents": 25000,
+              "paidAmountCents": 25000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "future": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 0,
+              "remainingDueCents": 0,
+              "status": "upcoming",
+              "isOverdue": false
+            },
+            "inactive": {
+              "expectedAmountCents": 0,
+              "paidAmountCents": 1000,
+              "remainingDueCents": 0,
+              "status": "inactive",
+              "isOverdue": false
+            },
+            "overpaid": {
+              "expectedAmountCents": 5000,
+              "paidAmountCents": 7000,
+              "remainingDueCents": 0,
+              "status": "completed",
+              "isOverdue": false
+            },
+            "partial": {
+              "expectedAmountCents": 20000,
+              "paidAmountCents": 10000,
+              "remainingDueCents": 10000,
+              "status": "partially_paid",
+              "isOverdue": false
+            }
+          },
+          "nextDueDates": {
+            "bill": "2026-10-15",
+            "bill-inactive": null,
+            "completed": null,
+            "future": "2026-12-01",
+            "inactive": null,
+            "overpaid": null,
+            "partial": "2026-10-31"
+          }
+        }
+      },
+      "aborts": [
+        {
+          "afterStoreMove": 1,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 2,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 3,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 4,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 5,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        },
+        {
+          "afterStoreMove": 6,
+          "error": {
+            "ok": false,
+            "name": "AbortError",
+            "message": "The operation was aborted."
+          },
+          "nativeVersionAfterAbort": 30,
+          "hashBefore": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterAbort": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+          "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+        }
+      ],
+      "tabInterruption": {
+        "nativeVersionBeforeRetry": 30,
+        "hashBeforeRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "hashAfterRetry": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "processInterruption": {
+        "beforeCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "beforeCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "afterCommitRestartHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+        "epochBeforeTermination": [
+          {
+            "id": "workspace",
+            "epoch": "899d4a8d-7959-4bf0-838d-e129e289d460",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "epochAfterRestart": [
+          {
+            "id": "workspace",
+            "epoch": "899d4a8d-7959-4bf0-838d-e129e289d460",
+            "mode": "guarded",
+            "stage": "committed"
+          }
+        ],
+        "afterRepeatedGateHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "inFlightWriter": {
+        "expectedHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9",
+        "actualHash": "af182a1d7ace7a7f699febcfc5944be4557529579b1a824283b2e9a64da720a9"
+      },
+      "incompleteGate": {
+        "ok": false,
+        "name": "Error",
+        "message": "PrototypeLayoutMismatch"
+      },
+      "competingUpgradersHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da",
+      "negativeEvidence": {
+        "additive": {
+          "nativeOlder": {
+            "ok": false,
+            "name": "VersionError",
+            "message": "An attempt was made to open a database using a lower version than the existing version."
+          },
+          "spread": {
+            "ok": false,
+            "name": "RangeError",
+            "message": "Unsupported or cross-type obligation/payment fields."
+          },
+          "historicalEdit": {
+            "ok": true
+          },
+          "transactionEdit": {
+            "ok": true
+          },
+          "replace": {
+            "ok": true
+          },
+          "paymentDelete": {
+            "ok": true
+          },
+          "transactionDelete": {
+            "ok": true
+          },
+          "reopen": {
+            "ok": true,
+            "value": 40
+          },
+          "offline": {
+            "ok": true
+          },
+          "restore": {
+            "ok": true
+          },
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "An attempt was made to open a database using a lower version than the existing version."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "An attempt was made to open a database using a lower version than the existing version."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            }
+          ],
+          "violations": [
+            {
+              "kind": "missing-payment",
+              "paymentId": "duplicate-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-expense-payment"
+            },
+            {
+              "kind": "missing-payment",
+              "paymentId": "v13-transfer-payment"
+            }
+          ]
+        },
+        "namespace": {
+          "retry": {
+            "ok": false,
+            "name": "Error",
+            "message": "MigrationSourceChanged"
+          },
+          "sourceHash": "c9a212ac24732f54173e73908ea47e1c53332f954c8ae368384e4877b50e28e5",
+          "targetHash": "a24d7ebca05fc6c881857d32cd2398f8b91128d2ea8968940dd9d4c21387738a"
+        },
+        "renameOnly": {
+          "create": {
+            "ok": true,
+            "value": "old-competing-bank"
+          },
+          "nativeVersion": 41,
+          "openEvents": [
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "opened",
+              "version": 30
+            },
+            {
+              "kind": "versionchange",
+              "oldVersion": 30,
+              "newVersion": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 30
+            },
+            {
+              "kind": "error",
+              "name": "VersionError",
+              "message": "An attempt was made to open a database using a lower version than the existing version."
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": null
+            },
+            {
+              "kind": "opened",
+              "version": 40
+            },
+            {
+              "kind": "request",
+              "database": "my-finance",
+              "version": 41
+            },
+            {
+              "kind": "opened",
+              "version": 41
+            }
+          ]
+        },
+        "pwaAdditive": {
+          "violations": [
+            {
+              "kind": "mismatched-transaction",
+              "paymentId": "v13-expense-payment"
+            }
+          ],
+          "oldAssets": [
+            "http://127.0.0.1:55358/my-finance/assets/index-CwPF-oEn.js"
+          ]
+        }
+      },
+      "pwaGuarded": {
+        "beforeSave": {
+          "dialog": true,
+          "amount": "250.01",
+          "bootstrap": false,
+          "onboarding": false
+        },
+        "oldRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "candidateRecovery": "My FinanceLocal settings could not be loaded. Check browser storage and try again. Your stored records have not been changed.Retry",
+        "historicalHash": "aad99ccfbe046e17e49e50e0d03e1442c04a170367e5be18dc3daf702460b5da"
+      },
+      "limitations": [
+        "Debugger-forced activation with old JavaScript retained is Chromium-only; normal waiting/activation is tested separately.",
+        "Candidate production shell still uses v3 repositories: its recovery error proves no production v4 integration. Installed OS PWA reopening is not tested."
+      ],
+      "safetyGates": {
+        "additiveProposal": "PROVEN UNSAFE",
+        "namespaceOnly": "PROVEN UNSAFE",
+        "guardedRepositoryMatrix": "PROVEN SAFE FOR TESTED PATHS",
+        "productionRelease": "UNPROVEN"
+      }
+    }
+  ],
+  "productionIntegration": "UNPROVEN",
+  "installedDesktopAndIosPwas": "UNPROVEN",
+  "recommendation": "STOP"
+}

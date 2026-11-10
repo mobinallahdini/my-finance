@@ -2,6 +2,7 @@ import { useMoney } from '../financeSettings/useMoney'
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type SubmitEvent } from 'react'
 import type { Account, Category } from '../../domain/models'
 import { accountTypeLabels } from '../accounts/accountLabels'
+import { createReportFilters, filterAccountTypes } from '../../domain/transactionQuery'
 import { transactionTypeLabels } from './transactionHelpers'
 import {
   emptyTransactionFilters, filterDraft, filterTypes, validateFilterDraft,
@@ -12,27 +13,29 @@ function toggleSelection<T extends string>(selected: readonly T[], value: T): T[
   return selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]
 }
 
-export function TransactionFilterPanel({ filters, accounts, categories, onApply, onCancel, showAccountFilter = true }: {
+export function TransactionFilterPanel({ filters, accounts, categories, onApply, onCancel, showAccountFilter = true, reportMode = false }: {
   filters: TransactionFilterState
   accounts: readonly Account[]
   categories: readonly Category[]
   onApply: (filters: TransactionFilterState) => void
   onCancel: () => void
   showAccountFilter?: boolean
+  reportMode?: boolean
 }) {
   const { currencyCode } = useMoney()
   const prefix = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [draft, setDraft] = useState(() => filterDraft(filters))
   const [errors, setErrors] = useState<FilterErrors>({})
+  const [queryError, setQueryError] = useState('')
   useLayoutEffect(() => {
     const dialog = dialogRef.current!
     const oldOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     dialog.showModal()
-    dialog.querySelector<HTMLSelectElement>('select')?.focus()
+    dialog.querySelector<HTMLElement>(reportMode ? 'input[type="search"], select' : 'select')?.focus()
     return () => { dialog.close(); document.body.style.overflow = oldOverflow }
-  }, [])
+  }, [reportMode])
 
   function changeField(field: FilterField, value: string) {
     setDraft((current) => ({ ...current, [field]: value }))
@@ -56,9 +59,16 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
       if (input instanceof HTMLElement) input.focus()
       return
     }
-    if (result.value) onApply(result.value)
+    if (result.value) {
+      try { onApply(reportMode ? createReportFilters(result.value) : result.value) }
+      catch (error) { setQueryError(error instanceof Error ? error.message : 'Review the report filters.') }
+    }
   }
   function containFocus(event: KeyboardEvent<HTMLDialogElement>) {
+    // A search input otherwise consumes the first Escape to clear its text.
+    if (reportMode && event.key === 'Escape') {
+      event.preventDefault(); event.stopPropagation(); onCancel(); return
+    }
     if (event.key !== 'Tab') return
     const targets = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
       'button:not(:disabled), input:not(:disabled), select:not(:disabled), summary',
@@ -91,8 +101,10 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
     setErrors((current) => ({ minimum: current.minimum, maximum: current.maximum }))
   }
   function clearDraft() {
-    setDraft(filterDraft({ ...emptyTransactionFilters(), query: draft.query }))
+    setDraft(filterDraft({ ...emptyTransactionFilters(), query: reportMode ? '' : draft.query,
+      ...(reportMode ? { accountTypes: [] } : {}) }))
     setErrors({})
+    setQueryError('')
   }
   const selectedCount = (ids: readonly string[]) => ids.length ? `${ids.length} selected` : 'Any'
   return (
@@ -101,10 +113,17 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
       <form className="transaction-form transaction-filter-form" onSubmit={apply} noValidate>
         <header className="transaction-editor-header">
           <button type="button" className="button-quiet" onClick={onCancel}>Cancel</button>
-          <h2 id={`${prefix}-heading`} tabIndex={-1}>Filters</h2>
+          <h2 id={`${prefix}-heading`} tabIndex={-1}>{reportMode ? 'Report filters' : 'Filters'}</h2>
           <button className="transaction-primary" type="submit">Apply filters</button>
         </header>
         <div className="transaction-editor-body transaction-filter-body">
+          {reportMode && <div className="transaction-field">
+            <label htmlFor={`${prefix}-query`}>Search text</label>
+            <input id={`${prefix}-query`} type="search" value={draft.query}
+              onChange={event => setDraft(current => ({ ...current, query: event.target.value }))}
+              aria-describedby={`${prefix}-search-help`} />
+            <p id={`${prefix}-search-help`}>Search notes, receipt numbers, types, categories, and accounts.</p>
+          </div>}
           <fieldset className="transaction-filter-group">
             <legend>Date</legend>
             <div className="transaction-field">
@@ -119,6 +138,17 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
               {field('fromDate', 'From date (optional)', 'date')}{field('toDate', 'To date (optional)', 'date')}
             </div>}
           </fieldset>
+          {reportMode && <fieldset className="transaction-filter-group">
+            <legend>Account types</legend>
+            <div className="transaction-filter-types">
+              {filterAccountTypes.map(type => <label className="transaction-filter-check" key={type}>
+                <input type="checkbox" name="accountTypes" value={type} checked={draft.accountTypes?.includes(type) ?? false}
+                  onChange={() => setDraft(current => ({ ...current, accountTypes: toggleSelection(current.accountTypes ?? [], type) }))} />
+                <span>{accountTypeLabels[type]}</span>
+              </label>)}
+            </div>
+            <p className="transaction-filter-help">Accounts and account types must match the same account, including for transfers.</p>
+          </fieldset>}
           <fieldset className="transaction-filter-group">
             <legend>Amount ({currencyCode})</legend>
             <p className="transaction-filter-help">Match the amount regardless of its displayed sign. Leave either bound blank for no limit.</p>
@@ -165,7 +195,8 @@ export function TransactionFilterPanel({ filters, accounts, categories, onApply,
             </fieldset>
           </details>
           {Object.values(errors).some(Boolean) && <p className="transaction-error" role="alert">Review the marked fields. Your active filters have not changed.</p>}
-          <button type="button" className="button-quiet transaction-filter-clear-draft" onClick={clearDraft}>Clear advanced filters</button>
+          {queryError && <p className="transaction-error" role="alert">{queryError}</p>}
+          <button type="button" className="button-quiet transaction-filter-clear-draft" onClick={clearDraft}>{reportMode ? 'Clear all filters' : 'Clear advanced filters'}</button>
         </div>
       </form>
     </dialog>

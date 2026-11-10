@@ -8,6 +8,15 @@ export function MoreSection() {
       <nav className="more-utilities" aria-label="Utilities">
         <ul className="more-list">
           <li>
+            <a className="more-category-link" href="#more/reports">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <path d="M4 3h16v18H4ZM8 16v-4m4 4V8m4 8v-6" />
+              </svg>
+              <span><strong>Financial Reports</strong><span>Explore income, spending, refunds, and transfers</span></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7" /></svg>
+            </a>
+          </li>
+          <li>
             <a className="more-category-link" href="#more/finance-settings">
               <span><strong>Finance settings</strong><span>Country, currency, and fiscal year</span></span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"

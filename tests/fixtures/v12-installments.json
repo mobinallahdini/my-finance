@@ -1,0 +1,92 @@
+{
+  "format": "my-finance-installment-safety-baseline-v1",
+  "release": { "tag": "v1.2.0", "commit": "67c5d5c2f0e47d0136d400215883bf34611021e8", "dexieVersion": 3, "nativeVersion": 30 },
+  "today": "2026-10-20",
+  "theme": "ocean",
+  "workspace": {
+    "accounts": [
+      { "id": "bank", "name": "Synthetic Main Bank", "type": "bank", "openingBalance": 100000 },
+      { "id": "cash", "name": "Synthetic Cash", "type": "cash", "openingBalance": 20000 },
+      { "id": "card-debt", "name": "Synthetic Debt Card", "type": "credit_card", "openingBalance": 50000, "creditLimit": 100000 },
+      { "id": "card-credit", "name": "Synthetic Credit Card", "type": "credit_card", "openingBalance": -5000, "creditLimit": 50000 },
+      { "id": "overdraft", "name": "Synthetic Overdraft", "type": "bank", "openingBalance": -2500 },
+      { "id": "card-no-limit", "name": "Synthetic Card Without Limit", "type": "credit_card", "openingBalance": 1234 }
+    ],
+    "categories": [
+      { "id": "food", "name": "Synthetic Groceries", "type": "expense" },
+      { "id": "equipment", "name": "Synthetic Equipment", "type": "expense" },
+      { "id": "salary", "name": "Synthetic Salary", "type": "income" }
+    ],
+    "transactions": [
+      { "id": "bank-income", "type": "income", "accountId": "bank", "categoryId": "salary", "amount": 300000, "date": "2026-09-25" },
+      { "id": "bank-expense", "type": "expense", "accountId": "bank", "categoryId": "food", "amount": 11500, "date": "2026-10-01", "taxAmountCents": 1500, "receiptNumber": "SYNTH / RC-0042", "note": "Synthetic receipt\nPreserve quotes: \"test\" and Unicode: 雪" },
+      { "id": "cash-expense", "type": "expense", "accountId": "cash", "categoryId": "food", "amount": 4000, "date": "2026-10-02" },
+      { "id": "card-purchase", "type": "expense", "accountId": "card-debt", "categoryId": "equipment", "amount": 25000, "date": "2026-10-03", "taxAmountCents": 3000, "receiptNumber": "=SYNTH-ONLY", "note": "Purchase already recorded independently" },
+      { "id": "repay-debt", "type": "transfer", "fromAccountId": "bank", "toAccountId": "card-debt", "amount": 20000, "date": "2026-10-04", "note": "Card repayment, never another Expense" },
+      { "id": "card-refund", "type": "refund", "accountId": "card-debt", "categoryId": "equipment", "amount": 5000, "date": "2026-10-05" },
+      { "id": "credit-refund", "type": "refund", "accountId": "card-credit", "categoryId": "food", "amount": 7500, "date": "2026-10-06" },
+      { "id": "credit-purchase", "type": "expense", "accountId": "card-credit", "categoryId": "food", "amount": 1000, "date": "2026-10-07" },
+      { "id": "cash-transfer", "type": "transfer", "fromAccountId": "bank", "toAccountId": "cash", "amount": 5000, "date": "2026-10-08" },
+      { "id": "bank-refund", "type": "refund", "accountId": "bank", "categoryId": "food", "amount": 500, "date": "2026-10-09" },
+      { "id": "cash-income", "type": "income", "accountId": "cash", "categoryId": "salary", "amount": 1000, "date": "2026-10-10" },
+      { "id": "credit-transfer-out", "type": "transfer", "fromAccountId": "card-credit", "toAccountId": "bank", "amount": 2000, "date": "2026-10-11" },
+      { "id": "september-expense", "type": "expense", "accountId": "cash", "categoryId": "food", "amount": 100, "date": "2026-09-30", "note": "" }
+    ],
+    "obligations": [
+      { "id": "bill", "type": "bill", "name": "Synthetic Power", "expectedAmountCents": 8000, "dueDay": 15, "startMonth": "2026-09", "isActive": true },
+      { "id": "bill-inactive", "type": "bill", "name": "Synthetic Archived Bill", "expectedAmountCents": 2000, "dueDay": 1, "startMonth": "2026-09", "isActive": false },
+      { "id": "partial", "type": "installment", "name": "Synthetic Partial Installment", "originalAmountCents": 100000, "scheduledPaymentCents": 20000, "dueDay": 31, "startMonth": "2026-09", "isActive": true },
+      { "id": "completed", "type": "installment", "name": "Synthetic Completed Installment", "originalAmountCents": 50000, "scheduledPaymentCents": 25000, "dueDay": 5, "startMonth": "2026-09", "isActive": true },
+      { "id": "overpaid", "type": "installment", "name": "Synthetic Overpaid Installment", "originalAmountCents": 10000, "scheduledPaymentCents": 5000, "dueDay": 10, "startMonth": "2026-09", "isActive": true },
+      { "id": "future", "type": "installment", "name": "Synthetic Future Installment", "originalAmountCents": 30000, "scheduledPaymentCents": 10000, "dueDay": 1, "startMonth": "2026-12", "isActive": true },
+      { "id": "inactive", "type": "installment", "name": "Synthetic Archived Installment", "originalAmountCents": 20000, "scheduledPaymentCents": 5000, "dueDay": 20, "startMonth": "2026-09", "isActive": false, "note": "Historical payments remain valid" }
+    ],
+    "obligationPayments": [
+      { "id": "bill-sep", "obligationId": "bill", "dueMonth": "2026-09", "paidDate": "2026-09-15", "amountCents": 8000 },
+      { "id": "bill-oct-a", "obligationId": "bill", "dueMonth": "2026-10", "paidDate": "2026-10-10", "amountCents": 3000 },
+      { "id": "bill-oct-b", "obligationId": "bill", "dueMonth": "2026-10", "paidDate": "2026-11-02", "amountCents": 2000, "note": "Late payment: October due, November paid" },
+      { "id": "archived-bill-oct", "obligationId": "bill-inactive", "dueMonth": "2026-10", "paidDate": "2026-10-01", "amountCents": 2000 },
+      { "id": "partial-sep", "obligationId": "partial", "dueMonth": "2026-09", "paidDate": "2026-09-30", "amountCents": 20000 },
+      { "id": "partial-oct-a", "obligationId": "partial", "dueMonth": "2026-10", "paidDate": "2026-10-15", "amountCents": 6000, "note": "Tracking only; no inferred bank deduction" },
+      { "id": "partial-oct-b", "obligationId": "partial", "dueMonth": "2026-10", "paidDate": "2026-11-03", "amountCents": 4000 },
+      { "id": "completed-sep", "obligationId": "completed", "dueMonth": "2026-09", "paidDate": "2026-09-05", "amountCents": 25000 },
+      { "id": "completed-oct", "obligationId": "completed", "dueMonth": "2026-10", "paidDate": "2026-10-05", "amountCents": 25000 },
+      { "id": "overpaid-sep", "obligationId": "overpaid", "dueMonth": "2026-09", "paidDate": "2026-09-10", "amountCents": 5000 },
+      { "id": "overpaid-oct", "obligationId": "overpaid", "dueMonth": "2026-10", "paidDate": "2026-10-10", "amountCents": 7000 },
+      { "id": "inactive-sep", "obligationId": "inactive", "dueMonth": "2026-09", "paidDate": "2026-10-02", "amountCents": 5000 },
+      { "id": "inactive-oct", "obligationId": "inactive", "dueMonth": "2026-10", "paidDate": "2026-11-04", "amountCents": 1000 }
+    ],
+    "applicationSettings": { "id": "application", "countryCode": "DE", "currencyCode": "GBP", "profileType": "business", "fiscalYearStartMonth": 7, "onboardingCompleted": true }
+  },
+  "expected": {
+    "recordCounts": { "accounts": 6, "categories": 3, "transactions": 13, "obligations": 7, "obligationPayments": 13, "applicationSettings": 1 },
+    "transactionCounts": { "expense": 5, "income": 2, "transfer": 3, "refund": 3 },
+    "openingBalancesCents": { "bank": 100000, "cash": 20000, "card-debt": 50000, "card-credit": -5000, "overdraft": -2500, "card-no-limit": 1234 },
+    "accountBalancesCents": { "bank": 366000, "cash": 21900, "card-debt": 50000, "card-credit": -9500, "overdraft": -2500, "card-no-limit": 1234 },
+    "availableCreditCents": { "card-debt": 50000, "card-credit": 59500, "card-no-limit": null },
+    "monthlyFinancial": { "2026-09": { "expensesCents": 100, "incomeCents": 300000 }, "2026-10": { "expensesCents": 28500, "incomeCents": 1000 }, "2026-11": { "expensesCents": 0, "incomeCents": 0 } },
+    "installments": {
+      "partial": { "totalPaidCents": 30000, "remainingAmountCents": 70000, "overpaymentCents": 0, "isCompleted": false },
+      "completed": { "totalPaidCents": 50000, "remainingAmountCents": 0, "overpaymentCents": 0, "isCompleted": true },
+      "overpaid": { "totalPaidCents": 12000, "remainingAmountCents": 0, "overpaymentCents": 2000, "isCompleted": true },
+      "future": { "totalPaidCents": 0, "remainingAmountCents": 30000, "overpaymentCents": 0, "isCompleted": false },
+      "inactive": { "totalPaidCents": 6000, "remainingAmountCents": 14000, "overpaymentCents": 0, "isCompleted": false }
+    },
+    "obligationMonths": {
+      "2026-09": { "expectedTotalDueCents": 56000, "totalPaidCents": 63000, "paidDuringMonthCents": 58000, "remainingTotalDueCents": 0, "overdueIds": [] },
+      "2026-10": { "expectedTotalDueCents": 58000, "totalPaidCents": 50000, "paidDuringMonthCents": 48000, "remainingTotalDueCents": 13000, "overdueIds": ["bill"] },
+      "2026-11": { "expectedTotalDueCents": 28000, "totalPaidCents": 0, "paidDuringMonthCents": 7000, "remainingTotalDueCents": 28000, "overdueIds": [] }
+    },
+    "octoberStates": {
+      "bill": { "expectedAmountCents": 8000, "paidAmountCents": 5000, "remainingDueCents": 3000, "status": "partially_paid", "isOverdue": true },
+      "bill-inactive": { "expectedAmountCents": 0, "paidAmountCents": 2000, "remainingDueCents": 0, "status": "inactive", "isOverdue": false },
+      "partial": { "expectedAmountCents": 20000, "paidAmountCents": 10000, "remainingDueCents": 10000, "status": "partially_paid", "isOverdue": false },
+      "completed": { "expectedAmountCents": 25000, "paidAmountCents": 25000, "remainingDueCents": 0, "status": "completed", "isOverdue": false },
+      "overpaid": { "expectedAmountCents": 5000, "paidAmountCents": 7000, "remainingDueCents": 0, "status": "completed", "isOverdue": false },
+      "future": { "expectedAmountCents": 0, "paidAmountCents": 0, "remainingDueCents": 0, "status": "upcoming", "isOverdue": false },
+      "inactive": { "expectedAmountCents": 0, "paidAmountCents": 1000, "remainingDueCents": 0, "status": "inactive", "isOverdue": false }
+    },
+    "nextDueDates": { "bill": "2026-10-15", "bill-inactive": null, "partial": "2026-10-31", "completed": null, "overpaid": null, "future": "2026-12-01", "inactive": null },
+    "preRefundLegacyBalancesCents": { "bank": 365500, "cash": 21900, "card-debt": 55000, "card-credit": -2000, "overdraft": -2500, "card-no-limit": 1234 }
+  }
+}

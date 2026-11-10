@@ -5,6 +5,12 @@ More. More links to the existing Categories management component at
 `#more/categories`; it has a Back to More link. Categories is neither copied nor
 reimplemented. More also describes the existing browser-local storage behavior.
 
+More → Financial Reports uses `#more/reports` and keeps More active in the same
+four-destination navigation. Its route heading stays mounted while the report
+content loads. Deep links, reload and browser history follow the existing hash
+architecture. See the [Reports UI](../../../docs/financial-reports.md) for its
+read-only snapshot, session filters, accessible controls and pagination.
+
 `useAppNavigation` reads native hash navigation using React's
 `useSyncExternalStore` and a `hashchange` subscription. Native anchor links create
 browser history entries, preserve the destination across reload, and support
@@ -40,10 +46,19 @@ Header, navigation, and main content share a centered 60rem (960px) content
 width inside the existing shell. The desktop header and navigation share a
 quiet surface, and the active destination uses an underline rather than a pill.
 
-On opening a destination, the app updates the document title, scrolls to the
-top, and focuses its heading unless an editor has already claimed focus. New
+On initial load, the app updates the document title and scrolls to the top without
+automatically focusing the route heading. On subsequent screen changes, including
+Back / Forward, it focuses the heading unless the new content has already claimed
+focus. A ref initialized to the resolved screen also excludes React Strict Mode's
+initial effect replay. The skip link still explicitly focuses the current heading;
 editor focus and existing save/cancel focus are retained. Links and controls keep
 the foundation's visible focus styles and approximately 48px touch targets.
+
+`npm run test:navigation:browser` checks development Strict Mode and the production
+build (run `npm run build` first), starting its own local servers. It exercises
+initial Home/deep links, pointer and keyboard navigation, Back / Forward, skip
+links, same-screen actions, and modal focus in Sage, Ocean, and Dark. It uses only
+a disposable Chrome profile and checks that navigation leaves its database intact.
 
 Validation: build, lint, diff whitespace check, and isolated Chrome checks at
 390×844, 320×720, and 1440×1000. Browser checks cover single-destination rendering,

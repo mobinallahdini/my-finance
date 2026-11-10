@@ -5,6 +5,7 @@ import {
   calculateMonthlyTotalIncome,
 } from '../../domain/calculations'
 import type { MoneyCents, Transaction, YearMonth } from '../../domain/models'
+import { calculateNetCashFlow } from '../../domain/financialSummary'
 import { accountsRepository, categoriesRepository, transactionsRepository } from '../../persistence/repositories'
 import { useDataRefresh } from '../shared/dataRefresh'
 import { compareTransactions, localCalendarDate } from '../transactions/transactionHelpers'
@@ -76,10 +77,7 @@ export function useMonthlyDashboard() {
 
         const expenses = calculateMonthlyTotalExpenses(transactions, month)
         const income = calculateMonthlyTotalIncome(transactions, month)
-        const netCashFlow = income - expenses
-        if (!Number.isSafeInteger(netCashFlow)) {
-          throw new RangeError('Net cash flow must be safe integer cents.')
-        }
+        const netCashFlow = calculateNetCashFlow(income, expenses)
 
         const categoryNames = new Map(categories.map((category) => [category.id, category.name]))
         const accountNames = new Map(accounts?.map((account) => [account.id, account.name]))

@@ -1,13 +1,7 @@
 import type { Account, Transaction } from '../../domain/models'
 
 export type EntryTransaction = Transaction
-
-export const transactionTypeLabels: Record<EntryTransaction['type'], string> = {
-  expense: 'Expense',
-  income: 'Income',
-  transfer: 'Transfer',
-  refund: 'Refund',
-}
+export { compareTransactions, transactionTypeLabels } from '../../domain/transactionQuery.ts'
 
 export function isEligibleAccount(account: Account, type: EntryTransaction['type']): boolean {
   return type !== 'income' || account.type === 'bank' || account.type === 'cash'
@@ -21,12 +15,6 @@ export function localCalendarDate(today = new Date()): string {
   const month = String(today.getMonth() + 1).padStart(2, '0')
   const day = String(today.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-/** IDs provide a stable tie-breaker; the model has no creation timestamp. */
-export function compareTransactions(left: EntryTransaction, right: EntryTransaction): number {
-  if (left.date !== right.date) return left.date > right.date ? -1 : 1
-  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0
 }
 
 export function transactionWriteError(error: unknown): string {
