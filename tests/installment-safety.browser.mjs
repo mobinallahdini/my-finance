@@ -14,6 +14,7 @@ import { build, createServer } from 'vite'
 import * as financial from '../src/domain/calculations.ts'
 import * as obligations from '../src/domain/obligationCalculations.ts'
 import { historical, businessStores, canonicalRecords, deriveHistoricalBaseline, expectedHistoricalBaseline, historicalBackup } from './helpers/installmentBaseline.mjs'
+import { verifyUpgradedOfflineReports } from './helpers/reportingUpgrade.mjs'
 
 const profile = await mkdtemp(join(tmpdir(), 'my-finance-installment-safety-profile-'))
 const artifacts = await mkdtemp(join(tmpdir(), 'my-finance-installment-safety-review-'))
@@ -173,6 +174,7 @@ try {
   passed('Candidate-specific Financial Reports route proves the new application shell is active')
   await client.send('Network.enable');await client.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1})
   await client.send('Page.reload');await ready(client,'.report-overview');compareHistorical(await stored(client),'Offline candidate reload preserves the historical baseline')
+  await verifyUpgradedOfflineReports({client,evaluate:expression=>evaluate(client,expression),wait:expression=>wait(client,expression),stored:()=>stored(client),passed,artifacts})
   await client.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1})
   // Current repositories, failure rollback and library compatibility probes use another origin.
   development=await createServer({server:{host:'127.0.0.1',port:0}});await development.listen()
