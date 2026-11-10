@@ -5,6 +5,11 @@ No schema v4, backup v4, links, account integration, UI, financial calculation,
 or service-worker changes are implemented by 5A. The proposal below is normative
 for subsequent implementation review; it is not a claim that these APIs exist.
 
+**5B-0 investigation update:** the additive layout below is PROVEN UNSAFE as a
+mixed-version write fence. Read [the actual released-client compatibility results](mixed-version-database-safety.md)
+before implementing it. A guarded canonical-store cutover is tested as an
+alternative; its production integration remains UNPROVEN.
+
 ## Current behavior, verified from source
 
 - `src/domain/models.ts`: `ObligationPayment` contains only `id`, `obligationId`,
