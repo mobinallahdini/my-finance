@@ -1,5 +1,5 @@
-import { daysInCalendarMonth } from '../../domain/calendar'
-import { createReportFilters, type TransactionFilterState } from '../../domain/transactionQuery'
+import { daysInCalendarMonth } from '../../domain/calendar.ts'
+import { createReportFilters, type TransactionFilterState } from '../../domain/transactionQuery.ts'
 import type { ReportGrouping } from '../../domain/reporting'
 import type { ValidatedTransactionFilters } from '../../domain/transactionQuery'
 
@@ -12,6 +12,10 @@ export const reportColumns = [
 export type ReportColumn = typeof reportColumns[number][0]
 export const defaultReportColumns: readonly ReportColumn[] = ['date', 'type', 'category', 'account', 'amountCents']
 export const reportPageSize = 25
+/** The screen defines the ordering; every output uses this same selection. */
+export function visibleReportColumns(selected: readonly ReportColumn[]) {
+  return reportColumns.filter(([key]) => selected.includes(key))
+}
 export type ReportPeriod = 'month' | 'year' | 'all' | 'custom'
 export interface ReportView {
   readonly filters: ValidatedTransactionFilters

@@ -1,0 +1,26 @@
+.report-print { display: none; }
+@page { size: A4 landscape; margin: 12mm; }
+@media print {
+  html:has(.report-print), body:has(> .report-print) { background: #fff !important; color: #000 !important; font-size: 12pt !important; }
+  body:has(> .report-print) { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+  body:has(> .report-print) > :not(.report-print) { display: none !important; }
+  .report-print { display: block !important; width: auto; max-width: none; margin: 0; padding: 0; background: #fff; color: #000; font: 9pt/1.4 system-ui, sans-serif; overflow-wrap: anywhere; }
+  .report-print * { color: #000 !important; background: transparent !important; text-shadow: none !important; box-shadow: none !important; }
+  .report-print h1 { font-size: 19pt; margin: 0 0 3mm; }
+  .report-print h2 { font-size: 12pt; margin: 5mm 0 2mm; break-after: avoid; }
+  .report-print p { margin: 1.5mm 0; }
+  .report-print dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2mm 5mm; margin: 2mm 0; }
+  .report-print dl > div { min-width: 0; break-inside: avoid; }
+  .report-print dt { font-weight: 650; }
+  .report-print dd { margin: 0; white-space: pre-wrap; }
+  .report-print-metrics { border-block: 1pt solid #888; padding-block: 3mm; }
+  .report-print-metrics dd { font-size: 12pt; font-variant-numeric: tabular-nums; }
+  .report-print table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-block: 2mm; font-size: 8.5pt; }
+  .report-print caption { text-align: left; font-weight: 650; margin-bottom: 1mm; }
+  .report-print thead { display: table-header-group; }
+  .report-print tbody { display: table-row-group; }
+  .report-print tr { break-inside: avoid; page-break-inside: avoid; }
+  .report-print :is(th, td) { text-align: left; vertical-align: top; border: .5pt solid #999; padding: 1.5mm; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .report-print th { font-weight: 650; }
+  .report-print [data-print-column='amountCents'] { font-weight: 650; font-variant-numeric: tabular-nums; }
+}

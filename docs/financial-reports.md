@@ -2,7 +2,8 @@
 
 More → Financial Reports opens `#more/reports`. It is a read-only view over the
 existing ledger, with no report preference writes, schema or migration changes,
-new transaction semantics, exports, installment integration, OCR, or dependencies.
+new transaction semantics, installment integration, OCR, or dependencies.
+Milestone 4 adds read-only [CSV and native print/PDF exports](report-exports.md).
 
 ## Data and calculations
 

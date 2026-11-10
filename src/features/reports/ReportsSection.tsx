@@ -10,6 +10,7 @@ import { reportColumns, defaultReportColumns, reportPeriod, reportPeriodFilters,
 import { useReportSnapshot } from './useReportSnapshot'
 import { useReportsSession, updateReportsSession } from './useReportsSession'
 import { ReportResults, ReportSummary } from './ReportResults'
+import { ReportExportActions } from './ReportExportActions'
 import '../transactions/transactions.css'
 import '../transactions/transactionFilters.css'
 import './reports.css'
@@ -102,6 +103,7 @@ export function ReportsSection() {
           </label>)}
         </fieldset><button type="button" onClick={() => updateReportsSession({ columns: defaultReportColumns })}>Restore default columns</button>
       </details>
+      <ReportExportActions report={result.report} columns={view.columns} accounts={accounts} categories={categories} />
       <div className="report-content" aria-busy={isLoading}>
         {isLoading && <p className="report-loading" role="status">Loading your report…</p>}
         {(error || result.error) && <div className="report-state" role="alert"><h3>Report unavailable</h3><p>{error ?? result.error}</p>

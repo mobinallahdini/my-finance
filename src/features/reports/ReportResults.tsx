@@ -1,45 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { PreparedReport, ReportRow, ReportGrouping } from '../../domain/reporting'
+import type { PreparedReport, ReportGrouping } from '../../domain/reporting'
 import type { FinancialSummary } from '../../domain/financialSummary'
 import { transactionTypeLabels } from '../../domain/transactionQuery'
-import { accountTypeLabels } from '../accounts/accountLabels'
 import { useMoney } from '../financeSettings/useMoney'
-import { readableMonth, signedTransactionAmount } from '../transactions/transactionPresentation'
-import { reportColumns, reportPageSize, type ReportColumn, type ReportView } from './reportView'
+import { readableMonth } from '../transactions/transactionPresentation'
+import { visibleReportColumns, reportPageSize, type ReportView } from './reportView'
 import { updateReportsSession } from './useReportsSession'
+import { reportAccountGroupingExplanation, reportCashFlowExplanation, reportCellText, reportSummaryMetrics } from './reportPresentation'
 
 export function ReportSummary({ report }: { report: PreparedReport }) {
   const { formatAmount, currencyCode } = useMoney()
   const summary = report.summary
-  const metrics = [
-    ['totalIncomeCents', 'Total Income'], ['grossExpensesCents', 'Gross Expenses'], ['refundsCents', 'Refunds'],
-    ['netExpensesCents', 'Net Expenses'], ['transferVolumeCents', 'Transfer Volume'], ['transactionCount', 'Matching transactions'],
-  ] as const
+  const metrics = reportSummaryMetrics.filter(([key]) => key !== 'netCashFlowCents')
   return <section className="report-overview" aria-label={`Report summary, in ${currencyCode}`}>
     <dl className="report-cash-flow"><dt>Net Cash Flow</dt>
       <dd data-metric="netCashFlowCents" className="financial-value">{formatAmount(summary.netCashFlowCents)}</dd></dl>
     <dl className="report-metrics">{metrics.map(([key, label]) => <div key={key}>
       <dt>{label}</dt><dd data-metric={key} className="financial-value">{key === 'transactionCount' ? summary[key] : formatAmount(summary[key])}</dd>
     </div>)}</dl>
-    <p className="report-explanation">Net Cash Flow is Income minus Net Expenses. It includes card purchases and excludes Transfers, so it may differ from your bank balance change.</p>
+    <p className="report-explanation">{reportCashFlowExplanation}</p>
   </section>
-}
-
-function cellText(row: ReportRow, column: ReportColumn, currencyCode: string, formatAmount: (value: number) => string): string {
-  switch (column) {
-    case 'date': return row.date
-    case 'type': return transactionTypeLabels[row.type]
-    case 'amountCents': return signedTransactionAmount({ type: row.type, amount: row.amountCents }, currencyCode)
-    case 'category': return row.category?.name ?? '—'
-    case 'account': return row.account?.name ?? (row.fromAccount && row.toAccount ? `From ${row.fromAccount.name} → To ${row.toAccount.name}` : '—')
-    case 'accountType': return row.accountType ? accountTypeLabels[row.accountType] : '—'
-    case 'fromAccount': return row.fromAccount?.name ?? '—'
-    case 'toAccount': return row.toAccount?.name ?? '—'
-    case 'note': return row.note ?? '—'
-    case 'taxAmountCents': return row.taxAmountCents === null ? '—' : formatAmount(row.taxAmountCents)
-    case 'expenseSubtotalCents': return row.expenseSubtotalCents === null ? '—' : formatAmount(row.expenseSubtotalCents)
-    case 'receiptNumber': return row.receiptNumber ?? '—'
-  }
 }
 
 function GroupMetrics({ summary }: { summary: FinancialSummary }) {
@@ -61,7 +41,7 @@ export function ReportResults({ report, view }: { report: PreparedReport; view: 
   const start = page * reportPageSize
   const visibleRows = group ? group.transactionIds.slice(start, start + reportPageSize).map(id => rowsById.get(id)!)
     : report.rows.slice(start, start + reportPageSize)
-  const columns = reportColumns.filter(([key]) => view.columns.includes(key))
+  const columns = visibleReportColumns(view.columns)
   const heading = useRef<HTMLHeadingElement>(null)
   const pendingFocus = useRef(false)
   useEffect(() => {
@@ -83,7 +63,7 @@ export function ReportResults({ report, view }: { report: PreparedReport; view: 
           </select></div>}
       </div>
     </div>
-    {view.grouping === 'account' && <p className="report-group-note">Transfers appear under both accounts. Group counts and Transfer volumes are not additive; the summary above counts each transaction once.</p>}
+    {view.grouping === 'account' && <p className="report-group-note">{reportAccountGroupingExplanation}</p>}
     {group && <section className="report-group-summary" aria-label="Selected group summary">
       <div className="report-group-title"><h4>{groupLabel}</h4><span>{group.summary.transactionCount} transactions in this group</span></div>
       <dl><GroupMetrics summary={group.summary} />
@@ -99,7 +79,7 @@ export function ReportResults({ report, view }: { report: PreparedReport; view: 
         <thead><tr>{columns.map(([key, label]) => <th scope="col" key={key} data-column={key} className={key === 'amountCents' ? 'report-amount' : undefined}>{label}</th>)}</tr></thead>
         <tbody>{visibleRows.map(row => <tr key={row.id} data-report-row={row.id}>
           {columns.map(([key]) => <td key={key} data-column={key} className={key === 'amountCents' ? `report-amount financial-${row.type}` : key === 'type' ? 'report-type' : undefined}>
-            {cellText(row, key, currencyCode, formatAmount)}</td>)}
+            {reportCellText(row, key, currencyCode)}</td>)}
         </tr>)}</tbody>
       </table>
     </div>
@@ -107,9 +87,9 @@ export function ReportResults({ report, view }: { report: PreparedReport; view: 
       <div className="report-card-heading"><div>
         {view.columns.includes('type') && <span className="report-type" data-column="type">{transactionTypeLabels[row.type]}</span>}
         {view.columns.includes('date') && <span className="report-card-date" data-column="date">{row.date}</span>}
-      </div><strong className={`report-amount financial-${row.type}`} data-column="amountCents">{cellText(row, 'amountCents', currencyCode, formatAmount)}</strong></div>
+      </div><strong className={`report-amount financial-${row.type}`} data-column="amountCents">{reportCellText(row, 'amountCents', currencyCode)}</strong></div>
       <dl>{columns.filter(([key]) => !['date', 'type', 'amountCents'].includes(key)).map(([key, label]) => <div key={key}>
-        <dt>{label}</dt><dd data-column={key}>{cellText(row, key, currencyCode, formatAmount)}</dd>
+        <dt>{label}</dt><dd data-column={key}>{reportCellText(row, key, currencyCode)}</dd>
       </div>)}</dl>
     </li>)}</ul>
     <nav className="report-pagination" aria-label="Report pages">
